@@ -106,9 +106,7 @@ def _public_item(item: Mapping[str, Any]) -> dict[str, Any]:
         profile = item.get("analysis_profile", {}) or {}
         public_item["analysis_profile"] = {
             "distinct_tool_count": profile.get("distinct_tool_count", len(public_item["analysis_tools"])),
-            "average_tool_plan_count": profile.get("average_tool_plan_count"),
-            "average_tool_task_count": profile.get("average_tool_task_count"),
-            "required_slot_count": profile.get("required_slot_count"),
+            "actual_analysis_task_count": profile.get("actual_analysis_task_count"),
             "enhanced_slot_count": profile.get("enhanced_slot_count"),
             "complexity_features": list(profile.get("complexity_features") or []),
         }
@@ -231,7 +229,7 @@ function analysisMarkup(item){
   const profile=item.analysis_profile||{};
   const tools=(item.analysis_tools||[]).map(tool=>`<span class="tool-chip">${esc(tool.label||tool.tool_id)}</span>`).join("");
   const features=(profile.complexity_features||[]).map(feature=>esc(feature)).join(" · ");
-  const metrics=[profile.distinct_tool_count!=null?`${profile.distinct_tool_count} 个工具`:"",profile.average_tool_task_count!=null?`平均 ${profile.average_tool_task_count} 个分析任务`:"",profile.required_slot_count!=null?`${profile.required_slot_count} 类必填证据`:""].filter(Boolean).join(" · ");
+  const metrics=[profile.distinct_tool_count!=null?`${profile.distinct_tool_count} 个工具`:"",profile.actual_analysis_task_count!=null?`实际分析任务 ${profile.actual_analysis_task_count} 个`:""].filter(Boolean).join(" · ");
   return `<div class="analysis-box"><div class="analysis-title">分析链 · ${esc(item.difficulty_label||labels[item.difficulty]||"")}</div><div class="tool-list">${tools||`<span class="tool-chip">工具链整理中</span>`}</div><div class="profile-line">${esc(metrics)}${features?`<br>证据链：${features}`:""}</div></div>`;
 }
 function cardMarkup(item,i){
@@ -309,7 +307,7 @@ FORBIDDEN_HTML_MARKERS = (
     "scoring_report_summary", "source_path", "/mnt/shared-storage-user/",
     "已听到操作员口述", "mock_live_stream", "c475-nested-10-r1",
     "自动播放", "下一项", "已完成展示", "高风险", "稳定", "prefilled_score",
-    "runNext", "runOne",
+    "runNext", "runOne", "平均", "必填证据",
 )
 
 

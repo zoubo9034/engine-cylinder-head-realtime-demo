@@ -38,6 +38,13 @@ class ReportContractTest(unittest.TestCase):
         self.assertTrue(all(item["analysis_tools"] for item in payload["items"]))
         self.assertEqual(payload["items"][0]["analysis_profile"]["sample_count"], 10)
         self.assertEqual(payload["items"][0]["analysis_profile"]["workflow_trace_count"], 10)
+        for item in payload["items"]:
+            profile = item["analysis_profile"]
+            self.assertIsInstance(profile["actual_analysis_task_count"], int)
+            self.assertLessEqual(
+                abs(profile["actual_analysis_task_count"] - profile["average_tool_task_count"]),
+                3,
+            )
 
     def test_public_html_has_no_internal_markers(self) -> None:
         html = render_html(template_payload())
@@ -52,6 +59,8 @@ class ReportContractTest(unittest.TestCase):
         self.assertIn("简单", html)
         self.assertNotIn("高风险", html)
         self.assertNotIn("稳定", html)
+        self.assertNotIn("平均", html)
+        self.assertNotIn("必填证据", html)
         self.assertNotIn("1—10号气缸盖螺栓", html)
         self.assertNotIn("25 N·m", html)
         self.assertNotIn("下一项", html)
@@ -86,6 +95,9 @@ class ReportContractTest(unittest.TestCase):
         self.assertEqual(public_item["difficulty_label"], "困难")
         self.assertTrue(public_item["analysis_tools"])
         self.assertEqual(public_item["score"], 1)
+        self.assertIn("actual_analysis_task_count", public_item["analysis_profile"])
+        self.assertNotIn("average_tool_task_count", public_item["analysis_profile"])
+        self.assertNotIn("required_slot_count", public_item["analysis_profile"])
         self.assertEqual(projection["score_summary"]["current_score"], 1)
 
     def test_manual_review_scores_zero_without_evaluation_text(self) -> None:

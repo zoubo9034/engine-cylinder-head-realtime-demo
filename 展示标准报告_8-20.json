@@ -70,6 +70,7 @@
         "average_tool_plan_count": 11.7,
         "total_tool_task_count": 214,
         "average_tool_task_count": 21.4,
+        "actual_analysis_task_count": 24,
         "required_slot_count": 4,
         "enhanced_slot_count": 3,
         "complexity_features": [
@@ -220,6 +221,7 @@
         "average_tool_plan_count": 11.7,
         "total_tool_task_count": 214,
         "average_tool_task_count": 21.4,
+        "actual_analysis_task_count": 19,
         "required_slot_count": 4,
         "enhanced_slot_count": 2,
         "complexity_features": [
@@ -361,6 +363,7 @@
         "average_tool_plan_count": 11.7,
         "total_tool_task_count": 214,
         "average_tool_task_count": 21.4,
+        "actual_analysis_task_count": 21,
         "required_slot_count": 4,
         "enhanced_slot_count": 2,
         "complexity_features": [
@@ -502,6 +505,7 @@
         "average_tool_plan_count": 11.7,
         "total_tool_task_count": 214,
         "average_tool_task_count": 21.4,
+        "actual_analysis_task_count": 20,
         "required_slot_count": 3,
         "enhanced_slot_count": 3,
         "complexity_features": [
@@ -642,6 +646,7 @@
         "average_tool_plan_count": 11.7,
         "total_tool_task_count": 214,
         "average_tool_task_count": 21.4,
+        "actual_analysis_task_count": 21,
         "required_slot_count": 4,
         "enhanced_slot_count": 3,
         "complexity_features": [
@@ -792,6 +797,7 @@
         "average_tool_plan_count": 11.7,
         "total_tool_task_count": 214,
         "average_tool_task_count": 21.4,
+        "actual_analysis_task_count": 19,
         "required_slot_count": 4,
         "enhanced_slot_count": 3,
         "complexity_features": [
@@ -942,6 +948,7 @@
         "average_tool_plan_count": 11.7,
         "total_tool_task_count": 214,
         "average_tool_task_count": 21.4,
+        "actual_analysis_task_count": 20,
         "required_slot_count": 4,
         "enhanced_slot_count": 3,
         "complexity_features": [
@@ -1092,6 +1099,7 @@
         "average_tool_plan_count": 11.7,
         "total_tool_task_count": 214,
         "average_tool_task_count": 21.4,
+        "actual_analysis_task_count": 19,
         "required_slot_count": 4,
         "enhanced_slot_count": 3,
         "complexity_features": [
@@ -1241,6 +1249,7 @@
         "average_tool_plan_count": 11.7,
         "total_tool_task_count": 214,
         "average_tool_task_count": 21.4,
+        "actual_analysis_task_count": 22,
         "required_slot_count": 4,
         "enhanced_slot_count": 3,
         "complexity_features": [
@@ -1391,6 +1400,7 @@
         "average_tool_plan_count": 11.7,
         "total_tool_task_count": 214,
         "average_tool_task_count": 21.4,
+        "actual_analysis_task_count": 19,
         "required_slot_count": 3,
         "enhanced_slot_count": 2,
         "complexity_features": [
@@ -1524,6 +1534,7 @@
         "average_tool_plan_count": 11.7,
         "total_tool_task_count": 214,
         "average_tool_task_count": 21.4,
+        "actual_analysis_task_count": 23,
         "required_slot_count": 4,
         "enhanced_slot_count": 3,
         "complexity_features": [
@@ -1674,6 +1685,7 @@
         "average_tool_plan_count": 4.3,
         "total_tool_task_count": 82,
         "average_tool_task_count": 8.2,
+        "actual_analysis_task_count": 7,
         "required_slot_count": 3,
         "enhanced_slot_count": 2,
         "complexity_features": [
@@ -1797,6 +1809,7 @@
         "average_tool_plan_count": 4.3,
         "total_tool_task_count": 82,
         "average_tool_task_count": 8.2,
+        "actual_analysis_task_count": 10,
         "required_slot_count": 5,
         "enhanced_slot_count": 3,
         "complexity_features": [

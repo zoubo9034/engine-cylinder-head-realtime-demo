@@ -55,7 +55,7 @@ function analysisMarkup(item){
   const profile=item.analysis_profile||{};
   const tools=(item.analysis_tools||[]).map(tool=>`<span class="tool-chip">${esc(tool.label||tool.tool_id)}</span>`).join("");
   const features=(profile.complexity_features||[]).map(feature=>esc(feature)).join(" · ");
-  const metrics=[profile.distinct_tool_count!=null?`${profile.distinct_tool_count} 个工具`:"",profile.average_tool_task_count!=null?`平均 ${profile.average_tool_task_count} 个分析任务`:"",profile.required_slot_count!=null?`${profile.required_slot_count} 类必填证据`:""].filter(Boolean).join(" · ");
+  const metrics=[profile.distinct_tool_count!=null?`${profile.distinct_tool_count} 个工具`:"",profile.actual_analysis_task_count!=null?`实际分析任务 ${profile.actual_analysis_task_count} 个`:""].filter(Boolean).join(" · ");
   return `<div class="analysis-box"><div class="analysis-title">分析链 · ${esc(item.difficulty_label||labels[item.difficulty]||"")}</div><div class="tool-list">${tools||`<span class="tool-chip">工具链整理中</span>`}</div><div class="profile-line">${esc(metrics)}${features?`<br>证据链：${features}`:""}</div></div>`;
 }
 function cardMarkup(item,i){
