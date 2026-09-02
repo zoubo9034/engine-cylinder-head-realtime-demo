@@ -123,6 +123,8 @@ class DemoState:
                     str(slot.get("slot_id")) for slot in item.get("required_evidence_slots", [])
                     if slot.get("status") == "bound"
                 ]
+            state = str(binding.get("state") or "待开始")
+            item["score"] = {"证据已绑定": 1, "已完成评分": 1, "待人工确认": 0}.get(state)
             self.write(payload)
             return payload
 

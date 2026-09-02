@@ -11,7 +11,8 @@
   },
   "presentation": {
     "audience_mode": "live_only",
-    "show_scores": false,
+    "show_scores": true,
+    "score_reveal": "terminal_only",
     "show_source_provenance": false,
     "show_raw_paths": false,
     "initial_state": "正在接入视频流",
@@ -36,15 +37,14 @@
       20
     ],
     "active_item_count": 13,
-    "display_score": "26/26",
-    "full_rubric_score": "50",
+    "max_score": 13,
     "inactive_items_display": "本次演示不展示，不计入现场回填进度",
     "display_mode": "evidence_progress_only"
   },
   "demo_policy": {
     "time_source": "live_stream_only",
-    "score_source": "offline_standard_report",
-    "score_reveal": "required_evidence_bound",
+    "score_source": "live_evidence_state",
+    "score_reveal": "terminal_only",
     "oral_gate": "disabled_for_demo",
     "oral_requirement_preserved_in_rubric": true,
     "oral_replacement": "流程节点确认与视觉时序证据"
@@ -59,8 +59,53 @@
       "item_number": 8,
       "item_id": "item_5069",
       "display_name": "第二次预松180°",
-      "difficulty": "high",
-      "prefilled_score": 2,
+      "difficulty": "difficult",
+      "difficulty_label": "困难",
+      "analysis_profile": {
+        "stage": "a1",
+        "sample_count": 10,
+        "workflow_trace_count": 10,
+        "distinct_tool_count": 5,
+        "total_tool_plan_count": 117,
+        "average_tool_plan_count": 11.7,
+        "total_tool_task_count": 214,
+        "average_tool_task_count": 21.4,
+        "required_slot_count": 4,
+        "enhanced_slot_count": 3,
+        "complexity_features": [
+          "角度与轮次",
+          "扳手—螺栓关系",
+          "连续动作"
+        ],
+        "rationale": "工具调用数量与证据链复杂度综合判断"
+      },
+      "analysis_tools": [
+        {
+          "tool_id": "end_state_workspace_inspector",
+          "label": "终态与工作区检查",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "object_motion_inspector",
+          "label": "对象动作与旋转分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "oral_evidence_analyzer",
+          "label": "口述证据分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "small_object_action_inspector",
+          "label": "小目标动作分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "temporal_sequence_analyzer",
+          "label": "时序与顺序分析",
+          "trace_count": 10
+        }
+      ],
       "prefilled_standard_text": "识别指针式扳手对气缸盖螺栓完成第二次180°预松，并确认动作连续、轮次正确。",
       "realtime_target": "识别指针式扳手对气缸盖螺栓完成第二次180°预松，并确认动作连续、轮次正确。",
       "retrieval_queries": [
@@ -151,6 +196,8 @@
         "evidence_explanation": "等待当前视频流中的有效证据。",
         "evidence": []
       },
+      "score": null,
+      "score_max": 1,
       "display_order": 1,
       "oral_policy": {
         "rubric_preserved": true,
@@ -162,8 +209,52 @@
       "item_number": 9,
       "item_id": "cylinder_head",
       "display_name": "将气缸盖放置在垫块上",
-      "difficulty": "stable",
-      "prefilled_score": 2,
+      "difficulty": "easy",
+      "difficulty_label": "简单",
+      "analysis_profile": {
+        "stage": "a1",
+        "sample_count": 10,
+        "workflow_trace_count": 10,
+        "distinct_tool_count": 5,
+        "total_tool_plan_count": 117,
+        "average_tool_plan_count": 11.7,
+        "total_tool_task_count": 214,
+        "average_tool_task_count": 21.4,
+        "required_slot_count": 4,
+        "enhanced_slot_count": 2,
+        "complexity_features": [
+          "放置终态",
+          "直接对象关系"
+        ],
+        "rationale": "工具调用数量与证据链复杂度综合判断"
+      },
+      "analysis_tools": [
+        {
+          "tool_id": "end_state_workspace_inspector",
+          "label": "终态与工作区检查",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "object_motion_inspector",
+          "label": "对象动作与旋转分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "oral_evidence_analyzer",
+          "label": "口述证据分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "small_object_action_inspector",
+          "label": "小目标动作分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "temporal_sequence_analyzer",
+          "label": "时序与顺序分析",
+          "trace_count": 10
+        }
+      ],
       "prefilled_standard_text": "识别双手扶持气缸盖缓慢落到支撑垫块，并确认没有与工作台直接接触。",
       "realtime_target": "识别双手扶持气缸盖缓慢落到支撑垫块，并确认没有与工作台直接接触。",
       "retrieval_queries": [
@@ -246,6 +337,8 @@
         "evidence_explanation": "等待当前视频流中的有效证据。",
         "evidence": []
       },
+      "score": null,
+      "score_max": 1,
       "display_order": 2,
       "oral_policy": {
         "rubric_preserved": true,
@@ -257,8 +350,52 @@
       "item_number": 10,
       "item_id": "gasket_remove",
       "display_name": "取下气缸垫",
-      "difficulty": "stable",
-      "prefilled_score": 2,
+      "difficulty": "easy",
+      "difficulty_label": "简单",
+      "analysis_profile": {
+        "stage": "a1",
+        "sample_count": 10,
+        "workflow_trace_count": 10,
+        "distinct_tool_count": 5,
+        "total_tool_plan_count": 117,
+        "average_tool_plan_count": 11.7,
+        "total_tool_task_count": 214,
+        "average_tool_task_count": 21.4,
+        "required_slot_count": 4,
+        "enhanced_slot_count": 2,
+        "complexity_features": [
+          "取下动作",
+          "脱离终态"
+        ],
+        "rationale": "工具调用数量与证据链复杂度综合判断"
+      },
+      "analysis_tools": [
+        {
+          "tool_id": "end_state_workspace_inspector",
+          "label": "终态与工作区检查",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "object_motion_inspector",
+          "label": "对象动作与旋转分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "oral_evidence_analyzer",
+          "label": "口述证据分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "small_object_action_inspector",
+          "label": "小目标动作分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "temporal_sequence_analyzer",
+          "label": "时序与顺序分析",
+          "trace_count": 10
+        }
+      ],
       "prefilled_standard_text": "识别手部与旧气缸垫的接触、抬起和移出结合面，确认气缸垫进入待检区域。",
       "realtime_target": "识别手部与旧气缸垫的接触、抬起和移出结合面，确认气缸垫进入待检区域。",
       "retrieval_queries": [
@@ -341,6 +478,8 @@
         "evidence_explanation": "等待当前视频流中的有效证据。",
         "evidence": []
       },
+      "score": null,
+      "score_max": 1,
       "display_order": 3,
       "oral_policy": {
         "rubric_preserved": true,
@@ -353,7 +492,51 @@
       "item_id": "gasket_inspect",
       "display_name": "检查气缸垫",
       "difficulty": "medium",
-      "prefilled_score": 2,
+      "difficulty_label": "中等",
+      "analysis_profile": {
+        "stage": "a1",
+        "sample_count": 10,
+        "workflow_trace_count": 10,
+        "distinct_tool_count": 5,
+        "total_tool_plan_count": 117,
+        "average_tool_plan_count": 11.7,
+        "total_tool_task_count": 214,
+        "average_tool_task_count": 21.4,
+        "required_slot_count": 3,
+        "enhanced_slot_count": 3,
+        "complexity_features": [
+          "近景小目标",
+          "孔位与边缘检查"
+        ],
+        "rationale": "工具调用数量与证据链复杂度综合判断"
+      },
+      "analysis_tools": [
+        {
+          "tool_id": "end_state_workspace_inspector",
+          "label": "终态与工作区检查",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "object_motion_inspector",
+          "label": "对象动作与旋转分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "oral_evidence_analyzer",
+          "label": "口述证据分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "small_object_action_inspector",
+          "label": "小目标动作分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "temporal_sequence_analyzer",
+          "label": "时序与顺序分析",
+          "trace_count": 10
+        }
+      ],
       "prefilled_standard_text": "识别对气缸垫孔位、边缘和表面状态的近景检查，保持正反面观察关系可追溯。",
       "realtime_target": "识别对气缸垫孔位、边缘和表面状态的近景检查，保持正反面观察关系可追溯。",
       "retrieval_queries": [
@@ -435,6 +618,8 @@
         "evidence_explanation": "等待当前视频流中的有效证据。",
         "evidence": []
       },
+      "score": null,
+      "score_max": 1,
       "display_order": 4,
       "oral_policy": {
         "rubric_preserved": true,
@@ -446,8 +631,53 @@
       "item_number": 12,
       "item_id": "positioning",
       "display_name": "检查定位销",
-      "difficulty": "high",
-      "prefilled_score": 2,
+      "difficulty": "difficult",
+      "difficulty_label": "困难",
+      "analysis_profile": {
+        "stage": "a1",
+        "sample_count": 10,
+        "workflow_trace_count": 10,
+        "distinct_tool_count": 5,
+        "total_tool_plan_count": 117,
+        "average_tool_plan_count": 11.7,
+        "total_tool_task_count": 214,
+        "average_tool_task_count": 21.4,
+        "required_slot_count": 4,
+        "enhanced_slot_count": 3,
+        "complexity_features": [
+          "双定位销",
+          "近景小目标",
+          "逐目标检查"
+        ],
+        "rationale": "工具调用数量与证据链复杂度综合判断"
+      },
+      "analysis_tools": [
+        {
+          "tool_id": "end_state_workspace_inspector",
+          "label": "终态与工作区检查",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "object_motion_inspector",
+          "label": "对象动作与旋转分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "oral_evidence_analyzer",
+          "label": "口述证据分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "small_object_action_inspector",
+          "label": "小目标动作分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "temporal_sequence_analyzer",
+          "label": "时序与顺序分析",
+          "trace_count": 10
+        }
+      ],
       "prefilled_standard_text": "识别气缸体边缘附近两枚金属圆柱定位销，并确认检查动作覆盖两枚目标。",
       "realtime_target": "识别气缸体边缘附近两枚金属圆柱定位销，并确认检查动作覆盖两枚目标。",
       "retrieval_queries": [
@@ -538,6 +768,8 @@
         "evidence_explanation": "等待当前视频流中的有效证据。",
         "evidence": []
       },
+      "score": null,
+      "score_max": 1,
       "display_order": 5,
       "oral_policy": {
         "rubric_preserved": true,
@@ -549,8 +781,53 @@
       "item_number": 13,
       "item_id": "clean_head",
       "display_name": "清洁气缸盖",
-      "difficulty": "high",
-      "prefilled_score": 2,
+      "difficulty": "difficult",
+      "difficulty_label": "困难",
+      "analysis_profile": {
+        "stage": "a1",
+        "sample_count": 10,
+        "workflow_trace_count": 10,
+        "distinct_tool_count": 5,
+        "total_tool_plan_count": 117,
+        "average_tool_plan_count": 11.7,
+        "total_tool_task_count": 214,
+        "average_tool_task_count": 21.4,
+        "required_slot_count": 4,
+        "enhanced_slot_count": 3,
+        "complexity_features": [
+          "结合面覆盖",
+          "擦拭接触",
+          "对象区分"
+        ],
+        "rationale": "工具调用数量与证据链复杂度综合判断"
+      },
+      "analysis_tools": [
+        {
+          "tool_id": "end_state_workspace_inspector",
+          "label": "终态与工作区检查",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "object_motion_inspector",
+          "label": "对象动作与旋转分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "oral_evidence_analyzer",
+          "label": "口述证据分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "small_object_action_inspector",
+          "label": "小目标动作分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "temporal_sequence_analyzer",
+          "label": "时序与顺序分析",
+          "trace_count": 10
+        }
+      ],
       "prefilled_standard_text": "识别白色无纺布与气缸盖下方结合面的直接擦拭接触，并确认主要密封区域被覆盖。",
       "realtime_target": "识别白色无纺布与气缸盖下方结合面的直接擦拭接触，并确认主要密封区域被覆盖。",
       "retrieval_queries": [
@@ -641,6 +918,8 @@
         "evidence_explanation": "等待当前视频流中的有效证据。",
         "evidence": []
       },
+      "score": null,
+      "score_max": 1,
       "display_order": 6,
       "oral_policy": {
         "rubric_preserved": true,
@@ -652,8 +931,53 @@
       "item_number": 14,
       "item_id": "clean_block",
       "display_name": "清洁气缸体",
-      "difficulty": "high",
-      "prefilled_score": 2,
+      "difficulty": "difficult",
+      "difficulty_label": "困难",
+      "analysis_profile": {
+        "stage": "a1",
+        "sample_count": 10,
+        "workflow_trace_count": 10,
+        "distinct_tool_count": 5,
+        "total_tool_plan_count": 117,
+        "average_tool_plan_count": 11.7,
+        "total_tool_task_count": 214,
+        "average_tool_task_count": 21.4,
+        "required_slot_count": 4,
+        "enhanced_slot_count": 3,
+        "complexity_features": [
+          "结合面覆盖",
+          "擦拭接触",
+          "对象区分"
+        ],
+        "rationale": "工具调用数量与证据链复杂度综合判断"
+      },
+      "analysis_tools": [
+        {
+          "tool_id": "end_state_workspace_inspector",
+          "label": "终态与工作区检查",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "object_motion_inspector",
+          "label": "对象动作与旋转分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "oral_evidence_analyzer",
+          "label": "口述证据分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "small_object_action_inspector",
+          "label": "小目标动作分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "temporal_sequence_analyzer",
+          "label": "时序与顺序分析",
+          "trace_count": 10
+        }
+      ],
       "prefilled_standard_text": "识别白色无纺布擦拭气缸体上方结合面，并确认气缸孔周边和主要密封区域被覆盖。",
       "realtime_target": "识别白色无纺布擦拭气缸体上方结合面，并确认气缸孔周边和主要密封区域被覆盖。",
       "retrieval_queries": [
@@ -744,6 +1068,8 @@
         "evidence_explanation": "等待当前视频流中的有效证据。",
         "evidence": []
       },
+      "score": null,
+      "score_max": 1,
       "display_order": 7,
       "oral_policy": {
         "rubric_preserved": true,
@@ -756,7 +1082,51 @@
       "item_id": "clean_gasket",
       "display_name": "清洁气缸垫",
       "difficulty": "medium",
-      "prefilled_score": 2,
+      "difficulty_label": "中等",
+      "analysis_profile": {
+        "stage": "a1",
+        "sample_count": 10,
+        "workflow_trace_count": 10,
+        "distinct_tool_count": 5,
+        "total_tool_plan_count": 117,
+        "average_tool_plan_count": 11.7,
+        "total_tool_task_count": 214,
+        "average_tool_task_count": 21.4,
+        "required_slot_count": 4,
+        "enhanced_slot_count": 3,
+        "complexity_features": [
+          "正反两面",
+          "清洁时序"
+        ],
+        "rationale": "工具调用数量与证据链复杂度综合判断"
+      },
+      "analysis_tools": [
+        {
+          "tool_id": "end_state_workspace_inspector",
+          "label": "终态与工作区检查",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "object_motion_inspector",
+          "label": "对象动作与旋转分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "oral_evidence_analyzer",
+          "label": "口述证据分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "small_object_action_inspector",
+          "label": "小目标动作分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "temporal_sequence_analyzer",
+          "label": "时序与顺序分析",
+          "trace_count": 10
+        }
+      ],
       "prefilled_standard_text": "识别白色无纺布对气缸垫正面和反面的擦拭，并确认清洁发生在安装前。",
       "realtime_target": "识别白色无纺布对气缸垫正面和反面的擦拭，并确认清洁发生在安装前。",
       "retrieval_queries": [
@@ -847,6 +1217,8 @@
         "evidence_explanation": "等待当前视频流中的有效证据。",
         "evidence": []
       },
+      "score": null,
+      "score_max": 1,
       "display_order": 8,
       "oral_policy": {
         "rubric_preserved": true,
@@ -858,8 +1230,53 @@
       "item_number": 16,
       "item_id": "clean_pins",
       "display_name": "清洁定位销",
-      "difficulty": "high",
-      "prefilled_score": 2,
+      "difficulty": "difficult",
+      "difficulty_label": "困难",
+      "analysis_profile": {
+        "stage": "a1",
+        "sample_count": 10,
+        "workflow_trace_count": 10,
+        "distinct_tool_count": 5,
+        "total_tool_plan_count": 117,
+        "average_tool_plan_count": 11.7,
+        "total_tool_task_count": 214,
+        "average_tool_task_count": 21.4,
+        "required_slot_count": 4,
+        "enhanced_slot_count": 3,
+        "complexity_features": [
+          "双定位销",
+          "逐目标接触",
+          "连续动作"
+        ],
+        "rationale": "工具调用数量与证据链复杂度综合判断"
+      },
+      "analysis_tools": [
+        {
+          "tool_id": "end_state_workspace_inspector",
+          "label": "终态与工作区检查",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "object_motion_inspector",
+          "label": "对象动作与旋转分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "oral_evidence_analyzer",
+          "label": "口述证据分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "small_object_action_inspector",
+          "label": "小目标动作分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "temporal_sequence_analyzer",
+          "label": "时序与顺序分析",
+          "trace_count": 10
+        }
+      ],
       "prefilled_standard_text": "识别白色无纺布逐一接触两枚金属定位销，并确认没有遗漏任一目标。",
       "realtime_target": "识别白色无纺布逐一接触两枚金属定位销，并确认没有遗漏任一目标。",
       "retrieval_queries": [
@@ -950,6 +1367,8 @@
         "evidence_explanation": "等待当前视频流中的有效证据。",
         "evidence": []
       },
+      "score": null,
+      "score_max": 1,
       "display_order": 9,
       "oral_policy": {
         "rubric_preserved": true,
@@ -961,8 +1380,53 @@
       "item_number": 17,
       "item_id": "report_gasket",
       "display_name": "报告更换气缸垫",
-      "difficulty": "high",
-      "prefilled_score": 2,
+      "difficulty": "difficult",
+      "difficulty_label": "困难",
+      "analysis_profile": {
+        "stage": "a1",
+        "sample_count": 10,
+        "workflow_trace_count": 10,
+        "distinct_tool_count": 5,
+        "total_tool_plan_count": 117,
+        "average_tool_plan_count": 11.7,
+        "total_tool_task_count": 214,
+        "average_tool_task_count": 21.4,
+        "required_slot_count": 3,
+        "enhanced_slot_count": 2,
+        "complexity_features": [
+          "安装前节点",
+          "前后时序",
+          "流程停顿"
+        ],
+        "rationale": "工具调用数量与证据链复杂度综合判断"
+      },
+      "analysis_tools": [
+        {
+          "tool_id": "end_state_workspace_inspector",
+          "label": "终态与工作区检查",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "object_motion_inspector",
+          "label": "对象动作与旋转分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "oral_evidence_analyzer",
+          "label": "口述证据分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "small_object_action_inspector",
+          "label": "小目标动作分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "temporal_sequence_analyzer",
+          "label": "时序与顺序分析",
+          "trace_count": 10
+        }
+      ],
       "prefilled_standard_text": "识别安装新气缸垫前的流程停顿和更换确认节点，并确认随后才进入安装阶段。",
       "realtime_target": "识别安装新气缸垫前的流程停顿和更换确认节点，并确认随后才进入安装阶段。",
       "retrieval_queries": [
@@ -1036,6 +1500,8 @@
         "evidence_explanation": "等待当前视频流中的有效证据。",
         "evidence": []
       },
+      "score": null,
+      "score_max": 1,
       "display_order": 10,
       "oral_policy": {
         "rubric_preserved": true,
@@ -1048,7 +1514,52 @@
       "item_id": "install_gasket",
       "display_name": "安装气缸垫",
       "difficulty": "medium",
-      "prefilled_score": 2,
+      "difficulty_label": "中等",
+      "analysis_profile": {
+        "stage": "a1",
+        "sample_count": 10,
+        "workflow_trace_count": 10,
+        "distinct_tool_count": 5,
+        "total_tool_plan_count": 117,
+        "average_tool_plan_count": 11.7,
+        "total_tool_task_count": 214,
+        "average_tool_task_count": 21.4,
+        "required_slot_count": 4,
+        "enhanced_slot_count": 3,
+        "complexity_features": [
+          "方向确认",
+          "孔位—定位销匹配",
+          "落座终态"
+        ],
+        "rationale": "工具调用数量与证据链复杂度综合判断"
+      },
+      "analysis_tools": [
+        {
+          "tool_id": "end_state_workspace_inspector",
+          "label": "终态与工作区检查",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "object_motion_inspector",
+          "label": "对象动作与旋转分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "oral_evidence_analyzer",
+          "label": "口述证据分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "small_object_action_inspector",
+          "label": "小目标动作分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "temporal_sequence_analyzer",
+          "label": "时序与顺序分析",
+          "trace_count": 10
+        }
+      ],
       "prefilled_standard_text": "识别新气缸垫方向、孔位与两枚定位销的匹配，以及平稳落座后的无明显错位状态。",
       "realtime_target": "识别新气缸垫方向、孔位与两枚定位销的匹配，以及平稳落座后的无明显错位状态。",
       "retrieval_queries": [
@@ -1139,6 +1650,8 @@
         "evidence_explanation": "等待当前视频流中的有效证据。",
         "evidence": []
       },
+      "score": null,
+      "score_max": 1,
       "display_order": 11,
       "oral_policy": {
         "rubric_preserved": true,
@@ -1150,8 +1663,43 @@
       "item_number": 19,
       "item_id": "cylinder_head_bolt",
       "display_name": "报告更换气缸盖螺栓",
-      "difficulty": "high",
-      "prefilled_score": 2,
+      "difficulty": "difficult",
+      "difficulty_label": "困难",
+      "analysis_profile": {
+        "stage": "a2",
+        "sample_count": 10,
+        "workflow_trace_count": 10,
+        "distinct_tool_count": 3,
+        "total_tool_plan_count": 43,
+        "average_tool_plan_count": 4.3,
+        "total_tool_task_count": 82,
+        "average_tool_task_count": 8.2,
+        "required_slot_count": 3,
+        "enhanced_slot_count": 2,
+        "complexity_features": [
+          "安装前节点",
+          "前后时序",
+          "新旧对象区分"
+        ],
+        "rationale": "工具调用数量与证据链复杂度综合判断"
+      },
+      "analysis_tools": [
+        {
+          "tool_id": "object_motion_inspector",
+          "label": "对象动作与旋转分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "oral_evidence_analyzer",
+          "label": "口述证据分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "temporal_sequence_analyzer",
+          "label": "时序与顺序分析",
+          "trace_count": 10
+        }
+      ],
       "prefilled_standard_text": "识别安装气缸盖螺栓前的新螺栓流程节点，避免将安装后的补充说明误判为事前报告。",
       "realtime_target": "识别安装气缸盖螺栓前的新螺栓流程节点，避免将安装后的补充说明误判为事前报告。",
       "retrieval_queries": [
@@ -1225,6 +1773,8 @@
         "evidence_explanation": "等待当前视频流中的有效证据。",
         "evidence": []
       },
+      "score": null,
+      "score_max": 1,
       "display_order": 12,
       "oral_policy": {
         "rubric_preserved": true,
@@ -1236,8 +1786,44 @@
       "item_number": 20,
       "item_id": "install_1st",
       "display_name": "第一次安装预紧",
-      "difficulty": "high",
-      "prefilled_score": 2,
+      "difficulty": "difficult",
+      "difficulty_label": "困难",
+      "analysis_profile": {
+        "stage": "a2",
+        "sample_count": 10,
+        "workflow_trace_count": 10,
+        "distinct_tool_count": 3,
+        "total_tool_plan_count": 43,
+        "average_tool_plan_count": 4.3,
+        "total_tool_task_count": 82,
+        "average_tool_task_count": 8.2,
+        "required_slot_count": 5,
+        "enhanced_slot_count": 3,
+        "complexity_features": [
+          "1—10顺序",
+          "扭矩工具",
+          "轮次区分",
+          "连续动作"
+        ],
+        "rationale": "工具调用数量与证据链复杂度综合判断"
+      },
+      "analysis_tools": [
+        {
+          "tool_id": "object_motion_inspector",
+          "label": "对象动作与旋转分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "oral_evidence_analyzer",
+          "label": "口述证据分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "temporal_sequence_analyzer",
+          "label": "时序与顺序分析",
+          "trace_count": 10
+        }
+      ],
       "prefilled_standard_text": "使用扭力扳手按维修手册顺序，依次对1—10号气缸盖螺栓完成第一次安装预紧；本轮预紧扭矩为25 N·m，且不与后续角度拧紧轮次混淆。",
       "realtime_target": "使用扭力扳手按维修手册顺序，依次对1—10号气缸盖螺栓完成第一次安装预紧；本轮预紧扭矩为25 N·m，且不与后续角度拧紧轮次混淆。",
       "retrieval_queries": [
@@ -1337,6 +1923,8 @@
         "evidence_explanation": "等待当前视频流中的有效证据。",
         "evidence": []
       },
+      "score": null,
+      "score_max": 1,
       "display_order": 13,
       "oral_policy": {
         "rubric_preserved": true,

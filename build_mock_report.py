@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from report_schema import ITEM_DEFINITIONS, template_payload, validated_copy
+from workflow_tool_stats import build_profile
 
 
 ROOT = Path(__file__).resolve().parent
@@ -158,6 +159,16 @@ def build_mock(template: dict[str, Any], source_run: Path) -> dict[str, Any]:
         raise ValueError(f"期望 10 个视频报告，实际找到 {len(summaries)} 个：{source_run}")
 
     payload = validated_copy(template)
+    tool_profile = build_profile(source_run, expected_samples=10)
+    profile_items = tool_profile.get("items", {}) or {}
+    for item in payload["items"]:
+        item_profile = profile_items.get(item["item_id"])
+        if not isinstance(item_profile, dict):
+            raise ValueError(f"缺少评分项工具 profile：{item['item_id']}")
+        item["difficulty"] = item_profile["difficulty"]
+        item["difficulty_label"] = item_profile["difficulty_label"]
+        item["analysis_profile"] = deepcopy(item_profile["analysis_profile"])
+        item["analysis_tools"] = deepcopy(item_profile["analysis_tools"])
     payload["demo_mode"] = "mock_live_stream"
     payload["presentation"]["initial_state"] = "正在接入视频流"
     payload["_mock_audit"] = {
@@ -260,6 +271,7 @@ def build_mock(template: dict[str, Any], source_run: Path) -> dict[str, Any]:
             ),
             "evidence": binding_evidence,
         }
+        item["score"] = {"证据已绑定": 1, "已完成评分": 1, "待人工确认": 0}.get(state)
         for slot in item["required_evidence_slots"]:
             evidence = slot_map.get(slot["slot_id"], [])
             slot["status"] = "bound" if evidence else "empty"
@@ -280,14 +292,15 @@ def build_mock(template: dict[str, Any], source_run: Path) -> dict[str, Any]:
             "evidence_explanation": "等待当前视频流中的有效证据。",
             "evidence": [],
         }
+        item["score"] = None
         for slot in item["required_evidence_slots"]:
             slot["status"] = "empty"
             slot["evidence"] = []
         events.append({
             "event_id": f"evt-{item_id}",
             "item_id": item_id,
-            "delay_ms": 1150 + (900 if item["difficulty"] == "high" else 250),
-            "processing_ms": 1900 if item["difficulty"] == "high" else 1200,
+            "delay_ms": 1150 + (900 if item["difficulty"] == "difficult" else 250),
+            "processing_ms": 1900 if item["difficulty"] == "difficult" else 1200,
             "final_state": state,
             "evidence_ids": [e["evidence_id"] for e in binding_evidence],
             "item_patch": completed_item,

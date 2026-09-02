@@ -9,6 +9,8 @@ bound to exactly one item.
 from __future__ import annotations
 
 from copy import deepcopy
+import json
+from pathlib import Path
 from typing import Any, Iterable, Mapping
 
 
@@ -17,7 +19,7 @@ ITEM_DEFINITIONS = [
         "item_number": 8,
         "item_id": "item_5069",
         "display_name": "第二次预松180°",
-        "difficulty": "high",
+        "difficulty": "difficult",
         "target_text": "识别指针式扳手对气缸盖螺栓完成第二次180°预松，并确认动作连续、轮次正确。",
         "queries": ["第二次预松180度 指针扳手", "pointer wrench half turn cylinder head bolt"],
         "required_slots": ["live_timestamp", "representative_frame", "object_detection", "multi_frame_sequence"],
@@ -28,7 +30,7 @@ ITEM_DEFINITIONS = [
         "item_number": 9,
         "item_id": "cylinder_head",
         "display_name": "将气缸盖放置在垫块上",
-        "difficulty": "stable",
+        "difficulty": "easy",
         "target_text": "识别双手扶持气缸盖缓慢落到支撑垫块，并确认没有与工作台直接接触。",
         "queries": ["气缸盖 放置 垫块", "cylinder head placed on support pads"],
         "required_slots": ["live_timestamp", "representative_frame", "object_detection", "multi_frame_sequence"],
@@ -39,7 +41,7 @@ ITEM_DEFINITIONS = [
         "item_number": 10,
         "item_id": "gasket_remove",
         "display_name": "取下气缸垫",
-        "difficulty": "stable",
+        "difficulty": "easy",
         "target_text": "识别手部与旧气缸垫的接触、抬起和移出结合面，确认气缸垫进入待检区域。",
         "queries": ["取下 旧气缸垫", "lift cylinder gasket from engine block"],
         "required_slots": ["live_timestamp", "representative_frame", "object_detection", "multi_frame_sequence"],
@@ -61,7 +63,7 @@ ITEM_DEFINITIONS = [
         "item_number": 12,
         "item_id": "positioning",
         "display_name": "检查定位销",
-        "difficulty": "high",
+        "difficulty": "difficult",
         "target_text": "识别气缸体边缘附近两枚金属圆柱定位销，并确认检查动作覆盖两枚目标。",
         "queries": ["检查定位销 金属圆柱", "two silver dowel pins engine block edge"],
         "required_slots": ["live_timestamp", "representative_frame", "object_detection", "multi_frame_sequence"],
@@ -72,7 +74,7 @@ ITEM_DEFINITIONS = [
         "item_number": 13,
         "item_id": "clean_head",
         "display_name": "清洁气缸盖",
-        "difficulty": "high",
+        "difficulty": "difficult",
         "target_text": "识别白色无纺布与气缸盖下方结合面的直接擦拭接触，并确认主要密封区域被覆盖。",
         "queries": ["清洁气缸盖 结合面 白色无纺布", "white nonwoven cloth wipes cylinder head surface"],
         "required_slots": ["live_timestamp", "representative_frame", "object_detection", "multi_frame_sequence"],
@@ -83,7 +85,7 @@ ITEM_DEFINITIONS = [
         "item_number": 14,
         "item_id": "clean_block",
         "display_name": "清洁气缸体",
-        "difficulty": "high",
+        "difficulty": "difficult",
         "target_text": "识别白色无纺布擦拭气缸体上方结合面，并确认气缸孔周边和主要密封区域被覆盖。",
         "queries": ["清洁气缸体 结合面 无纺布", "white cloth cleans engine block sealing surface"],
         "required_slots": ["live_timestamp", "representative_frame", "object_detection", "multi_frame_sequence"],
@@ -105,7 +107,7 @@ ITEM_DEFINITIONS = [
         "item_number": 16,
         "item_id": "clean_pins",
         "display_name": "清洁定位销",
-        "difficulty": "high",
+        "difficulty": "difficult",
         "target_text": "识别白色无纺布逐一接触两枚金属定位销，并确认没有遗漏任一目标。",
         "queries": ["清洁两枚定位销 无纺布", "wipe two dowel pins with white cloth"],
         "required_slots": ["live_timestamp", "representative_frame", "object_detection", "multi_frame_sequence"],
@@ -116,7 +118,7 @@ ITEM_DEFINITIONS = [
         "item_number": 17,
         "item_id": "report_gasket",
         "display_name": "报告更换气缸垫",
-        "difficulty": "high",
+        "difficulty": "difficult",
         "target_text": "识别安装新气缸垫前的流程停顿和更换确认节点，并确认随后才进入安装阶段。",
         "queries": ["报告更换气缸垫 安装前", "gasket replacement report before installation"],
         "required_slots": ["live_timestamp", "process_node_frame", "temporal_order"],
@@ -138,7 +140,7 @@ ITEM_DEFINITIONS = [
         "item_number": 19,
         "item_id": "cylinder_head_bolt",
         "display_name": "报告更换气缸盖螺栓",
-        "difficulty": "high",
+        "difficulty": "difficult",
         "target_text": "识别安装气缸盖螺栓前的新螺栓流程节点，避免将安装后的补充说明误判为事前报告。",
         "queries": ["报告更换气缸盖螺栓 安装前", "new cylinder head bolt report before install"],
         "required_slots": ["live_timestamp", "process_node_frame", "temporal_order"],
@@ -149,7 +151,7 @@ ITEM_DEFINITIONS = [
         "item_number": 20,
         "item_id": "install_1st",
         "display_name": "第一次安装预紧",
-        "difficulty": "high",
+        "difficulty": "difficult",
         "target_text": "使用扭力扳手按维修手册顺序，依次对1—10号气缸盖螺栓完成第一次安装预紧；本轮预紧扭矩为25 N·m，且不与后续角度拧紧轮次混淆。",
         "queries": ["第一次安装预紧 1-10 25Nm", "torque wrench first tightening ten bolt order"],
         "required_slots": ["live_timestamp", "representative_frame", "object_detection", "multi_frame_sequence", "sequence_order"],
@@ -199,6 +201,26 @@ SLOT_LABELS = {
 }
 
 
+DIFFICULTY_LABELS = {
+    "difficult": "困难",
+    "medium": "中等",
+    "easy": "简单",
+}
+
+DEFAULT_PROFILE_PATH = Path(__file__).with_name("workflow_tool_profile_10video.json")
+
+
+def load_tool_profile(path: Path | None = None) -> dict[str, Any]:
+    """Load the checked-in aggregate profile, if one is available."""
+    profile_path = path or DEFAULT_PROFILE_PATH
+    if not profile_path.is_file():
+        return {}
+    value = json.loads(profile_path.read_text(encoding="utf-8"))
+    if not isinstance(value, dict):
+        raise ValueError("workflow tool profile 顶层必须是对象")
+    return value
+
+
 def _slot(slot_id: str, *, required: bool, kind: str = "image") -> dict[str, Any]:
     return {
         "slot_id": slot_id,
@@ -210,10 +232,14 @@ def _slot(slot_id: str, *, required: bool, kind: str = "image") -> dict[str, Any
     }
 
 
-def template_payload() -> dict[str, Any]:
+def template_payload(profile: Mapping[str, Any] | None = None) -> dict[str, Any]:
     """Return a fresh, JSON-serialisable live-only report template."""
+    profile_items = dict((profile or load_tool_profile()).get("items", {}) or {})
     items = []
     for order, definition in enumerate(ITEM_DEFINITIONS, start=1):
+        item_profile = profile_items.get(definition["item_id"], {}) or {}
+        difficulty = str(item_profile.get("difficulty") or definition["difficulty"])
+        difficulty_label = str(item_profile.get("difficulty_label") or DIFFICULTY_LABELS[difficulty])
         required = []
         for slot_id in definition["required_slots"]:
             kind = "timestamp" if slot_id == "live_timestamp" else ("sequence" if slot_id in {"multi_frame_sequence", "temporal_order", "sequence_order"} else "image")
@@ -223,11 +249,13 @@ def template_payload() -> dict[str, Any]:
             "item_number": definition["item_number"],
             "item_id": definition["item_id"],
             "display_name": definition["display_name"],
-            "difficulty": definition["difficulty"],
+            "difficulty": difficulty,
+            "difficulty_label": difficulty_label,
+            "analysis_profile": deepcopy(item_profile.get("analysis_profile", {})),
+            "analysis_tools": deepcopy(item_profile.get("analysis_tools", [])),
             # The internal template keeps the rubric snapshot available to
             # auditors.  render_report.public_projection deliberately omits
             # these fields so the audience only sees live analysis.
-            "prefilled_score": 2,
             "prefilled_standard_text": definition["target_text"],
             "realtime_target": definition["target_text"],
             "retrieval_queries": definition["queries"],
@@ -252,6 +280,8 @@ def template_payload() -> dict[str, Any]:
                 "evidence_explanation": "等待当前视频流中的有效证据。",
                 "evidence": [],
             },
+            "score": None,
+            "score_max": 1,
             "display_order": order,
             "oral_policy": {
                 "rubric_preserved": True,
@@ -272,7 +302,8 @@ def template_payload() -> dict[str, Any]:
         },
         "presentation": {
             "audience_mode": "live_only",
-            "show_scores": False,
+            "show_scores": True,
+            "score_reveal": "terminal_only",
             "show_source_provenance": False,
             "show_raw_paths": False,
             "initial_state": "正在接入视频流",
@@ -283,15 +314,14 @@ def template_payload() -> dict[str, Any]:
             "total_rubric_items": 28,
             "active_item_numbers": [d["item_number"] for d in ITEM_DEFINITIONS],
             "active_item_count": len(ITEM_DEFINITIONS),
-            "display_score": "26/26",
-            "full_rubric_score": "50",
+            "max_score": len(ITEM_DEFINITIONS),
             "inactive_items_display": "本次演示不展示，不计入现场回填进度",
             "display_mode": "evidence_progress_only",
         },
         "demo_policy": {
             "time_source": "live_stream_only",
-            "score_source": "offline_standard_report",
-            "score_reveal": "required_evidence_bound",
+            "score_source": "live_evidence_state",
+            "score_reveal": "terminal_only",
             "oral_gate": "disabled_for_demo",
             "oral_requirement_preserved_in_rubric": True,
             "oral_replacement": "流程节点确认与视觉时序证据",
@@ -316,8 +346,10 @@ def validate_report(payload: Mapping[str, Any], *, allow_mock: bool = True) -> l
     errors: list[str] = []
     if payload.get("schema") != "realtime-evidence-report/v1":
         errors.append("schema must be realtime-evidence-report/v1")
-    if payload.get("presentation", {}).get("show_scores") is not False:
-        errors.append("presentation.show_scores must be false")
+    if payload.get("presentation", {}).get("show_scores") is not True:
+        errors.append("presentation.show_scores must be true")
+    if payload.get("presentation", {}).get("score_reveal") != "terminal_only":
+        errors.append("presentation.score_reveal must be terminal_only")
     if payload.get("presentation", {}).get("show_source_provenance") is not False:
         errors.append("presentation.show_source_provenance must be false")
     items = payload.get("items")
@@ -328,6 +360,8 @@ def validate_report(payload: Mapping[str, Any], *, allow_mock: bool = True) -> l
     actual = [(item.get("item_number"), item.get("item_id")) for item in items if isinstance(item, Mapping)]
     if actual != expected:
         errors.append(f"items must follow exact 8-20 order: expected {expected}, got {actual}")
+    if payload.get("scope", {}).get("max_score") != len(ITEM_DEFINITIONS):
+        errors.append(f"scope.max_score must be {len(ITEM_DEFINITIONS)}")
     used_paths: dict[str, str] = {}
     for item in items:
         if not isinstance(item, Mapping):
@@ -340,6 +374,13 @@ def validate_report(payload: Mapping[str, Any], *, allow_mock: bool = True) -> l
             errors.append(f"{item.get('item_id')}: duplicate evidence slot")
         if not required_ids.issubset(set(slot_ids)):
             errors.append(f"{item.get('item_id')}: completion slots missing from slot definitions")
+        difficulty = str(item.get("difficulty") or "")
+        if difficulty not in DIFFICULTY_LABELS:
+            errors.append(f"{item.get('item_id')}: unknown difficulty {difficulty}")
+        if str(item.get("difficulty_label") or "") != DIFFICULTY_LABELS.get(difficulty, ""):
+            errors.append(f"{item.get('item_id')}: difficulty label mismatch")
+        if item.get("score_max") != 1:
+            errors.append(f"{item.get('item_id')}: score_max must be 1")
         binding = item.get("live_binding", {}) or {}
         for evidence in binding.get("evidence", []) or []:
             if not isinstance(evidence, Mapping):
@@ -353,6 +394,12 @@ def validate_report(payload: Mapping[str, Any], *, allow_mock: bool = True) -> l
         state = str(binding.get("state") or "")
         if state and state not in {"待开始", "已定位", "证据生成中", "证据已绑定", "已完成评分", "待人工确认"}:
             errors.append(f"{item.get('item_id')}: unknown live state {state}")
+        expected_score = {"证据已绑定": 1, "已完成评分": 1, "待人工确认": 0}.get(state)
+        score = item.get("score")
+        if expected_score is None and score is not None:
+            errors.append(f"{item.get('item_id')}: non-terminal item must not have a score")
+        elif expected_score is not None and score != expected_score:
+            errors.append(f"{item.get('item_id')}: score does not match state {state}")
     if not allow_mock and payload.get("demo_mode"):
         errors.append("mock payload is not allowed")
     return errors

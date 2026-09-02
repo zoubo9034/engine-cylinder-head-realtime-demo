@@ -1,0 +1,622 @@
+{
+  "schema": "workflow-tool-profile/v1",
+  "source_run_label": "c475-nested-10-r1",
+  "sample_count": 10,
+  "stage_trace_count": 40,
+  "items": {
+    "item_5069": {
+      "difficulty": "difficult",
+      "difficulty_label": "困难",
+      "analysis_profile": {
+        "stage": "a1",
+        "sample_count": 10,
+        "workflow_trace_count": 10,
+        "distinct_tool_count": 5,
+        "total_tool_plan_count": 117,
+        "average_tool_plan_count": 11.7,
+        "total_tool_task_count": 214,
+        "average_tool_task_count": 21.4,
+        "required_slot_count": 4,
+        "enhanced_slot_count": 3,
+        "complexity_features": [
+          "角度与轮次",
+          "扳手—螺栓关系",
+          "连续动作"
+        ],
+        "rationale": "工具调用数量与证据链复杂度综合判断"
+      },
+      "analysis_tools": [
+        {
+          "tool_id": "end_state_workspace_inspector",
+          "label": "终态与工作区检查",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "object_motion_inspector",
+          "label": "对象动作与旋转分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "oral_evidence_analyzer",
+          "label": "口述证据分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "small_object_action_inspector",
+          "label": "小目标动作分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "temporal_sequence_analyzer",
+          "label": "时序与顺序分析",
+          "trace_count": 10
+        }
+      ]
+    },
+    "cylinder_head": {
+      "difficulty": "easy",
+      "difficulty_label": "简单",
+      "analysis_profile": {
+        "stage": "a1",
+        "sample_count": 10,
+        "workflow_trace_count": 10,
+        "distinct_tool_count": 5,
+        "total_tool_plan_count": 117,
+        "average_tool_plan_count": 11.7,
+        "total_tool_task_count": 214,
+        "average_tool_task_count": 21.4,
+        "required_slot_count": 4,
+        "enhanced_slot_count": 2,
+        "complexity_features": [
+          "放置终态",
+          "直接对象关系"
+        ],
+        "rationale": "工具调用数量与证据链复杂度综合判断"
+      },
+      "analysis_tools": [
+        {
+          "tool_id": "end_state_workspace_inspector",
+          "label": "终态与工作区检查",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "object_motion_inspector",
+          "label": "对象动作与旋转分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "oral_evidence_analyzer",
+          "label": "口述证据分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "small_object_action_inspector",
+          "label": "小目标动作分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "temporal_sequence_analyzer",
+          "label": "时序与顺序分析",
+          "trace_count": 10
+        }
+      ]
+    },
+    "gasket_remove": {
+      "difficulty": "easy",
+      "difficulty_label": "简单",
+      "analysis_profile": {
+        "stage": "a1",
+        "sample_count": 10,
+        "workflow_trace_count": 10,
+        "distinct_tool_count": 5,
+        "total_tool_plan_count": 117,
+        "average_tool_plan_count": 11.7,
+        "total_tool_task_count": 214,
+        "average_tool_task_count": 21.4,
+        "required_slot_count": 4,
+        "enhanced_slot_count": 2,
+        "complexity_features": [
+          "取下动作",
+          "脱离终态"
+        ],
+        "rationale": "工具调用数量与证据链复杂度综合判断"
+      },
+      "analysis_tools": [
+        {
+          "tool_id": "end_state_workspace_inspector",
+          "label": "终态与工作区检查",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "object_motion_inspector",
+          "label": "对象动作与旋转分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "oral_evidence_analyzer",
+          "label": "口述证据分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "small_object_action_inspector",
+          "label": "小目标动作分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "temporal_sequence_analyzer",
+          "label": "时序与顺序分析",
+          "trace_count": 10
+        }
+      ]
+    },
+    "gasket_inspect": {
+      "difficulty": "medium",
+      "difficulty_label": "中等",
+      "analysis_profile": {
+        "stage": "a1",
+        "sample_count": 10,
+        "workflow_trace_count": 10,
+        "distinct_tool_count": 5,
+        "total_tool_plan_count": 117,
+        "average_tool_plan_count": 11.7,
+        "total_tool_task_count": 214,
+        "average_tool_task_count": 21.4,
+        "required_slot_count": 3,
+        "enhanced_slot_count": 3,
+        "complexity_features": [
+          "近景小目标",
+          "孔位与边缘检查"
+        ],
+        "rationale": "工具调用数量与证据链复杂度综合判断"
+      },
+      "analysis_tools": [
+        {
+          "tool_id": "end_state_workspace_inspector",
+          "label": "终态与工作区检查",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "object_motion_inspector",
+          "label": "对象动作与旋转分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "oral_evidence_analyzer",
+          "label": "口述证据分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "small_object_action_inspector",
+          "label": "小目标动作分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "temporal_sequence_analyzer",
+          "label": "时序与顺序分析",
+          "trace_count": 10
+        }
+      ]
+    },
+    "positioning": {
+      "difficulty": "difficult",
+      "difficulty_label": "困难",
+      "analysis_profile": {
+        "stage": "a1",
+        "sample_count": 10,
+        "workflow_trace_count": 10,
+        "distinct_tool_count": 5,
+        "total_tool_plan_count": 117,
+        "average_tool_plan_count": 11.7,
+        "total_tool_task_count": 214,
+        "average_tool_task_count": 21.4,
+        "required_slot_count": 4,
+        "enhanced_slot_count": 3,
+        "complexity_features": [
+          "双定位销",
+          "近景小目标",
+          "逐目标检查"
+        ],
+        "rationale": "工具调用数量与证据链复杂度综合判断"
+      },
+      "analysis_tools": [
+        {
+          "tool_id": "end_state_workspace_inspector",
+          "label": "终态与工作区检查",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "object_motion_inspector",
+          "label": "对象动作与旋转分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "oral_evidence_analyzer",
+          "label": "口述证据分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "small_object_action_inspector",
+          "label": "小目标动作分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "temporal_sequence_analyzer",
+          "label": "时序与顺序分析",
+          "trace_count": 10
+        }
+      ]
+    },
+    "clean_head": {
+      "difficulty": "difficult",
+      "difficulty_label": "困难",
+      "analysis_profile": {
+        "stage": "a1",
+        "sample_count": 10,
+        "workflow_trace_count": 10,
+        "distinct_tool_count": 5,
+        "total_tool_plan_count": 117,
+        "average_tool_plan_count": 11.7,
+        "total_tool_task_count": 214,
+        "average_tool_task_count": 21.4,
+        "required_slot_count": 4,
+        "enhanced_slot_count": 3,
+        "complexity_features": [
+          "结合面覆盖",
+          "擦拭接触",
+          "对象区分"
+        ],
+        "rationale": "工具调用数量与证据链复杂度综合判断"
+      },
+      "analysis_tools": [
+        {
+          "tool_id": "end_state_workspace_inspector",
+          "label": "终态与工作区检查",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "object_motion_inspector",
+          "label": "对象动作与旋转分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "oral_evidence_analyzer",
+          "label": "口述证据分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "small_object_action_inspector",
+          "label": "小目标动作分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "temporal_sequence_analyzer",
+          "label": "时序与顺序分析",
+          "trace_count": 10
+        }
+      ]
+    },
+    "clean_block": {
+      "difficulty": "difficult",
+      "difficulty_label": "困难",
+      "analysis_profile": {
+        "stage": "a1",
+        "sample_count": 10,
+        "workflow_trace_count": 10,
+        "distinct_tool_count": 5,
+        "total_tool_plan_count": 117,
+        "average_tool_plan_count": 11.7,
+        "total_tool_task_count": 214,
+        "average_tool_task_count": 21.4,
+        "required_slot_count": 4,
+        "enhanced_slot_count": 3,
+        "complexity_features": [
+          "结合面覆盖",
+          "擦拭接触",
+          "对象区分"
+        ],
+        "rationale": "工具调用数量与证据链复杂度综合判断"
+      },
+      "analysis_tools": [
+        {
+          "tool_id": "end_state_workspace_inspector",
+          "label": "终态与工作区检查",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "object_motion_inspector",
+          "label": "对象动作与旋转分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "oral_evidence_analyzer",
+          "label": "口述证据分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "small_object_action_inspector",
+          "label": "小目标动作分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "temporal_sequence_analyzer",
+          "label": "时序与顺序分析",
+          "trace_count": 10
+        }
+      ]
+    },
+    "clean_gasket": {
+      "difficulty": "medium",
+      "difficulty_label": "中等",
+      "analysis_profile": {
+        "stage": "a1",
+        "sample_count": 10,
+        "workflow_trace_count": 10,
+        "distinct_tool_count": 5,
+        "total_tool_plan_count": 117,
+        "average_tool_plan_count": 11.7,
+        "total_tool_task_count": 214,
+        "average_tool_task_count": 21.4,
+        "required_slot_count": 4,
+        "enhanced_slot_count": 3,
+        "complexity_features": [
+          "正反两面",
+          "清洁时序"
+        ],
+        "rationale": "工具调用数量与证据链复杂度综合判断"
+      },
+      "analysis_tools": [
+        {
+          "tool_id": "end_state_workspace_inspector",
+          "label": "终态与工作区检查",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "object_motion_inspector",
+          "label": "对象动作与旋转分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "oral_evidence_analyzer",
+          "label": "口述证据分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "small_object_action_inspector",
+          "label": "小目标动作分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "temporal_sequence_analyzer",
+          "label": "时序与顺序分析",
+          "trace_count": 10
+        }
+      ]
+    },
+    "clean_pins": {
+      "difficulty": "difficult",
+      "difficulty_label": "困难",
+      "analysis_profile": {
+        "stage": "a1",
+        "sample_count": 10,
+        "workflow_trace_count": 10,
+        "distinct_tool_count": 5,
+        "total_tool_plan_count": 117,
+        "average_tool_plan_count": 11.7,
+        "total_tool_task_count": 214,
+        "average_tool_task_count": 21.4,
+        "required_slot_count": 4,
+        "enhanced_slot_count": 3,
+        "complexity_features": [
+          "双定位销",
+          "逐目标接触",
+          "连续动作"
+        ],
+        "rationale": "工具调用数量与证据链复杂度综合判断"
+      },
+      "analysis_tools": [
+        {
+          "tool_id": "end_state_workspace_inspector",
+          "label": "终态与工作区检查",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "object_motion_inspector",
+          "label": "对象动作与旋转分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "oral_evidence_analyzer",
+          "label": "口述证据分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "small_object_action_inspector",
+          "label": "小目标动作分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "temporal_sequence_analyzer",
+          "label": "时序与顺序分析",
+          "trace_count": 10
+        }
+      ]
+    },
+    "report_gasket": {
+      "difficulty": "difficult",
+      "difficulty_label": "困难",
+      "analysis_profile": {
+        "stage": "a1",
+        "sample_count": 10,
+        "workflow_trace_count": 10,
+        "distinct_tool_count": 5,
+        "total_tool_plan_count": 117,
+        "average_tool_plan_count": 11.7,
+        "total_tool_task_count": 214,
+        "average_tool_task_count": 21.4,
+        "required_slot_count": 3,
+        "enhanced_slot_count": 2,
+        "complexity_features": [
+          "安装前节点",
+          "前后时序",
+          "流程停顿"
+        ],
+        "rationale": "工具调用数量与证据链复杂度综合判断"
+      },
+      "analysis_tools": [
+        {
+          "tool_id": "end_state_workspace_inspector",
+          "label": "终态与工作区检查",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "object_motion_inspector",
+          "label": "对象动作与旋转分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "oral_evidence_analyzer",
+          "label": "口述证据分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "small_object_action_inspector",
+          "label": "小目标动作分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "temporal_sequence_analyzer",
+          "label": "时序与顺序分析",
+          "trace_count": 10
+        }
+      ]
+    },
+    "install_gasket": {
+      "difficulty": "medium",
+      "difficulty_label": "中等",
+      "analysis_profile": {
+        "stage": "a1",
+        "sample_count": 10,
+        "workflow_trace_count": 10,
+        "distinct_tool_count": 5,
+        "total_tool_plan_count": 117,
+        "average_tool_plan_count": 11.7,
+        "total_tool_task_count": 214,
+        "average_tool_task_count": 21.4,
+        "required_slot_count": 4,
+        "enhanced_slot_count": 3,
+        "complexity_features": [
+          "方向确认",
+          "孔位—定位销匹配",
+          "落座终态"
+        ],
+        "rationale": "工具调用数量与证据链复杂度综合判断"
+      },
+      "analysis_tools": [
+        {
+          "tool_id": "end_state_workspace_inspector",
+          "label": "终态与工作区检查",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "object_motion_inspector",
+          "label": "对象动作与旋转分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "oral_evidence_analyzer",
+          "label": "口述证据分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "small_object_action_inspector",
+          "label": "小目标动作分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "temporal_sequence_analyzer",
+          "label": "时序与顺序分析",
+          "trace_count": 10
+        }
+      ]
+    },
+    "cylinder_head_bolt": {
+      "difficulty": "difficult",
+      "difficulty_label": "困难",
+      "analysis_profile": {
+        "stage": "a2",
+        "sample_count": 10,
+        "workflow_trace_count": 10,
+        "distinct_tool_count": 3,
+        "total_tool_plan_count": 43,
+        "average_tool_plan_count": 4.3,
+        "total_tool_task_count": 82,
+        "average_tool_task_count": 8.2,
+        "required_slot_count": 3,
+        "enhanced_slot_count": 2,
+        "complexity_features": [
+          "安装前节点",
+          "前后时序",
+          "新旧对象区分"
+        ],
+        "rationale": "工具调用数量与证据链复杂度综合判断"
+      },
+      "analysis_tools": [
+        {
+          "tool_id": "object_motion_inspector",
+          "label": "对象动作与旋转分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "oral_evidence_analyzer",
+          "label": "口述证据分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "temporal_sequence_analyzer",
+          "label": "时序与顺序分析",
+          "trace_count": 10
+        }
+      ]
+    },
+    "install_1st": {
+      "difficulty": "difficult",
+      "difficulty_label": "困难",
+      "analysis_profile": {
+        "stage": "a2",
+        "sample_count": 10,
+        "workflow_trace_count": 10,
+        "distinct_tool_count": 3,
+        "total_tool_plan_count": 43,
+        "average_tool_plan_count": 4.3,
+        "total_tool_task_count": 82,
+        "average_tool_task_count": 8.2,
+        "required_slot_count": 5,
+        "enhanced_slot_count": 3,
+        "complexity_features": [
+          "1—10顺序",
+          "扭矩工具",
+          "轮次区分",
+          "连续动作"
+        ],
+        "rationale": "工具调用数量与证据链复杂度综合判断"
+      },
+      "analysis_tools": [
+        {
+          "tool_id": "object_motion_inspector",
+          "label": "对象动作与旋转分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "oral_evidence_analyzer",
+          "label": "口述证据分析",
+          "trace_count": 10
+        },
+        {
+          "tool_id": "temporal_sequence_analyzer",
+          "label": "时序与顺序分析",
+          "trace_count": 10
+        }
+      ]
+    }
+  }
+}
