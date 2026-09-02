@@ -1,0 +1,1349 @@
+{
+  "schema": "realtime-evidence-report/v1",
+  "report_id": "engine-cylinder-head-realtime-8-20-v1",
+  "title": "发动机气缸盖拆装智能实训分析",
+  "source": {
+    "offline_run_id": "2026-08-25-core380-engine120-rough29-r5-cpu32-10c",
+    "core_version": "core-v1.2.380",
+    "engine_version": "engine-v1.2.20",
+    "rubric_id": "engine_cylinder_head",
+    "rubric_version": "v1"
+  },
+  "presentation": {
+    "audience_mode": "live_only",
+    "show_scores": false,
+    "show_source_provenance": false,
+    "show_raw_paths": false,
+    "initial_state": "正在接入视频流",
+    "poll_interval_ms": 650,
+    "footer": "本页面展示当前视频流的实时分析过程。证据未完成时不输出结论，低置信度结果保留人工确认状态。"
+  },
+  "scope": {
+    "total_rubric_items": 28,
+    "active_item_numbers": [
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20
+    ],
+    "active_item_count": 13,
+    "display_score": "26/26",
+    "full_rubric_score": "50",
+    "inactive_items_display": "本次演示不展示，不计入现场回填进度",
+    "display_mode": "evidence_progress_only"
+  },
+  "demo_policy": {
+    "time_source": "live_stream_only",
+    "score_source": "offline_standard_report",
+    "score_reveal": "required_evidence_bound",
+    "oral_gate": "disabled_for_demo",
+    "oral_requirement_preserved_in_rubric": true,
+    "oral_replacement": "流程节点确认与视觉时序证据"
+  },
+  "demo_context": {
+    "entry_item_number": 8,
+    "pre_entry_context": "已由现场流程上下文确认",
+    "time_source": "live_stream_only"
+  },
+  "items": [
+    {
+      "item_number": 8,
+      "item_id": "item_5069",
+      "display_name": "第二次预松180°",
+      "difficulty": "high",
+      "prefilled_score": 2,
+      "prefilled_standard_text": "识别指针式扳手对气缸盖螺栓完成第二次180°预松，并确认动作连续、轮次正确。",
+      "realtime_target": "识别指针式扳手对气缸盖螺栓完成第二次180°预松，并确认动作连续、轮次正确。",
+      "retrieval_queries": [
+        "第二次预松180度 指针扳手",
+        "pointer wrench half turn cylinder head bolt"
+      ],
+      "required_evidence_slots": [
+        {
+          "slot_id": "live_timestamp",
+          "label": "现场时间",
+          "required": true,
+          "kind": "timestamp",
+          "status": "empty",
+          "evidence": []
+        },
+        {
+          "slot_id": "representative_frame",
+          "label": "代表性关键帧",
+          "required": true,
+          "kind": "image",
+          "status": "empty",
+          "evidence": []
+        },
+        {
+          "slot_id": "object_detection",
+          "label": "目标检测",
+          "required": true,
+          "kind": "image",
+          "status": "empty",
+          "evidence": []
+        },
+        {
+          "slot_id": "multi_frame_sequence",
+          "label": "连续帧",
+          "required": true,
+          "kind": "sequence",
+          "status": "empty",
+          "evidence": []
+        }
+      ],
+      "enhanced_evidence_slots": [
+        {
+          "slot_id": "segmentation",
+          "label": "语义分割",
+          "required": false,
+          "kind": "image",
+          "status": "empty",
+          "evidence": []
+        },
+        {
+          "slot_id": "rotation_trace",
+          "label": "旋转轨迹",
+          "required": false,
+          "kind": "image",
+          "status": "empty",
+          "evidence": []
+        },
+        {
+          "slot_id": "angle_card",
+          "label": "角度提示",
+          "required": false,
+          "kind": "image",
+          "status": "empty",
+          "evidence": []
+        }
+      ],
+      "evidence_hint": "展示扳手、螺栓目标框与开始—动作中—完成连续帧；轮次使用序列条表达。",
+      "completion_condition": {
+        "required_slot_ids": [
+          "live_timestamp",
+          "representative_frame",
+          "object_detection",
+          "multi_frame_sequence"
+        ],
+        "success_state": "evidence_bound",
+        "low_confidence_state": "manual_review",
+        "missing_state": "evidence_generating"
+      },
+      "live_binding": {
+        "state": "待开始",
+        "revision": 0,
+        "changed_slot_ids": [],
+        "live_timestamp": null,
+        "live_start_sec": null,
+        "live_end_sec": null,
+        "time_source": "live_stream",
+        "time_confidence": null,
+        "evidence_explanation": "等待当前视频流中的有效证据。",
+        "evidence": []
+      },
+      "display_order": 1,
+      "oral_policy": {
+        "rubric_preserved": true,
+        "demo_gate": "disabled",
+        "replacement": "流程节点确认与视觉时序证据"
+      }
+    },
+    {
+      "item_number": 9,
+      "item_id": "cylinder_head",
+      "display_name": "将气缸盖放置在垫块上",
+      "difficulty": "stable",
+      "prefilled_score": 2,
+      "prefilled_standard_text": "识别双手扶持气缸盖缓慢落到支撑垫块，并确认没有与工作台直接接触。",
+      "realtime_target": "识别双手扶持气缸盖缓慢落到支撑垫块，并确认没有与工作台直接接触。",
+      "retrieval_queries": [
+        "气缸盖 放置 垫块",
+        "cylinder head placed on support pads"
+      ],
+      "required_evidence_slots": [
+        {
+          "slot_id": "live_timestamp",
+          "label": "现场时间",
+          "required": true,
+          "kind": "timestamp",
+          "status": "empty",
+          "evidence": []
+        },
+        {
+          "slot_id": "representative_frame",
+          "label": "代表性关键帧",
+          "required": true,
+          "kind": "image",
+          "status": "empty",
+          "evidence": []
+        },
+        {
+          "slot_id": "object_detection",
+          "label": "目标检测",
+          "required": true,
+          "kind": "image",
+          "status": "empty",
+          "evidence": []
+        },
+        {
+          "slot_id": "multi_frame_sequence",
+          "label": "连续帧",
+          "required": true,
+          "kind": "sequence",
+          "status": "empty",
+          "evidence": []
+        }
+      ],
+      "enhanced_evidence_slots": [
+        {
+          "slot_id": "segmentation",
+          "label": "语义分割",
+          "required": false,
+          "kind": "image",
+          "status": "empty",
+          "evidence": []
+        },
+        {
+          "slot_id": "contact_relation",
+          "label": "接触关系",
+          "required": false,
+          "kind": "image",
+          "status": "empty",
+          "evidence": []
+        }
+      ],
+      "evidence_hint": "展示气缸盖与垫块的目标框，并用接触关系图确认落位。",
+      "completion_condition": {
+        "required_slot_ids": [
+          "live_timestamp",
+          "representative_frame",
+          "object_detection",
+          "multi_frame_sequence"
+        ],
+        "success_state": "evidence_bound",
+        "low_confidence_state": "manual_review",
+        "missing_state": "evidence_generating"
+      },
+      "live_binding": {
+        "state": "待开始",
+        "revision": 0,
+        "changed_slot_ids": [],
+        "live_timestamp": null,
+        "live_start_sec": null,
+        "live_end_sec": null,
+        "time_source": "live_stream",
+        "time_confidence": null,
+        "evidence_explanation": "等待当前视频流中的有效证据。",
+        "evidence": []
+      },
+      "display_order": 2,
+      "oral_policy": {
+        "rubric_preserved": true,
+        "demo_gate": "disabled",
+        "replacement": "流程节点确认与视觉时序证据"
+      }
+    },
+    {
+      "item_number": 10,
+      "item_id": "gasket_remove",
+      "display_name": "取下气缸垫",
+      "difficulty": "stable",
+      "prefilled_score": 2,
+      "prefilled_standard_text": "识别手部与旧气缸垫的接触、抬起和移出结合面，确认气缸垫进入待检区域。",
+      "realtime_target": "识别手部与旧气缸垫的接触、抬起和移出结合面，确认气缸垫进入待检区域。",
+      "retrieval_queries": [
+        "取下 旧气缸垫",
+        "lift cylinder gasket from engine block"
+      ],
+      "required_evidence_slots": [
+        {
+          "slot_id": "live_timestamp",
+          "label": "现场时间",
+          "required": true,
+          "kind": "timestamp",
+          "status": "empty",
+          "evidence": []
+        },
+        {
+          "slot_id": "representative_frame",
+          "label": "代表性关键帧",
+          "required": true,
+          "kind": "image",
+          "status": "empty",
+          "evidence": []
+        },
+        {
+          "slot_id": "object_detection",
+          "label": "目标检测",
+          "required": true,
+          "kind": "image",
+          "status": "empty",
+          "evidence": []
+        },
+        {
+          "slot_id": "multi_frame_sequence",
+          "label": "连续帧",
+          "required": true,
+          "kind": "sequence",
+          "status": "empty",
+          "evidence": []
+        }
+      ],
+      "enhanced_evidence_slots": [
+        {
+          "slot_id": "gasket_outline",
+          "label": "气缸垫轮廓",
+          "required": false,
+          "kind": "image",
+          "status": "empty",
+          "evidence": []
+        },
+        {
+          "slot_id": "before_after_comparison",
+          "label": "前后对比",
+          "required": false,
+          "kind": "image",
+          "status": "empty",
+          "evidence": []
+        }
+      ],
+      "evidence_hint": "展示薄片轮廓、手部接触和脱离气缸体前后的对比。",
+      "completion_condition": {
+        "required_slot_ids": [
+          "live_timestamp",
+          "representative_frame",
+          "object_detection",
+          "multi_frame_sequence"
+        ],
+        "success_state": "evidence_bound",
+        "low_confidence_state": "manual_review",
+        "missing_state": "evidence_generating"
+      },
+      "live_binding": {
+        "state": "待开始",
+        "revision": 0,
+        "changed_slot_ids": [],
+        "live_timestamp": null,
+        "live_start_sec": null,
+        "live_end_sec": null,
+        "time_source": "live_stream",
+        "time_confidence": null,
+        "evidence_explanation": "等待当前视频流中的有效证据。",
+        "evidence": []
+      },
+      "display_order": 3,
+      "oral_policy": {
+        "rubric_preserved": true,
+        "demo_gate": "disabled",
+        "replacement": "流程节点确认与视觉时序证据"
+      }
+    },
+    {
+      "item_number": 11,
+      "item_id": "gasket_inspect",
+      "display_name": "检查气缸垫",
+      "difficulty": "medium",
+      "prefilled_score": 2,
+      "prefilled_standard_text": "识别对气缸垫孔位、边缘和表面状态的近景检查，保持正反面观察关系可追溯。",
+      "realtime_target": "识别对气缸垫孔位、边缘和表面状态的近景检查，保持正反面观察关系可追溯。",
+      "retrieval_queries": [
+        "检查气缸垫 变形 缺失",
+        "inspect cylinder gasket holes edges"
+      ],
+      "required_evidence_slots": [
+        {
+          "slot_id": "live_timestamp",
+          "label": "现场时间",
+          "required": true,
+          "kind": "timestamp",
+          "status": "empty",
+          "evidence": []
+        },
+        {
+          "slot_id": "representative_frame",
+          "label": "代表性关键帧",
+          "required": true,
+          "kind": "image",
+          "status": "empty",
+          "evidence": []
+        },
+        {
+          "slot_id": "multi_frame_sequence",
+          "label": "连续帧",
+          "required": true,
+          "kind": "sequence",
+          "status": "empty",
+          "evidence": []
+        }
+      ],
+      "enhanced_evidence_slots": [
+        {
+          "slot_id": "gasket_detail_segmentation",
+          "label": "气缸垫细节",
+          "required": false,
+          "kind": "image",
+          "status": "empty",
+          "evidence": []
+        },
+        {
+          "slot_id": "inspection_regions",
+          "label": "检查区域",
+          "required": false,
+          "kind": "image",
+          "status": "empty",
+          "evidence": []
+        },
+        {
+          "slot_id": "inspection_result_card",
+          "label": "检查结果卡",
+          "required": false,
+          "kind": "image",
+          "status": "empty",
+          "evidence": []
+        }
+      ],
+      "evidence_hint": "使用近景卡片放大孔位、边缘和表面检查区域。",
+      "completion_condition": {
+        "required_slot_ids": [
+          "live_timestamp",
+          "representative_frame",
+          "multi_frame_sequence"
+        ],
+        "success_state": "evidence_bound",
+        "low_confidence_state": "manual_review",
+        "missing_state": "evidence_generating"
+      },
+      "live_binding": {
+        "state": "待开始",
+        "revision": 0,
+        "changed_slot_ids": [],
+        "live_timestamp": null,
+        "live_start_sec": null,
+        "live_end_sec": null,
+        "time_source": "live_stream",
+        "time_confidence": null,
+        "evidence_explanation": "等待当前视频流中的有效证据。",
+        "evidence": []
+      },
+      "display_order": 4,
+      "oral_policy": {
+        "rubric_preserved": true,
+        "demo_gate": "disabled",
+        "replacement": "流程节点确认与视觉时序证据"
+      }
+    },
+    {
+      "item_number": 12,
+      "item_id": "positioning",
+      "display_name": "检查定位销",
+      "difficulty": "high",
+      "prefilled_score": 2,
+      "prefilled_standard_text": "识别气缸体边缘附近两枚金属圆柱定位销，并确认检查动作覆盖两枚目标。",
+      "realtime_target": "识别气缸体边缘附近两枚金属圆柱定位销，并确认检查动作覆盖两枚目标。",
+      "retrieval_queries": [
+        "检查定位销 金属圆柱",
+        "two silver dowel pins engine block edge"
+      ],
+      "required_evidence_slots": [
+        {
+          "slot_id": "live_timestamp",
+          "label": "现场时间",
+          "required": true,
+          "kind": "timestamp",
+          "status": "empty",
+          "evidence": []
+        },
+        {
+          "slot_id": "representative_frame",
+          "label": "代表性关键帧",
+          "required": true,
+          "kind": "image",
+          "status": "empty",
+          "evidence": []
+        },
+        {
+          "slot_id": "object_detection",
+          "label": "目标检测",
+          "required": true,
+          "kind": "image",
+          "status": "empty",
+          "evidence": []
+        },
+        {
+          "slot_id": "multi_frame_sequence",
+          "label": "连续帧",
+          "required": true,
+          "kind": "sequence",
+          "status": "empty",
+          "evidence": []
+        }
+      ],
+      "enhanced_evidence_slots": [
+        {
+          "slot_id": "segmentation",
+          "label": "语义分割",
+          "required": false,
+          "kind": "image",
+          "status": "empty",
+          "evidence": []
+        },
+        {
+          "slot_id": "pin_1_pin_2_labels",
+          "label": "定位销编号",
+          "required": false,
+          "kind": "image",
+          "status": "empty",
+          "evidence": []
+        },
+        {
+          "slot_id": "position_relation",
+          "label": "位置关系",
+          "required": false,
+          "kind": "image",
+          "status": "empty",
+          "evidence": []
+        }
+      ],
+      "evidence_hint": "近景同时标出定位销1和定位销2，避免用单个小目标代替两枚检查。",
+      "completion_condition": {
+        "required_slot_ids": [
+          "live_timestamp",
+          "representative_frame",
+          "object_detection",
+          "multi_frame_sequence"
+        ],
+        "success_state": "evidence_bound",
+        "low_confidence_state": "manual_review",
+        "missing_state": "evidence_generating"
+      },
+      "live_binding": {
+        "state": "待开始",
+        "revision": 0,
+        "changed_slot_ids": [],
+        "live_timestamp": null,
+        "live_start_sec": null,
+        "live_end_sec": null,
+        "time_source": "live_stream",
+        "time_confidence": null,
+        "evidence_explanation": "等待当前视频流中的有效证据。",
+        "evidence": []
+      },
+      "display_order": 5,
+      "oral_policy": {
+        "rubric_preserved": true,
+        "demo_gate": "disabled",
+        "replacement": "流程节点确认与视觉时序证据"
+      }
+    },
+    {
+      "item_number": 13,
+      "item_id": "clean_head",
+      "display_name": "清洁气缸盖",
+      "difficulty": "high",
+      "prefilled_score": 2,
+      "prefilled_standard_text": "识别白色无纺布与气缸盖下方结合面的直接擦拭接触，并确认主要密封区域被覆盖。",
+      "realtime_target": "识别白色无纺布与气缸盖下方结合面的直接擦拭接触，并确认主要密封区域被覆盖。",
+      "retrieval_queries": [
+        "清洁气缸盖 结合面 白色无纺布",
+        "white nonwoven cloth wipes cylinder head surface"
+      ],
+      "required_evidence_slots": [
+        {
+          "slot_id": "live_timestamp",
+          "label": "现场时间",
+          "required": true,
+          "kind": "timestamp",
+          "status": "empty",
+          "evidence": []
+        },
+        {
+          "slot_id": "representative_frame",
+          "label": "代表性关键帧",
+          "required": true,
+          "kind": "image",
+          "status": "empty",
+          "evidence": []
+        },
+        {
+          "slot_id": "object_detection",
+          "label": "目标检测",
+          "required": true,
+          "kind": "image",
+          "status": "empty",
+          "evidence": []
+        },
+        {
+          "slot_id": "multi_frame_sequence",
+          "label": "连续帧",
+          "required": true,
+          "kind": "sequence",
+          "status": "empty",
+          "evidence": []
+        }
+      ],
+      "enhanced_evidence_slots": [
+        {
+          "slot_id": "surface_segmentation",
+          "label": "结合面区域",
+          "required": false,
+          "kind": "image",
+          "status": "empty",
+          "evidence": []
+        },
+        {
+          "slot_id": "coverage_trace",
+          "label": "擦拭覆盖轨迹",
+          "required": false,
+          "kind": "image",
+          "status": "empty",
+          "evidence": []
+        },
+        {
+          "slot_id": "before_after_comparison",
+          "label": "前后对比",
+          "required": false,
+          "kind": "image",
+          "status": "empty",
+          "evidence": []
+        }
+      ],
+      "evidence_hint": "突出白色无纺布、气缸盖结合面和擦拭覆盖轨迹。",
+      "completion_condition": {
+        "required_slot_ids": [
+          "live_timestamp",
+          "representative_frame",
+          "object_detection",
+          "multi_frame_sequence"
+        ],
+        "success_state": "evidence_bound",
+        "low_confidence_state": "manual_review",
+        "missing_state": "evidence_generating"
+      },
+      "live_binding": {
+        "state": "待开始",
+        "revision": 0,
+        "changed_slot_ids": [],
+        "live_timestamp": null,
+        "live_start_sec": null,
+        "live_end_sec": null,
+        "time_source": "live_stream",
+        "time_confidence": null,
+        "evidence_explanation": "等待当前视频流中的有效证据。",
+        "evidence": []
+      },
+      "display_order": 6,
+      "oral_policy": {
+        "rubric_preserved": true,
+        "demo_gate": "disabled",
+        "replacement": "流程节点确认与视觉时序证据"
+      }
+    },
+    {
+      "item_number": 14,
+      "item_id": "clean_block",
+      "display_name": "清洁气缸体",
+      "difficulty": "high",
+      "prefilled_score": 2,
+      "prefilled_standard_text": "识别白色无纺布擦拭气缸体上方结合面，并确认气缸孔周边和主要密封区域被覆盖。",
+      "realtime_target": "识别白色无纺布擦拭气缸体上方结合面，并确认气缸孔周边和主要密封区域被覆盖。",
+      "retrieval_queries": [
+        "清洁气缸体 结合面 无纺布",
+        "white cloth cleans engine block sealing surface"
+      ],
+      "required_evidence_slots": [
+        {
+          "slot_id": "live_timestamp",
+          "label": "现场时间",
+          "required": true,
+          "kind": "timestamp",
+          "status": "empty",
+          "evidence": []
+        },
+        {
+          "slot_id": "representative_frame",
+          "label": "代表性关键帧",
+          "required": true,
+          "kind": "image",
+          "status": "empty",
+          "evidence": []
+        },
+        {
+          "slot_id": "object_detection",
+          "label": "目标检测",
+          "required": true,
+          "kind": "image",
+          "status": "empty",
+          "evidence": []
+        },
+        {
+          "slot_id": "multi_frame_sequence",
+          "label": "连续帧",
+          "required": true,
+          "kind": "sequence",
+          "status": "empty",
+          "evidence": []
+        }
+      ],
+      "enhanced_evidence_slots": [
+        {
+          "slot_id": "surface_segmentation",
+          "label": "结合面区域",
+          "required": false,
+          "kind": "image",
+          "status": "empty",
+          "evidence": []
+        },
+        {
+          "slot_id": "coverage_trace",
+          "label": "擦拭覆盖轨迹",
+          "required": false,
+          "kind": "image",
+          "status": "empty",
+          "evidence": []
+        },
+        {
+          "slot_id": "before_after_comparison",
+          "label": "前后对比",
+          "required": false,
+          "kind": "image",
+          "status": "empty",
+          "evidence": []
+        }
+      ],
+      "evidence_hint": "目标必须绑定气缸体上表面，避免将气缸盖清洁画面混用。",
+      "completion_condition": {
+        "required_slot_ids": [
+          "live_timestamp",
+          "representative_frame",
+          "object_detection",
+          "multi_frame_sequence"
+        ],
+        "success_state": "evidence_bound",
+        "low_confidence_state": "manual_review",
+        "missing_state": "evidence_generating"
+      },
+      "live_binding": {
+        "state": "待开始",
+        "revision": 0,
+        "changed_slot_ids": [],
+        "live_timestamp": null,
+        "live_start_sec": null,
+        "live_end_sec": null,
+        "time_source": "live_stream",
+        "time_confidence": null,
+        "evidence_explanation": "等待当前视频流中的有效证据。",
+        "evidence": []
+      },
+      "display_order": 7,
+      "oral_policy": {
+        "rubric_preserved": true,
+        "demo_gate": "disabled",
+        "replacement": "流程节点确认与视觉时序证据"
+      }
+    },
+    {
+      "item_number": 15,
+      "item_id": "clean_gasket",
+      "display_name": "清洁气缸垫",
+      "difficulty": "medium",
+      "prefilled_score": 2,
+      "prefilled_standard_text": "识别白色无纺布对气缸垫正面和反面的擦拭，并确认清洁发生在安装前。",
+      "realtime_target": "识别白色无纺布对气缸垫正面和反面的擦拭，并确认清洁发生在安装前。",
+      "retrieval_queries": [
+        "清洁气缸垫 两面 无纺布",
+        "wipe both sides of cylinder gasket"
+      ],
+      "required_evidence_slots": [
+        {
+          "slot_id": "live_timestamp",
+          "label": "现场时间",
+          "required": true,
+          "kind": "timestamp",
+          "status": "empty",
+          "evidence": []
+        },
+        {
+          "slot_id": "representative_frame",
+          "label": "代表性关键帧",
+          "required": true,
+          "kind": "image",
+          "status": "empty",
+          "evidence": []
+        },
+        {
+          "slot_id": "object_detection",
+          "label": "目标检测",
+          "required": true,
+          "kind": "image",
+          "status": "empty",
+          "evidence": []
+        },
+        {
+          "slot_id": "multi_frame_sequence",
+          "label": "连续帧",
+          "required": true,
+          "kind": "sequence",
+          "status": "empty",
+          "evidence": []
+        }
+      ],
+      "enhanced_evidence_slots": [
+        {
+          "slot_id": "double_side_segmentation",
+          "label": "双面区域",
+          "required": false,
+          "kind": "image",
+          "status": "empty",
+          "evidence": []
+        },
+        {
+          "slot_id": "front_back_labels",
+          "label": "正反面标签",
+          "required": false,
+          "kind": "image",
+          "status": "empty",
+          "evidence": []
+        },
+        {
+          "slot_id": "clean_state_card",
+          "label": "清洁状态卡",
+          "required": false,
+          "kind": "image",
+          "status": "empty",
+          "evidence": []
+        }
+      ],
+      "evidence_hint": "正面、翻面、反面三段证据分开显示，不以翻面动作本身代替清洁接触。",
+      "completion_condition": {
+        "required_slot_ids": [
+          "live_timestamp",
+          "representative_frame",
+          "object_detection",
+          "multi_frame_sequence"
+        ],
+        "success_state": "evidence_bound",
+        "low_confidence_state": "manual_review",
+        "missing_state": "evidence_generating"
+      },
+      "live_binding": {
+        "state": "待开始",
+        "revision": 0,
+        "changed_slot_ids": [],
+        "live_timestamp": null,
+        "live_start_sec": null,
+        "live_end_sec": null,
+        "time_source": "live_stream",
+        "time_confidence": null,
+        "evidence_explanation": "等待当前视频流中的有效证据。",
+        "evidence": []
+      },
+      "display_order": 8,
+      "oral_policy": {
+        "rubric_preserved": true,
+        "demo_gate": "disabled",
+        "replacement": "流程节点确认与视觉时序证据"
+      }
+    },
+    {
+      "item_number": 16,
+      "item_id": "clean_pins",
+      "display_name": "清洁定位销",
+      "difficulty": "high",
+      "prefilled_score": 2,
+      "prefilled_standard_text": "识别白色无纺布逐一接触两枚金属定位销，并确认没有遗漏任一目标。",
+      "realtime_target": "识别白色无纺布逐一接触两枚金属定位销，并确认没有遗漏任一目标。",
+      "retrieval_queries": [
+        "清洁两枚定位销 无纺布",
+        "wipe two dowel pins with white cloth"
+      ],
+      "required_evidence_slots": [
+        {
+          "slot_id": "live_timestamp",
+          "label": "现场时间",
+          "required": true,
+          "kind": "timestamp",
+          "status": "empty",
+          "evidence": []
+        },
+        {
+          "slot_id": "representative_frame",
+          "label": "代表性关键帧",
+          "required": true,
+          "kind": "image",
+          "status": "empty",
+          "evidence": []
+        },
+        {
+          "slot_id": "object_detection",
+          "label": "目标检测",
+          "required": true,
+          "kind": "image",
+          "status": "empty",
+          "evidence": []
+        },
+        {
+          "slot_id": "multi_frame_sequence",
+          "label": "连续帧",
+          "required": true,
+          "kind": "sequence",
+          "status": "empty",
+          "evidence": []
+        }
+      ],
+      "enhanced_evidence_slots": [
+        {
+          "slot_id": "pin_segmentation",
+          "label": "定位销区域",
+          "required": false,
+          "kind": "image",
+          "status": "empty",
+          "evidence": []
+        },
+        {
+          "slot_id": "pin_sequence",
+          "label": "定位销顺序",
+          "required": false,
+          "kind": "image",
+          "status": "empty",
+          "evidence": []
+        },
+        {
+          "slot_id": "contact_detail",
+          "label": "接触细节",
+          "required": false,
+          "kind": "image",
+          "status": "empty",
+          "evidence": []
+        }
+      ],
+      "evidence_hint": "以定位销1→定位销2序列展示逐一清洁和接触区域。",
+      "completion_condition": {
+        "required_slot_ids": [
+          "live_timestamp",
+          "representative_frame",
+          "object_detection",
+          "multi_frame_sequence"
+        ],
+        "success_state": "evidence_bound",
+        "low_confidence_state": "manual_review",
+        "missing_state": "evidence_generating"
+      },
+      "live_binding": {
+        "state": "待开始",
+        "revision": 0,
+        "changed_slot_ids": [],
+        "live_timestamp": null,
+        "live_start_sec": null,
+        "live_end_sec": null,
+        "time_source": "live_stream",
+        "time_confidence": null,
+        "evidence_explanation": "等待当前视频流中的有效证据。",
+        "evidence": []
+      },
+      "display_order": 9,
+      "oral_policy": {
+        "rubric_preserved": true,
+        "demo_gate": "disabled",
+        "replacement": "流程节点确认与视觉时序证据"
+      }
+    },
+    {
+      "item_number": 17,
+      "item_id": "report_gasket",
+      "display_name": "报告更换气缸垫",
+      "difficulty": "high",
+      "prefilled_score": 2,
+      "prefilled_standard_text": "识别安装新气缸垫前的流程停顿和更换确认节点，并确认随后才进入安装阶段。",
+      "realtime_target": "识别安装新气缸垫前的流程停顿和更换确认节点，并确认随后才进入安装阶段。",
+      "retrieval_queries": [
+        "报告更换气缸垫 安装前",
+        "gasket replacement report before installation"
+      ],
+      "required_evidence_slots": [
+        {
+          "slot_id": "live_timestamp",
+          "label": "现场时间",
+          "required": true,
+          "kind": "timestamp",
+          "status": "empty",
+          "evidence": []
+        },
+        {
+          "slot_id": "process_node_frame",
+          "label": "流程节点帧",
+          "required": true,
+          "kind": "image",
+          "status": "empty",
+          "evidence": []
+        },
+        {
+          "slot_id": "temporal_order",
+          "label": "时序关系",
+          "required": true,
+          "kind": "sequence",
+          "status": "empty",
+          "evidence": []
+        }
+      ],
+      "enhanced_evidence_slots": [
+        {
+          "slot_id": "new_gasket_detection",
+          "label": "新气缸垫识别",
+          "required": false,
+          "kind": "image",
+          "status": "empty",
+          "evidence": []
+        },
+        {
+          "slot_id": "node_confirmation_card",
+          "label": "节点确认卡",
+          "required": false,
+          "kind": "image",
+          "status": "empty",
+          "evidence": []
+        }
+      ],
+      "evidence_hint": "演示模式用视觉停顿、下一工序前置和流程节点确认替代口述门槛。",
+      "completion_condition": {
+        "required_slot_ids": [
+          "live_timestamp",
+          "process_node_frame",
+          "temporal_order"
+        ],
+        "success_state": "evidence_bound",
+        "low_confidence_state": "manual_review",
+        "missing_state": "evidence_generating"
+      },
+      "live_binding": {
+        "state": "待开始",
+        "revision": 0,
+        "changed_slot_ids": [],
+        "live_timestamp": null,
+        "live_start_sec": null,
+        "live_end_sec": null,
+        "time_source": "live_stream",
+        "time_confidence": null,
+        "evidence_explanation": "等待当前视频流中的有效证据。",
+        "evidence": []
+      },
+      "display_order": 10,
+      "oral_policy": {
+        "rubric_preserved": true,
+        "demo_gate": "disabled",
+        "replacement": "流程节点确认与视觉时序证据"
+      }
+    },
+    {
+      "item_number": 18,
+      "item_id": "install_gasket",
+      "display_name": "安装气缸垫",
+      "difficulty": "medium",
+      "prefilled_score": 2,
+      "prefilled_standard_text": "识别新气缸垫方向、孔位与两枚定位销的匹配，以及平稳落座后的无明显错位状态。",
+      "realtime_target": "识别新气缸垫方向、孔位与两枚定位销的匹配，以及平稳落座后的无明显错位状态。",
+      "retrieval_queries": [
+        "安装气缸垫 定位销 孔位",
+        "install cylinder gasket align dowel pins"
+      ],
+      "required_evidence_slots": [
+        {
+          "slot_id": "live_timestamp",
+          "label": "现场时间",
+          "required": true,
+          "kind": "timestamp",
+          "status": "empty",
+          "evidence": []
+        },
+        {
+          "slot_id": "representative_frame",
+          "label": "代表性关键帧",
+          "required": true,
+          "kind": "image",
+          "status": "empty",
+          "evidence": []
+        },
+        {
+          "slot_id": "object_detection",
+          "label": "目标检测",
+          "required": true,
+          "kind": "image",
+          "status": "empty",
+          "evidence": []
+        },
+        {
+          "slot_id": "multi_frame_sequence",
+          "label": "连续帧",
+          "required": true,
+          "kind": "sequence",
+          "status": "empty",
+          "evidence": []
+        }
+      ],
+      "enhanced_evidence_slots": [
+        {
+          "slot_id": "gasket_segmentation",
+          "label": "气缸垫区域",
+          "required": false,
+          "kind": "image",
+          "status": "empty",
+          "evidence": []
+        },
+        {
+          "slot_id": "orientation_card",
+          "label": "方向提示",
+          "required": false,
+          "kind": "image",
+          "status": "empty",
+          "evidence": []
+        },
+        {
+          "slot_id": "hole_pin_relation",
+          "label": "孔位匹配",
+          "required": false,
+          "kind": "image",
+          "status": "empty",
+          "evidence": []
+        }
+      ],
+      "evidence_hint": "按对准—放置—落座三段显示方向和孔位匹配关系。",
+      "completion_condition": {
+        "required_slot_ids": [
+          "live_timestamp",
+          "representative_frame",
+          "object_detection",
+          "multi_frame_sequence"
+        ],
+        "success_state": "evidence_bound",
+        "low_confidence_state": "manual_review",
+        "missing_state": "evidence_generating"
+      },
+      "live_binding": {
+        "state": "待开始",
+        "revision": 0,
+        "changed_slot_ids": [],
+        "live_timestamp": null,
+        "live_start_sec": null,
+        "live_end_sec": null,
+        "time_source": "live_stream",
+        "time_confidence": null,
+        "evidence_explanation": "等待当前视频流中的有效证据。",
+        "evidence": []
+      },
+      "display_order": 11,
+      "oral_policy": {
+        "rubric_preserved": true,
+        "demo_gate": "disabled",
+        "replacement": "流程节点确认与视觉时序证据"
+      }
+    },
+    {
+      "item_number": 19,
+      "item_id": "cylinder_head_bolt",
+      "display_name": "报告更换气缸盖螺栓",
+      "difficulty": "high",
+      "prefilled_score": 2,
+      "prefilled_standard_text": "识别安装气缸盖螺栓前的新螺栓流程节点，避免将安装后的补充说明误判为事前报告。",
+      "realtime_target": "识别安装气缸盖螺栓前的新螺栓流程节点，避免将安装后的补充说明误判为事前报告。",
+      "retrieval_queries": [
+        "报告更换气缸盖螺栓 安装前",
+        "new cylinder head bolt report before install"
+      ],
+      "required_evidence_slots": [
+        {
+          "slot_id": "live_timestamp",
+          "label": "现场时间",
+          "required": true,
+          "kind": "timestamp",
+          "status": "empty",
+          "evidence": []
+        },
+        {
+          "slot_id": "process_node_frame",
+          "label": "流程节点帧",
+          "required": true,
+          "kind": "image",
+          "status": "empty",
+          "evidence": []
+        },
+        {
+          "slot_id": "temporal_order",
+          "label": "时序关系",
+          "required": true,
+          "kind": "sequence",
+          "status": "empty",
+          "evidence": []
+        }
+      ],
+      "enhanced_evidence_slots": [
+        {
+          "slot_id": "new_bolt_detection",
+          "label": "新螺栓识别",
+          "required": false,
+          "kind": "image",
+          "status": "empty",
+          "evidence": []
+        },
+        {
+          "slot_id": "node_confirmation_card",
+          "label": "节点确认卡",
+          "required": false,
+          "kind": "image",
+          "status": "empty",
+          "evidence": []
+        }
+      ],
+      "evidence_hint": "展示待安装区域和安装前节点，不生成口述文本。",
+      "completion_condition": {
+        "required_slot_ids": [
+          "live_timestamp",
+          "process_node_frame",
+          "temporal_order"
+        ],
+        "success_state": "evidence_bound",
+        "low_confidence_state": "manual_review",
+        "missing_state": "evidence_generating"
+      },
+      "live_binding": {
+        "state": "待开始",
+        "revision": 0,
+        "changed_slot_ids": [],
+        "live_timestamp": null,
+        "live_start_sec": null,
+        "live_end_sec": null,
+        "time_source": "live_stream",
+        "time_confidence": null,
+        "evidence_explanation": "等待当前视频流中的有效证据。",
+        "evidence": []
+      },
+      "display_order": 12,
+      "oral_policy": {
+        "rubric_preserved": true,
+        "demo_gate": "disabled",
+        "replacement": "流程节点确认与视觉时序证据"
+      }
+    },
+    {
+      "item_number": 20,
+      "item_id": "install_1st",
+      "display_name": "第一次安装预紧",
+      "difficulty": "high",
+      "prefilled_score": 2,
+      "prefilled_standard_text": "使用扭力扳手按维修手册顺序，依次对1—10号气缸盖螺栓完成第一次安装预紧；本轮预紧扭矩为25 N·m，且不与后续角度拧紧轮次混淆。",
+      "realtime_target": "使用扭力扳手按维修手册顺序，依次对1—10号气缸盖螺栓完成第一次安装预紧；本轮预紧扭矩为25 N·m，且不与后续角度拧紧轮次混淆。",
+      "retrieval_queries": [
+        "第一次安装预紧 1-10 25Nm",
+        "torque wrench first tightening ten bolt order"
+      ],
+      "required_evidence_slots": [
+        {
+          "slot_id": "live_timestamp",
+          "label": "现场时间",
+          "required": true,
+          "kind": "timestamp",
+          "status": "empty",
+          "evidence": []
+        },
+        {
+          "slot_id": "representative_frame",
+          "label": "代表性关键帧",
+          "required": true,
+          "kind": "image",
+          "status": "empty",
+          "evidence": []
+        },
+        {
+          "slot_id": "object_detection",
+          "label": "目标检测",
+          "required": true,
+          "kind": "image",
+          "status": "empty",
+          "evidence": []
+        },
+        {
+          "slot_id": "multi_frame_sequence",
+          "label": "连续帧",
+          "required": true,
+          "kind": "sequence",
+          "status": "empty",
+          "evidence": []
+        },
+        {
+          "slot_id": "sequence_order",
+          "label": "顺序序列",
+          "required": true,
+          "kind": "sequence",
+          "status": "empty",
+          "evidence": []
+        }
+      ],
+      "enhanced_evidence_slots": [
+        {
+          "slot_id": "tool_segmentation",
+          "label": "工具区域",
+          "required": false,
+          "kind": "image",
+          "status": "empty",
+          "evidence": []
+        },
+        {
+          "slot_id": "bolt_trace",
+          "label": "螺栓轨迹",
+          "required": false,
+          "kind": "image",
+          "status": "empty",
+          "evidence": []
+        },
+        {
+          "slot_id": "torque_parameter_card",
+          "label": "扭矩提示",
+          "required": false,
+          "kind": "image",
+          "status": "empty",
+          "evidence": []
+        }
+      ],
+      "evidence_hint": "完成后展示扭力扳手与螺栓接触、1—10号顺序和25 N·m参数；角度拧紧轮次不得混入本项。",
+      "completion_condition": {
+        "required_slot_ids": [
+          "live_timestamp",
+          "representative_frame",
+          "object_detection",
+          "multi_frame_sequence",
+          "sequence_order"
+        ],
+        "success_state": "evidence_bound",
+        "low_confidence_state": "manual_review",
+        "missing_state": "evidence_generating"
+      },
+      "live_binding": {
+        "state": "待开始",
+        "revision": 0,
+        "changed_slot_ids": [],
+        "live_timestamp": null,
+        "live_start_sec": null,
+        "live_end_sec": null,
+        "time_source": "live_stream",
+        "time_confidence": null,
+        "evidence_explanation": "等待当前视频流中的有效证据。",
+        "evidence": []
+      },
+      "display_order": 13,
+      "oral_policy": {
+        "rubric_preserved": true,
+        "demo_gate": "disabled",
+        "replacement": "流程节点确认与视觉时序证据"
+      }
+    }
+  ],
+  "events": []
+}
