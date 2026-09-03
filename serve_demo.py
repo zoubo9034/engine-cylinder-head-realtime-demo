@@ -20,7 +20,7 @@ from typing import Any, Mapping
 from urllib.parse import urlparse
 
 from render_report import public_projection
-from report_schema import template_payload, validated_copy
+from report_schema import TERMINAL_LIVE_STATES, template_payload, validated_copy
 
 
 class ReusableThreadingHTTPServer(ThreadingHTTPServer):
@@ -72,20 +72,22 @@ class DemoState:
         with self.lock:
             previous = self.read()
             payload = template_payload()
-            # Keep the replay schedule when the configured file is the generated
-            # mock fixture.  Reset clears every live binding but must not destroy
-            # the artifact-backed event stream that makes the fixture replayable.
+            # Keep only the replay schedule when the configured file is a mock
+            # fixture.  The fresh template clears all bindings and details.
             if previous.get("demo_mode") == "mock_live_stream" or previous.get("events"):
                 payload["demo_mode"] = previous.get("demo_mode", "mock_live_stream")
-                if isinstance(previous.get("_mock_audit"), Mapping):
-                    payload["_mock_audit"] = dict(previous["_mock_audit"])
                 payload["events"] = list(previous.get("events") or [])
             self.write(payload)
             return payload
 
     def update(self, body: Mapping[str, Any]) -> dict[str, Any]:
         with self.lock:
-            item_id = str(body.get("item_id") or "")
+            incoming_patch = body.get("item_patch")
+            item_id = str(
+                body.get("item_id")
+                or (incoming_patch.get("item_id") if isinstance(incoming_patch, Mapping) else "")
+                or ""
+            )
             if not item_id:
                 raise ValueError("缺少 item_id")
             payload = self.read()
@@ -93,15 +95,22 @@ class DemoState:
             if item is None:
                 raise ValueError(f"未知评分项：{item_id}")
 
-            incoming = body.get("item_patch")
+            incoming = incoming_patch
+            detail_supplied = False
             if isinstance(incoming, Mapping):
                 # Accept a complete item patch from an evaluator, but keep the
                 # immutable item identity and order owned by the template.
                 if str(incoming.get("item_id") or item_id) != item_id:
                     raise ValueError("item_patch.item_id 与 item_id 不一致")
-                for key in ("live_binding", "required_evidence_slots", "enhanced_evidence_slots"):
+                for key in (
+                    "live_binding",
+                    "required_evidence_slots",
+                    "enhanced_evidence_slots",
+                    "detail_evaluation",
+                ):
                     if key in incoming:
                         item[key] = incoming[key]
+                        detail_supplied = detail_supplied or key == "detail_evaluation"
             else:
                 binding_patch = body.get("live_binding")
                 if isinstance(binding_patch, Mapping):
@@ -110,6 +119,20 @@ class DemoState:
                 slots_patch = body.get("required_evidence_slots")
                 if isinstance(slots_patch, list):
                     item["required_evidence_slots"] = slots_patch
+                enhanced_slots_patch = body.get("enhanced_evidence_slots")
+                if isinstance(enhanced_slots_patch, list):
+                    item["enhanced_evidence_slots"] = enhanced_slots_patch
+                detail_patch = body.get("detail_evaluation")
+                if isinstance(detail_patch, Mapping):
+                    item["detail_evaluation"] = dict(detail_patch)
+                    detail_supplied = True
+
+            # Also accept the flat form for clients that have not migrated to
+            # ``item_patch`` yet; an explicit detail payload always wins over
+            # lifecycle defaults.
+            if not detail_supplied and isinstance(body.get("detail_evaluation"), Mapping):
+                item["detail_evaluation"] = dict(body["detail_evaluation"])
+                detail_supplied = True
 
             binding = item.setdefault("live_binding", {})
             old_revision = int(binding.get("revision") or 0)
@@ -124,6 +147,21 @@ class DemoState:
                     if slot.get("status") == "bound"
                 ]
             state = str(binding.get("state") or "待开始")
+            detail = item.setdefault("detail_evaluation", {})
+            if not isinstance(detail, Mapping):
+                detail = {"state": "locked", "updated_at": None, "checks": [], "unresolved_summary": ""}
+                item["detail_evaluation"] = detail
+            # A missing lifecycle marker gets a safe display state.  Actual
+            # criterion checks are never inferred or fabricated here.  When a
+            # new non-terminal cycle starts, discard stale terminal checks so
+            # the drawer cannot show an earlier observation for the new frame.
+            if not detail_supplied:
+                if state == "证据生成中":
+                    detail.update({"state": "analyzing", "updated_at": None, "checks": [], "unresolved_summary": ""})
+                elif state in {"待开始", "已定位"}:
+                    detail.update({"state": "locked", "updated_at": None, "checks": [], "unresolved_summary": ""})
+                elif state in TERMINAL_LIVE_STATES and not (detail.get("checks") or []):
+                    detail["state"] = "unavailable"
             item["score"] = {"证据已绑定": 1, "已完成评分": 1, "待人工确认": 0}.get(state)
             self.write(payload)
             return payload

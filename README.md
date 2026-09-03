@@ -11,6 +11,7 @@
 | 文件 | 用途 |
 | --- | --- |
 | `report_schema.py` | 8–20 项报告模板和 JSON 校验 |
+| `detail_rules.py` | 13 个评分项的对象、动作、时序、完成状态核验依据 |
 | `render_report.py` | 从报告 JSON 生成自包含 HTML |
 | `build_mock_report.py` | 从 10 个视频 artifacts 生成事件回放 JSON |
 | `workflow_tool_stats.py` | 汇总 10 个视频的 `workflow_trace`，生成难度与分析工具 profile |
@@ -29,6 +30,10 @@
 Inter 正文建立层级。时间线使用点状脊柱，卡片、证据和分析链使用 4–8px 圆角与轻阴影，状态
 颜色沿用 success / warning / error 浅色语义。HTML 不依赖外部前端包，字体不可用时自动回退到
 系统字体。
+
+每张评分卡都保留“展开详细表单”入口。入口始终可见：项目尚未进入终态时，右侧抽屉只显示对象识别、动作过程、时序关系、完成状态四组核验维度及数量；进入“已完成评分”或“待人工确认”后，抽屉才显示逐条依据、当前核验状态、置信度、关联证据、现场时间范围、风险边界和分析链。抽屉为只读查看器，不提供改分、通过/不通过或人工备注操作。
+
+证据缩略图和抽屉中的证据引用共用同一查看交互：鼠标或键盘聚焦约 120ms 后显示带阶段、时间和置信度的悬停预览，点击或触屏点击打开高清灯箱；灯箱支持关闭按钮、背景点击和 Esc。缺少图像时只显示占位状态，不生成图片。
 
 ## 环境与工作目录
 
@@ -53,6 +58,8 @@ python render_report.py render \
 
 模板包含 13 个现场回填位置。初始状态为“待开始”，现场识别程序写入某项的绑定数据后，
 页面通过轮询检测到变更并自动展开该项的证据动画。
+
+模板中的 `detail_form` 是固定的纯视觉核验框架；实时识别程序只写入对应项目的 `detail_evaluation`（`locked`、`analyzing`、`unlocked` 或 `unavailable`）和证据引用，详细核验不会改变分数。每条核验结果可使用 `pending`、`confirmed`、`not_confirmed` 或 `manual_review`，并带有置信度、观察摘要、原因和同项目证据 ID。
 
 模板中的 `difficulty`、`difficulty_label` 和 `analysis_tools` 来自仓库内的
 `workflow_tool_profile_10video.json`。该 profile 只记录 10 个视频中各评分项的工具调用数量、
@@ -122,6 +129,7 @@ http://127.0.0.1:8765/展示标准报告_8-20_mock.html
 
 - `启动评测`：开始轮询报告 JSON；mock 页面会按事件补丁顺序回放。
 - `重置`：调用 `/api/reset`，清空现场绑定并恢复初始模板；mock 文件会保留回放事件。
+- `展开详细表单`：打开当前评分项的只读详情抽屉；未完成时显示核验维度骨架，终态后显示逐条依据和证据关联。
 - 左侧流程项：只用于查看某个评分项，不承担“下一项”推进功能。
 
 mock HTML 也可以直接用浏览器打开并启动内嵌回放；标准 HTML 的实时轮询和重置功能需要通过
@@ -155,6 +163,31 @@ mock HTML 也可以直接用浏览器打开并启动内嵌回放；标准 HTML �
 `live_binding.state` 归一化分数：`已完成评分`/`证据已绑定` 为 1，`待人工确认` 为 0，其他状态
 保持空值，忽略请求中自行传入的分数字段。
 
+详情结果可以随同项目补丁提交，评分仍只由 `live_binding.state` 决定：
+
+```json
+{
+  "item_id": "item_5069",
+  "detail_evaluation": {
+    "state": "unlocked",
+    "updated_at": "00:06:28",
+    "checks": [
+      {
+        "criterion_id": "wrench_bolt_identity",
+        "status": "confirmed",
+        "confidence": 0.94,
+        "evidence_ids": ["ev-example"],
+        "observation": "扳手和目标螺栓清晰可辨。",
+        "reason": ""
+      }
+    ],
+    "unresolved_summary": ""
+  }
+}
+```
+
+`detail_form` 由模板固定提供，证据 ID 只能引用同一评分项的实时证据；服务端拒绝跨项目引用。
+
 ### `POST /api/reset`
 
 以原子替换方式写回模板，保证页面和 JSON 不会读到半写入内容。
@@ -163,7 +196,8 @@ mock HTML 也可以直接用浏览器打开并启动内嵌回放；标准 HTML �
 
 ```bash
 python -m unittest -v test_report.py
-python -m py_compile report_schema.py render_report.py build_mock_report.py serve_demo.py
+python -m py_compile detail_rules.py report_schema.py render_report.py build_mock_report.py serve_demo.py
 ```
 
-测试覆盖模板范围、跨评分项证据复用、公开投影脱敏、mock 事件结构和重置行为。
+测试覆盖 13 项规则唯一性、初始锁定与重置清空、终态详情公开投影、人工确认状态、跨评分项证据复用、
+mock 的完成/分析中/人工确认事件、特殊轮次与顺序字段、抽屉和证据图像查看器标记，以及公开页面脱敏。

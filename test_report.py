@@ -7,14 +7,42 @@ import json
 import re
 import tempfile
 import unittest
+from copy import deepcopy
 from pathlib import Path
 
+from detail_rules import DETAIL_CHECK_STATUSES, DETAIL_EVALUATION_STATES, DETAIL_RULES, DETAIL_RULES_BY_ITEM
 from report_schema import DIFFICULTY_LABELS, ITEM_DEFINITIONS, template_payload, validate_report
-from render_report import FORBIDDEN_HTML_MARKERS, public_projection, render_html
+from render_report import FORBIDDEN_HTML_MARKERS, _clean_text, public_projection, render_html
 from serve_demo import DemoState
+from workflow_tool_stats import _is_visual_tool
 
 
 class ReportContractTest(unittest.TestCase):
+    def test_thirteen_visual_detail_rules_are_unique_and_owned(self) -> None:
+        self.assertEqual(len(DETAIL_RULES), 13)
+        self.assertEqual(set(DETAIL_RULES_BY_ITEM), {item["item_id"] for item in ITEM_DEFINITIONS})
+        criterion_ids: set[str] = set()
+        for rule, definition in zip(DETAIL_RULES, ITEM_DEFINITIONS):
+            self.assertEqual(rule["item_id"], definition["item_id"])
+            slots = set(definition["required_slots"]) | set(definition["enhanced_slots"])
+            criteria = rule["detail_form"]["criteria"]
+            self.assertTrue(criteria)
+            for criterion in criteria:
+                self.assertTrue(set(criterion["evidence_slot_ids"]).issubset(slots))
+                self.assertNotIn(criterion["criterion_id"], criterion_ids)
+                criterion_ids.add(criterion["criterion_id"])
+
+    def test_detail_template_is_locked_and_has_no_speech_policy(self) -> None:
+        payload = template_payload()
+        self.assertEqual(
+            {item["detail_evaluation"]["state"] for item in payload["items"]},
+            {"locked"},
+        )
+        self.assertTrue(all(item["detail_evaluation"]["checks"] == [] for item in payload["items"]))
+        self.assertTrue(all("oral_policy" not in item for item in payload["items"]))
+        self.assertNotIn("oral_gate", payload["demo_policy"])
+        self.assertNotIn("oral_replacement", payload["demo_policy"])
+
     def test_template_has_exact_live_scope(self) -> None:
         payload = template_payload()
         self.assertEqual(payload["schema"], "realtime-evidence-report/v1")
@@ -45,6 +73,15 @@ class ReportContractTest(unittest.TestCase):
                 abs(profile["actual_analysis_task_count"] - profile["average_tool_task_count"]),
                 3,
             )
+
+    def test_visual_tool_filter_keeps_temporal_analyzer(self) -> None:
+        # ``temporal`` contains the letters ``oral``; filtering by arbitrary
+        # substrings would silently remove this visual tool from the analysis
+        # chain along with speech-dependent tools.
+        self.assertTrue(_is_visual_tool("temporal_sequence_analyzer"))
+        self.assertTrue(_is_visual_tool("object_motion_inspector"))
+        self.assertFalse(_is_visual_tool("oral_evidence_analyzer"))
+        self.assertFalse(_is_visual_tool("video_mme_subtitle_analyzer"))
 
     def test_public_html_has_no_internal_markers(self) -> None:
         html = render_html(template_payload())
@@ -100,6 +137,86 @@ class ReportContractTest(unittest.TestCase):
         self.assertTrue(all("difficulty_label" not in item for item in projection["items"]))
         self.assertTrue(all("analysis_tools" not in item for item in projection["items"]))
         self.assertTrue(all("score" not in item for item in projection["items"]))
+        self.assertTrue(all(set(item["detail"]) >= {"state", "sections", "criterion_count", "button"} for item in projection["items"]))
+        self.assertTrue(all("criteria" not in item["detail"] for item in projection["items"]))
+
+    def test_public_text_keeps_visual_slash_phrases_but_hides_absolute_paths(self) -> None:
+        phrase = "画面能辨认气缸盖下方结合面，并出现燃烧室/气门侧特征。"
+        self.assertEqual(_clean_text(phrase, "回退文案"), phrase)
+        self.assertEqual(_clean_text("/tmp/local-frame.jpg", "回退文案"), "回退文案")
+
+    def test_terminal_detail_projection_reveals_checks_only_at_terminal(self) -> None:
+        payload = template_payload()
+        item = payload["items"][0]
+        evidence = {
+            "evidence_id": "ev-local",
+            "item_id": item["item_id"],
+            "kind": "representative_frame",
+            "source_path": "/tmp/local-frame.jpg",
+            "caption": "相关对象画面",
+        }
+        item["live_binding"]["state"] = "已完成评分"
+        item["live_binding"]["evidence"] = [evidence]
+        item["score"] = 1
+        item["detail_evaluation"] = {
+            "state": "unlocked",
+            "updated_at": "00:10",
+            "checks": [{
+                "criterion_id": "wrench_bolt_identity",
+                "status": "confirmed",
+                "confidence": 0.91,
+                "evidence_ids": ["ev-local"],
+                "observation": "对象在画面中清晰可辨。",
+                "reason": "",
+            }],
+            "unresolved_summary": "",
+            "high_level_evaluation": "关键对象关系已完成核验。",
+        }
+        public_item = public_projection(payload)["items"][0]
+        self.assertIn("criteria", public_item["detail"])
+        self.assertIn("checks", public_item["detail"])
+        self.assertEqual(public_item["detail"]["checks"][0]["evidence_ids"], ["ev-local"])
+        self.assertIn("high_level_evaluation", public_item["detail"])
+
+    def test_manual_detail_projection_keeps_unresolved_reason_without_success_copy(self) -> None:
+        payload = template_payload()
+        item = payload["items"][0]
+        item["live_binding"]["state"] = "待人工确认"
+        item["score"] = 0
+        item["detail_evaluation"] = {
+            "state": "unlocked",
+            "updated_at": "00:10",
+            "checks": [],
+            "unresolved_summary": "仍有核验项缺少完整画面，建议人工复核后确认。",
+            "high_level_evaluation": "不应在人工确认状态显示。",
+        }
+        public_item = public_projection(payload)["items"][0]
+        self.assertEqual(public_item["score"], 0)
+        self.assertIn("unresolved_summary", public_item["detail"])
+        self.assertNotIn("high_level_evaluation", public_item["detail"])
+
+    def test_manual_check_copy_is_neutralized_when_it_contains_success_wording(self) -> None:
+        payload = template_payload()
+        item = payload["items"][0]
+        item["live_binding"]["state"] = "待人工确认"
+        item["score"] = 0
+        item["detail_evaluation"] = {
+            "state": "unlocked",
+            "updated_at": "00:10",
+            "checks": [{
+                "criterion_id": "wrench_bolt_identity",
+                "status": "manual_review",
+                "confidence": 0.4,
+                "evidence_ids": [],
+                "observation": "动作正确，但画面还需要确认。",
+                "reason": "结果符合标准。",
+            }],
+            "unresolved_summary": "仍有核验项待确认。",
+        }
+        public_check = public_projection(payload)["items"][0]["detail"]["checks"][0]
+        self.assertEqual(public_check["observation"], "当前画面仍需确认。")
+        self.assertEqual(public_check["reason"], "仍有核验项待确认。")
+
 
     def test_terminal_projection_reveals_score_difficulty_and_tools(self) -> None:
         payload = template_payload()
@@ -134,6 +251,118 @@ class ReportContractTest(unittest.TestCase):
         for item in payload["items"][:2]:
             item["live_binding"]["evidence"] = [{"source_path": path}]
         self.assertTrue(any("reused across items" in e for e in validate_report(payload)))
+
+    def test_detail_evidence_reference_cannot_cross_items(self) -> None:
+        payload = template_payload()
+        first, second = payload["items"][:2]
+        first["live_binding"]["state"] = "待人工确认"
+        first["score"] = 0
+        first["live_binding"]["evidence"] = [{"evidence_id": "ev-first", "item_id": first["item_id"]}]
+        second["live_binding"]["state"] = "待人工确认"
+        second["score"] = 0
+        second["live_binding"]["evidence"] = [{"evidence_id": "ev-second", "item_id": second["item_id"]}]
+        second["detail_evaluation"] = {
+            "state": "unlocked",
+            "updated_at": None,
+            "checks": [{
+                "criterion_id": "two_hand_support",
+                "status": "manual_review",
+                "confidence": 0.2,
+                "evidence_ids": ["ev-first"],
+                "observation": "待确认。",
+                "reason": "",
+            }],
+            "unresolved_summary": "需要补充相关画面后再确认。",
+        }
+        self.assertTrue(any("not owned by item" in error or "reused across items" in error for error in validate_report(payload)))
+
+    def test_compact_event_cannot_reference_another_item_evidence(self) -> None:
+        payload = template_payload()
+        first, second = payload["items"][:2]
+        first["live_binding"]["evidence"] = [{"evidence_id": "ev-first", "item_id": first["item_id"]}]
+        second["live_binding"]["evidence"] = [{"evidence_id": "ev-second", "item_id": second["item_id"]}]
+        payload["events"] = [{
+            "event_id": "evt-compact",
+            "item_id": second["item_id"],
+            "final_state": "证据生成中",
+            "evidence_ids": ["ev-first"],
+        }]
+        self.assertTrue(any("not owned by event item" in error for error in validate_report(payload)))
+
+    def test_detail_event_may_reuse_same_item_snapshot_evidence(self) -> None:
+        payload = template_payload()
+        item = payload["items"][0]
+        evidence = {"evidence_id": "ev-first", "item_id": item["item_id"]}
+        item["live_binding"]["evidence"] = [evidence]
+        item["live_binding"]["state"] = "待人工确认"
+        item["score"] = 0
+        item["detail_evaluation"] = {
+            "state": "unlocked",
+            "updated_at": None,
+            "checks": [{
+                "criterion_id": "wrench_bolt_identity",
+                "status": "manual_review",
+                "confidence": 0.4,
+                "evidence_ids": ["ev-first"],
+                "observation": "当前画面仍需确认。",
+                "reason": "需要补充相关画面。",
+            }],
+            "unresolved_summary": "仍有核验项待确认。",
+        }
+        payload["events"] = [{
+            "event_id": "evt-detail",
+            "item_id": item["item_id"],
+            "final_state": "待人工确认",
+            "evidence_ids": ["ev-first"],
+            "item_patch": {
+                "item_id": item["item_id"],
+                "live_binding": {"state": "待人工确认"},
+                "detail_evaluation": item["detail_evaluation"],
+            },
+        }]
+        self.assertEqual(validate_report(payload), [])
+
+    def test_detail_status_and_special_fields_are_present(self) -> None:
+        payload = template_payload()
+        by_number = {item["item_number"]: item for item in payload["items"]}
+        self.assertTrue(any("第二次轮次" in c["label"] for c in by_number[8]["detail_form"]["criteria"]))
+        self.assertIn("front_back_labels", [slot["slot_id"] for slot in by_number[15]["enhanced_evidence_slots"]])
+        self.assertIn("hole_pin_relation", [slot["slot_id"] for slot in by_number[18]["enhanced_evidence_slots"]])
+        self.assertIn("sequence_order", [slot["slot_id"] for slot in by_number[20]["required_evidence_slots"]])
+        self.assertIn("1—10号气缸盖螺栓", by_number[20]["prefilled_standard_text"])
+        self.assertIn("25 N·m", by_number[20]["prefilled_standard_text"])
+
+    def test_visual_detail_rules_retain_initial_process_specifics(self) -> None:
+        by_number = {
+            rule["item_number"]: rule["detail_form"]
+            for rule in DETAIL_RULES
+        }
+        text = lambda number: " ".join(
+            f"{criterion['label']} {criterion['basis']} {criterion['boundary']}"
+            for criterion in by_number[number]["criteria"]
+        )
+        expected_fragments = {
+            8: ("第二次轮次", "180°", "两次 90°", "开始", "动作中", "完成"),
+            9: ("双手", "垫块", "工作台", "抬起", "下降", "落位"),
+            10: ("旧气缸垫", "薄片边缘", "完全脱离", "待检区域"),
+            11: ("孔位", "外缘", "内缘", "变形、缺失或破损", "正面", "反面"),
+            12: ("两枚", "定位销 1", "定位销 2", "分别", "损伤"),
+            13: ("燃烧室/气门侧", "白色无纺布", "密封区域", "气缸体", "活塞", "气缸孔"),
+            14: ("气缸体", "白色无纺布", "气缸孔周边", "连续画面", "擦拭变化"),
+            15: ("正面", "翻面", "反面", "安装之前", "接触画面"),
+            16: ("定位销1→定位销2", "定位销 1", "定位销 2", "两枚"),
+            17: ("视觉节点", "待用", "安装前", "三个阶段"),
+            18: ("穿孔", "正反面", "螺栓孔", "外轮廓", "定位销被垫片遮挡", "对准", "落座"),
+            19: ("新螺栓", "待安装区域", "流程节点", "插入或紧固", "三个阶段"),
+            20: ("扭力扳手", "可见旋转", "第一次", "1→10", "25 N·m", "角度轮次", "手动补拧"),
+        }
+        forbidden = ("口述", "口头", "音频", "字幕", "替代", "仅凭", "可追溯", "同图", "倒推")
+        for number, fragments in expected_fragments.items():
+            value = text(number)
+            for fragment in fragments:
+                self.assertIn(fragment, value, f"item {number} lost {fragment}")
+            self.assertFalse(any(marker in value for marker in forbidden), f"item {number} leaked internal wording")
+
 
     def test_mock_fixture_is_empty_until_event_patch(self) -> None:
         path = Path(__file__).with_name("展示标准报告_8-20_mock.json")
@@ -188,6 +417,61 @@ class ReportContractTest(unittest.TestCase):
             completed = json.loads(report_path.read_text(encoding="utf-8"))
             self.assertEqual(completed["items"][0]["score"], 1)
 
+    def test_update_accepts_detail_evaluation_without_changing_score_rule(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            report_path = root / "report.json"
+            payload = template_payload()
+            report_path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+            state = DemoState(root, report_path)
+            state.update({
+                "item_id": "item_5069",
+                "live_binding": {"state": "待人工确认"},
+                "detail_evaluation": {
+                    "state": "unlocked",
+                    "updated_at": None,
+                    "checks": [],
+                    "unresolved_summary": "需要补充相关画面后再确认。",
+                },
+                "score": 1,
+            })
+            saved = json.loads(report_path.read_text(encoding="utf-8"))
+            self.assertEqual(saved["items"][0]["detail_evaluation"]["state"], "unlocked")
+            self.assertEqual(saved["items"][0]["score"], 0)
+
+    def test_reset_clears_detail_results_and_keeps_only_events(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            report_path = root / "mock.json"
+            payload = template_payload()
+            payload["demo_mode"] = "mock_live_stream"
+            payload["_mock_audit"] = {"source_run": "/private/source"}
+            item = payload["items"][0]
+            item["live_binding"]["state"] = "待人工确认"
+            item["score"] = 0
+            item["detail_evaluation"] = {"state": "unlocked", "updated_at": "00:01", "checks": [], "unresolved_summary": "待确认"}
+            payload["events"] = [{"event_id": "evt", "item_id": item["item_id"], "item_patch": deepcopy(item)}]
+            report_path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+            reset = DemoState(root, report_path).reset()
+            self.assertEqual(reset["items"][0]["detail_evaluation"]["state"], "locked")
+            self.assertEqual(reset["items"][0]["detail_evaluation"]["checks"], [])
+            self.assertEqual(len(reset["events"]), 1)
+            saved = json.loads(report_path.read_text(encoding="utf-8"))
+            self.assertNotIn("_mock_audit", saved)
+
+    def test_mock_events_cover_detail_lifecycle_and_visual_fields(self) -> None:
+        path = Path(__file__).with_name("展示标准报告_8-20_mock.json")
+        if not path.exists():
+            self.skipTest("mock fixture has not been generated")
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        event_states = {event["item_patch"]["live_binding"]["state"] for event in payload["events"]}
+        self.assertTrue({"已完成评分", "证据生成中", "待人工确认"}.issubset(event_states))
+        patches = {event["item_id"]: event["item_patch"] for event in payload["events"]}
+        self.assertIn("第二次预松", {entry.get("round") for entry in patches["item_5069"]["live_binding"]["evidence"]})
+        self.assertTrue(any(entry.get("phase") == "动作中" for entry in patches["clean_gasket"]["live_binding"]["evidence"]))
+        self.assertTrue(any(slot["slot_id"] == "hole_pin_relation" for slot in patches["install_gasket"]["enhanced_evidence_slots"]))
+        self.assertIn("sequence_order", [slot["slot_id"] for slot in patches["install_1st"]["required_evidence_slots"]])
+
     def test_mock_reset_keeps_replay_schedule(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -200,6 +484,13 @@ class ReportContractTest(unittest.TestCase):
             reset = state.reset()
             self.assertEqual(len(reset["events"]), 1)
             self.assertEqual(reset["items"][0]["live_binding"]["state"], "待开始")
+
+    def test_html_contains_detail_drawer_and_image_viewer_interactions(self) -> None:
+        html = render_html(json.loads(Path("展示标准报告_8-20_mock.json").read_text(encoding="utf-8")))
+        for marker in ("detail-drawer", "drawer-backdrop", "hover-preview", "lightbox", "展开详细表单", "aria-controls", "aria-expanded", "object-fit:contain", "prefers-reduced-motion"):
+            self.assertIn(marker, html)
+        for marker in ("口述", "音频", "字幕", "演示模式", "可追溯", "同图", "仅凭", "倒推", "内部", "/mnt/shared-storage-user/", "source_path"):
+            self.assertNotIn(marker, html)
 
 
 if __name__ == "__main__":

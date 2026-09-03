@@ -13,6 +13,7 @@ import hashlib
 import json
 import math
 import random
+import re
 import statistics
 from collections import Counter, defaultdict
 from pathlib import Path
@@ -22,22 +23,42 @@ from report_schema import ITEM_DEFINITIONS
 
 
 TOOL_LABELS = {
-    "oral_evidence_analyzer": "口述证据分析",
     "temporal_sequence_analyzer": "时序与顺序分析",
     "object_motion_inspector": "对象动作与旋转分析",
     "small_object_action_inspector": "小目标动作分析",
-    "end_state_workspace_inspector": "终态与工作区检查",
+    "end_state_workspace_inspector": "完成状态与工作区检查",
     "rotation_tool_motion_inspector": "旋转动作分析",
-    "video_mme_subtitle_analyzer": "字幕与转写分析",
 }
+
+# The realtime demo is a visual-only surface.  Historical traces may contain
+# audio/subtitle tools; they are ignored when building the checked-in profile.
+EXCLUDED_TOOL_IDS = {
+    "oral_evidence_analyzer",
+    "video_mme_subtitle_analyzer",
+    "audio_transcription_analyzer",
+    "speech_activity_detector",
+}
+
+
+def _is_visual_tool(tool_id: str) -> bool:
+    """Return False for tool names that depend on speech or subtitles."""
+    normalized = str(tool_id).strip().lower()
+    if not normalized or normalized in EXCLUDED_TOOL_IDS:
+        return False
+    # Match semantic name components rather than arbitrary substrings.  A
+    # naive ``"oral" in name`` check incorrectly removes the visual
+    # ``temporal_sequence_analyzer`` tool because ``temporal`` ends in
+    # ``oral``.
+    components = set(re.split(r"[^a-z0-9]+", normalized))
+    return not components.intersection({"oral", "speech", "audio", "subtitle", "transcript"})
 
 # Difficulty is intentionally a presentation category, not a score.  The
 # evidence-chain features make the judgment auditable when several items share
 # the same stage-level tool set.
 DIFFICULTY_BY_ITEM = {
     "item_5069": ("difficult", "困难", ["角度与轮次", "扳手—螺栓关系", "连续动作"]),
-    "cylinder_head": ("easy", "简单", ["放置终态", "直接对象关系"]),
-    "gasket_remove": ("easy", "简单", ["取下动作", "脱离终态"]),
+    "cylinder_head": ("easy", "简单", ["放置完成姿态", "直接对象关系"]),
+    "gasket_remove": ("easy", "简单", ["取下动作", "脱离完成状态"]),
     "gasket_inspect": ("medium", "中等", ["近景小目标", "孔位与边缘检查"]),
     "positioning": ("difficult", "困难", ["双定位销", "近景小目标", "逐目标检查"]),
     "clean_head": ("difficult", "困难", ["结合面覆盖", "擦拭接触", "对象区分"]),
@@ -45,7 +66,7 @@ DIFFICULTY_BY_ITEM = {
     "clean_gasket": ("medium", "中等", ["正反两面", "清洁时序"]),
     "clean_pins": ("difficult", "困难", ["双定位销", "逐目标接触", "连续动作"]),
     "report_gasket": ("difficult", "困难", ["安装前节点", "前后时序", "流程停顿"]),
-    "install_gasket": ("medium", "中等", ["方向确认", "孔位—定位销匹配", "落座终态"]),
+    "install_gasket": ("medium", "中等", ["方向确认", "孔位—定位销匹配", "落座状态"]),
     "cylinder_head_bolt": ("difficult", "困难", ["安装前节点", "前后时序", "新旧对象区分"]),
     "install_1st": ("difficult", "困难", ["1—10顺序", "扭矩工具", "轮次区分", "连续动作"]),
 }
@@ -71,7 +92,13 @@ def _trace_records(trace_path: Path, active_ids: set[str]) -> Iterable[dict[str,
     for node in trace.get("nodes", []) or []:
         if not isinstance(node, dict) or node.get("node_type") != "tool_prior_consumption":
             continue
-        names = [str(name) for name in node.get("executable_tool_names", []) or [] if str(name)]
+        names = [
+            str(name)
+            for name in node.get("executable_tool_names", []) or []
+            if _is_visual_tool(str(name))
+        ]
+        if not names:
+            continue
         plans = int(node.get("executable_tool_plan_count") or 0)
         tasks = int(node.get("executable_tool_task_count") or 0)
         for claim_id in node.get("tool_prior_claim_ids", []) or []:
