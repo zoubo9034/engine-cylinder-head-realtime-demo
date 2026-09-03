@@ -13,6 +13,7 @@ from pathlib import Path
 from detail_rules import DETAIL_CHECK_STATUSES, DETAIL_EVALUATION_STATES, DETAIL_RULES, DETAIL_RULES_BY_ITEM
 from report_schema import DIFFICULTY_LABELS, ITEM_DEFINITIONS, template_payload, validate_report
 from render_report import FORBIDDEN_HTML_MARKERS, _clean_text, public_projection, render_html
+from build_mock_report import MOCK_ANALYSIS_DURATION_MS
 from serve_demo import (
     ANALYSIS_DURATION_MAX_MS,
     ANALYSIS_DURATION_MIN_MS,
@@ -388,7 +389,7 @@ class ReportContractTest(unittest.TestCase):
         self.assertTrue(all(not item["live_binding"]["evidence"] for item in payload["items"]))
         self.assertTrue(all(event.get("item_patch") for event in payload["events"]))
         self.assertTrue(all(event["item_patch"]["live_binding"]["state"] == "已完成评分" for event in payload["events"]))
-        self.assertTrue(all(ANALYSIS_DURATION_MIN_MS <= event["processing_ms"] <= ANALYSIS_DURATION_MAX_MS for event in payload["events"]))
+        self.assertTrue(all(event["processing_ms"] == MOCK_ANALYSIS_DURATION_MS for event in payload["events"]))
         self.assertTrue(all(
             event["item_patch"].get("score") == 1
             for event in payload["events"]

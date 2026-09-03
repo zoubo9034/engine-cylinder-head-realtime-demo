@@ -14,7 +14,7 @@
 | `report_schema.py` | 8–20 项报告模板和 JSON 校验 |
 | `detail_rules.py` | 13 个评分项的对象、动作、时序、完成状态核验依据 |
 | `render_report.py` | 从报告 JSON 生成自包含 HTML |
-| `build_mock_report.py` | 从 10 个视频 artifacts 生成事件回放 JSON |
+| `build_mock_report.py` | 从 10 或 29 个视频 artifacts 生成事件回放 JSON；每项随机选一个完整得分样本 |
 | `workflow_tool_stats.py` | 汇总 10 个视频的 `workflow_trace`，生成难度与分析工具 profile |
 | `workflow_tool_profile_10video.json` | 由当前 10 个视频生成的无路径工具链统计 |
 | `serve_demo.py` | 提供静态文件、实时轮询、回填和重置 API |
@@ -86,11 +86,16 @@ python workflow_tool_stats.py \
 
 ## 生成 mock 回放
 
-默认示例使用上级 Engine 目录中已有的 10 个视频运行产物：
+mock 源可以是包含 10 个报告的嵌套 Engine 运行目录，也可以是包含 29 个报告的平铺 artifacts
+目录。生成器会先按项目最终得分筛选正确样本，再从同一视频该项目的分析过程关键帧、mask 或
+bbox 产物中随机取证；不会把不同视频的帧拼到同一个项目。需要从较大的平铺归档中取出指定
+视频时，可用 `--video-manifest`（JSON 或每行一个视频路径）限定清单，并用 `--seed` 固定一次
+回放的抽样结果：
 
 ```bash
 python build_mock_report.py \
   --source-run ../unified-scoring-engine/outputs/c475-nested-10-r1 \
+  --seed 20260903 \
   --template 展示标准报告_8-20.json \
   --output 展示标准报告_8-20_mock.json
 
@@ -101,8 +106,8 @@ python render_report.py render \
 
 mock JSON 的 13 个评分项初始仍为空；由 artifacts 提取出的真实证据保存在
 `events[].item_patch`。每个事件都对应一个按规范完成的项目，回放时先显示“已定位”和
-“证据生成中”，经过事件中的 8–20 秒分析窗口后显示“已完成评分”、逐条全对依据和 `1 / 1 分`。
-历史 artifacts 只用于提供真实帧、时间和分析工具链，不改变这套现场标准结论。
+“证据生成中”，经过事件固定 3 秒的 mock 分析窗口后显示“已完成评分”、逐条全对依据和
+`1 / 1 分`。历史 artifacts 只用于提供真实帧、时间和分析工具链，不改变这套现场标准结论。
 
 ## 启动实时演示
 
