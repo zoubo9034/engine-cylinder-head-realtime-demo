@@ -639,7 +639,18 @@ def _resolve_image_path(
     if not path.is_absolute():
         path = session_dir / path
     if _path_is_image(path):
-        return path.resolve()
+        # Reports in the archive sometimes retain an absolute path from an
+        # earlier run of the same sample.  Never follow that path when it
+        # points at a sibling session: every mock frame must remain inside the
+        # one source video selected for this item.  The suffix recovery below
+        # maps it into the current session when the relative artifact exists.
+        try:
+            resolved = path.resolve()
+            session_resolved = Path(session_dir).resolve()
+            if resolved == session_resolved or session_resolved in resolved.parents:
+                return resolved
+        except OSError:
+            pass
 
     # Reports copied between workers often retain an old absolute prefix or a
     # stage-run prefix (``15/keyframes/...``).  Recover the path directly from
@@ -850,6 +861,105 @@ _ITEM_PROCESS_HINTS: dict[str, tuple[str, ...]] = {
     "cylinder_head_bolt": ("螺栓", "气缸盖", "新", "待用", "报告", "安装", "bolt"),
     "install_1st": ("第一次", "预紧", "扭力", "扭矩", "1", "10", "25", "螺栓", "wrench", "tighten"),
 }
+# Task-result names are useful provenance hints, but are never treated as a
+# score.  They let the mock prefer a project-specific visual sampler over a
+# generic end-state/quality task when both are present in one source video.
+_ITEM_TASK_PATH_HINTS: dict[str, tuple[str, ...]] = {
+    "item_5069": ("g1_omi", "rotation_angle", "preloosen", "pre_loosen", "wrench", "torque"),
+    "cylinder_head": ("cylinder_head_pad", "head_placement", "g5_placement", "place_head", "pad_under_head"),
+    "gasket_remove": ("g2_remove", "gasket_remove", "remove_gasket", "gasket_lift"),
+    "gasket_inspect": ("g2_inspect", "gasket_inspect", "inspect_gasket", "gasket_check"),
+    "positioning": ("positioning", "pins_inspect", "pin_check", "locating_pin"),
+    "clean_head": ("g3_clean_head", "clean_head", "head_clean", "head_wipe"),
+    "clean_block": ("g3_clean_block", "clean_block", "block_clean", "block_wipe"),
+    "clean_gasket": ("g2_clean", "clean_gasket", "gasket_clean", "gasket_wipe"),
+    "clean_pins": ("g3_clean_pins", "clean_pins", "pins_clean", "pin_wipe"),
+    "report_gasket": ("report_gasket", "gasket_report", "replacement_report", "report"),
+    "install_gasket": ("g2_install", "gasket_install", "install_gasket", "gasket_seated"),
+    "cylinder_head_bolt": ("bolt_install", "head_bolt", "cylinder_head_bolt", "new_bolt"),
+    "install_1st": ("g1_install", "first_tighten", "first_preload", "install_1st", "torque"),
+}
+# These names identify the visual task variants that produced the clearest
+# process sequences in the supplied Engine export.  They are only ranking
+# hints: correctness still comes from the item-level result and the final
+# image remains bound to the same source video.  Exact-name matching avoids
+# rewarding similarly named seed-only tasks (for example
+# ``SOAI_clean_block_cloth``).
+_ITEM_PREFERRED_TASK_NAMES: dict[str, tuple[str, ...]] = {
+    # Names are compared exactly (case-insensitively).  They come from the
+    # concrete task directories in the supplied Engine exports; a task name
+    # is only a ranking hint and never changes the item's score.
+    "positioning": (
+        "G4_SOAI_01",
+        "soai_g4_positioning",
+        "soai_positioning_check",
+        "SOAI_positioning_visibility",
+        "soai_pins_inspect",
+        "soai_positioning_contact",
+        "soai_positioning_pins",
+        "soai_positioning_pins_inspect",
+        "soai_pins_clean__positioning",
+    ),
+    "clean_head": (
+        "G5_SOAI_01",
+        "soai_g3_clean_head",
+        "omi_g3_clean_motion__tool_fit_visual__clean_head",
+        "soai_clean_head",
+        "auto_visual_coverage_clean_head",
+        "omi_cleaning_motion__tool_fit_visual__clean_head",
+        "omi_g3_clean_motion__tool_fit_visual__clean_head",
+    ),
+    "clean_block": (
+        "G5_SOAI_02",
+        "soai_g3_clean_head__clean_block",
+        "omi_g3_clean_motion__tool_fit_visual__clean_block",
+        "soai_g3_clean_block",
+        "soai_clean_block",
+        "soai_clean_head_block_pins__clean_block",
+    ),
+    "clean_gasket": (
+        "G3_SOAI_02",
+        "soai_g2_clean",
+        "soai_clean_gasket",
+        "SOAI_gasket_clean_both__clean_gasket",
+    ),
+    "clean_pins": (
+        "auto_visual_coverage_clean_pins",
+        "soai_g3_pins__clean_pins",
+        "SOAI_pins_clean",
+        "soai_clean_pins",
+        "soai_pins_clean__clean_pins",
+        "soai_clean_pins_action",
+        "soai_pins_contact_check",
+    ),
+    "install_gasket": (
+        "G3_SOAI_04",
+        "soai_g2_install",
+        "soai_install_gasket",
+        "soai_gasket_install",
+        "soai_gasket_install_action",
+        "soai_gasket_actions__install_gasket",
+    ),
+    "gasket_remove": (
+        "G3_SOAI_01",
+        "auto_visual_coverage_gasket_remove",
+        "soai_g2_remove",
+        "soai_gasket_remove",
+    ),
+    "gasket_inspect": (
+        "G3_SOAI_03",
+        "auto_visual_coverage_gasket_inspect",
+        "soai_g2_inspect__gasket_inspect",
+        "soai_gasket_inspect",
+    ),
+    "cylinder_head": (
+        "G2_SOAI_01",
+        "auto_visual_coverage_cylinder_head",
+        "eswi_cylinder_head_placement__omi_motion_cylinder_head",
+        "soai_g4_placement",
+        "SOAI_head_placement",
+    ),
+}
 _ITEM_PROCESS_EXCLUSIONS: tuple[str, ...] = (
     "未找到",
     "未看到",
@@ -959,17 +1069,128 @@ def _task_visual_candidate(value: Mapping[str, Any]) -> bool:
     if status in _TASK_NEGATIVE_STATUSES or evidence_status in _TASK_NEGATIVE_STATUSES:
         return False
     if status in {"insufficient", "pending", "analyzing", ""} or evidence_status in {"insufficient", "pending", "analyzing", ""}:
+        # A few rich tasks retain sampled frames even when the task text says
+        # that the requested object/action is absent.  Those frames are not a
+        # safe thumbnail for an all-correct mock: they usually show a nearby
+        # operation (for example camshaft handling for a locating-pin check).
+        task_text = " ".join(
+            str(value.get(key) or "")
+            # Keep this check on the concise task judgment.  ``visual_judge_raw``
+            # also contains ``missing_targets`` for an otherwise useful frame,
+            # so treating that diagnostic list as a rejection discards the
+            # actual wiping image.
+            for key in ("reason", "observation", "description", "issues")
+        ).casefold()
+        task_negative_markers = (
+            "no dowel", "no locating pin", "no pin", "only cam", "only camshaft",
+            "no direct visual evidence", "not resolved", "fails to wipe", "fails to perform",
+            "no cleaning action", "no wiping", "no visible white cloth",
+            "not upper mating", "not the upper", "target pins not clearly",
+            "not clearly identified", "not shown", "未看到", "未显示", "未观察到",
+            "未使用", "未进行", "未完成", "无法确认", "不在上方", "仅展示",
+        )
+        if any(marker in task_text for marker in task_negative_markers):
+            return False
         visual_fields = (
             "object_visible",
             "action_observed",
             "contact_observed",
+            "target_identity_supported",
             "motion_supported",
             "rotation_supported",
             "projected_angle_supported",
             "verified_checks",
             "visible_targets",
         )
-        return any(bool(value.get(field)) for field in visual_fields)
+        has_visual_fields = any(bool(value.get(field)) for field in visual_fields)
+        # A failed object-visibility task is a locator diagnostic, not a
+        # usable process frame.  Its sampled images are commonly the first
+        # setup/table view in a broad window; allowing it through was the
+        # source of the pin-check card showing tools instead of the target
+        # pins.  Other task types may still expose image-only transition facts
+        # below, so keep this guard specific to the visibility check.
+        task_type = str(value.get("task_type") or "").casefold()
+        if "object_visibility" in task_type and not has_visual_fields:
+            return False
+        if has_visual_fields:
+            return True
+
+        # The Engine visual falsifier records a useful state transition even
+        # when a stricter material/audio requirement leaves the normalized
+        # status as ``insufficient``.  These facts are image-level evidence,
+        # so they are safe for a visual-only mock candidate.
+        transition_keys = (
+            "ordered_transition_falsification_observations",
+            "ordered_transition_observations",
+            "transition_observations",
+        )
+        for key in transition_keys:
+            transitions = value.get(key)
+            if not isinstance(transitions, (list, tuple)):
+                continue
+            for transition in transitions:
+                if not isinstance(transition, Mapping):
+                    continue
+                if transition.get("same_target_identity_visible") or transition.get("requested_state_delta_visible"):
+                    return True
+                if transition.get("before_visible_fact") and transition.get("after_visible_fact"):
+                    return True
+
+        audit = value.get("visual_falsification_audit")
+        if isinstance(audit, Mapping):
+            panels = audit.get("panel_observations") or audit.get("observations")
+            if isinstance(panels, (list, tuple)):
+                for panel in panels:
+                    if not isinstance(panel, Mapping):
+                        continue
+                    if panel.get("target_or_state_visible") or panel.get("requested_action_or_relation_visible"):
+                        return True
+
+        reason_parts = [
+            value.get("reason"),
+            value.get("observation"),
+            value.get("visual_judge_raw"),
+        ]
+        reason = " ".join(str(part or "") for part in reason_parts).casefold()
+        if reason:
+            negative_markers = (
+                "no visual evidence",
+                "no evidence",
+                "not visible",
+                "not shown",
+                "cannot confirm",
+                "unable to confirm",
+                "未看到",
+                "未见",
+                "未显示",
+                "无法确认",
+                "无法判断",
+                "没有直接",
+            )
+            positive_markers = (
+                "shows",
+                "visible",
+                "confirms",
+                "lifted",
+                "held",
+                "wiping",
+                "clean",
+                "placed",
+                "installed",
+                "rotat",
+                "显示",
+                "可见",
+                "抬起",
+                "拿起",
+                "擦拭",
+                "清洁",
+                "放置",
+                "安装",
+                "旋转",
+                "脱离",
+            )
+            if any(marker in reason for marker in positive_markers) and not any(marker in reason for marker in negative_markers):
+                return True
     return False
 
 
@@ -981,10 +1202,48 @@ def _task_confidence(value: Mapping[str, Any]) -> float:
     return 0.0
 
 
+def _task_path_hint_score(item_id: str, record: Mapping[str, Any]) -> float:
+    """Rank an item-owned task by its private task/artifact naming hints."""
+    text = " ".join(
+        str(record.get(key) or "")
+        for key in ("task_name", "task_type", "task_path", "source_task_path")
+    ).casefold()
+    hints = _ITEM_TASK_PATH_HINTS.get(item_id, ())
+    hits = sum(1 for hint in hints if str(hint).casefold() in text)
+    score = min(72.0, hits * 18.0)
+    # These are often useful for diagnostics but are not a focused process
+    # view.  Keep them available as a fallback without letting them displace
+    # a project-specific action task.
+    if any(token in text for token in ("final_state", "end_state", "workspace_check", "object_visibility_check")):
+        score -= 24.0
+    if "rejected_positive_refinement" in text:
+        score -= 28.0
+    # Keep similarly named operations apart.  The rich export includes both
+    # clean-head and clean-block tasks in one stage, so their names are more
+    # reliable than a generic ``clean`` hit.
+    pair_penalties = {
+        "clean_head": ("clean_block", "clean_gasket", "clean_pins"),
+        "clean_block": ("clean_head", "clean_gasket", "clean_pins"),
+        "clean_gasket": ("clean_head", "clean_block", "clean_pins"),
+        "clean_pins": ("clean_head", "clean_block", "clean_gasket"),
+    }
+    for token in pair_penalties.get(item_id, ()):
+        if token in text:
+            score -= 30.0
+    specific_bonus = {
+        "clean_head": ("g3_clean_head", "clean_head_cloth", "head_wipe"),
+        "clean_block": ("g3_clean_block", "clean_block_cloth", "block_wipe"),
+        "clean_gasket": ("g2_clean", "gasket_clean_both", "clean_gasket"),
+        "clean_pins": ("g3_clean_pins", "clean_pins_both", "pin_wipe"),
+    }
+    score += sum(24.0 for token in specific_bonus.get(item_id, ()) if token in text)
+    return score
+
+
 def _task_timestamp(value: Any) -> float | None:
     if isinstance(value, Mapping):
         for key in ("time_sec", "timestamp_sec", "seconds", "timestamp", "time"):
-            candidate = _timestamp_seconds({key: value.get(key)}) if key in value else None
+            candidate = _numeric_seconds(value.get(key)) if key in value else None
             if candidate is not None:
                 return candidate
         for key in ("source_time_sec", "source_timestamp_sec"):
@@ -1001,6 +1260,7 @@ def _task_image_entries(
     task_path: Path,
     session_dir: Path,
     image_index: Iterable[Path],
+    item_id: str | None = None,
 ) -> list[dict[str, Any]]:
     """Extract process images and their source timestamps from one task."""
     entries: list[dict[str, Any]] = []
@@ -1008,12 +1268,251 @@ def _task_image_entries(
     frame_count = 0
     crop_count = 0
 
+    # Analysis tasks often carry a broad sampler history in addition to the
+    # requested local window.  Keep frames from that task's own window first;
+    # otherwise the first budget entries can be unrelated setup frames (for
+    # example a table view at 0s before a pin check at 97.5s).
+    target_range = value.get("time_range") or value.get("source_time_range")
+    target_start: float | None = None
+    target_end: float | None = None
+    if isinstance(target_range, Mapping):
+        target_start = _numeric_seconds(target_range.get("start"))
+        target_end = _numeric_seconds(target_range.get("end"))
+        if target_start is not None and target_end is not None and target_end < target_start:
+            target_start, target_end = target_end, target_start
+
+    # A refinement directory named ``rejected_positive`` is not necessarily
+    # a negative result.  In the rich export it can contain the final,
+    # authority-bound sequence after an earlier candidate was rejected.  The
+    # task result itself is the source of truth: allow those frames only when
+    # this task ended in a positive/supported state, while keeping negative or
+    # unresolved task outputs excluded below.
+    task_status = _normalised_status(value.get("status"))
+    task_evidence_status = _normalised_status(value.get("evidence_status"))
+    allow_rejected_positive = bool(
+        _task_positive(value)
+        and task_status not in _TASK_NEGATIVE_STATUSES
+        and task_evidence_status not in _TASK_NEGATIVE_STATUSES
+    )
+
+    # The visual inspector records the exact image labels it used to make its
+    # task judgment.  Resolve those labels to source times so the mock begins
+    # with the same action frames rather than the sampler's earlier setup
+    # frames.  The data may be present directly or inside visual_judge_raw.
+    supported_times: list[float] = []
+    action_times: list[float] = []
+    raw_judge = value.get("visual_judge_raw")
+    frozen = raw_judge.get("frozen_local_observations") if isinstance(raw_judge, Mapping) else None
+    if not isinstance(frozen, Mapping):
+        frozen = value.get("frozen_local_observations")
+    source_index = frozen.get("image_source_time_index") if isinstance(frozen, Mapping) else None
+    support_labels: set[str] = set()
+    action_labels: set[str] = set()
+    for labels in (
+        value.get("supporting_image_labels"),
+        frozen.get("supporting_image_labels") if isinstance(frozen, Mapping) else None,
+        raw_judge.get("supporting_image_labels") if isinstance(raw_judge, Mapping) else None,
+    ):
+        if isinstance(labels, (list, tuple, set)):
+            support_labels.update(str(label).casefold() for label in labels)
+    target_lines: list[str] = []
+    # The pin-cleaning task has a broad frozen observation history which also
+    # describes the neighbouring pin-inspection task (I09/I13).  Those labels
+    # can outrank the actual cleaning panels when used for frame ordering.
+    # Keep the task's own visible target list authoritative for this item;
+    # other actions still benefit from the richer frozen history.
+    target_sources = [value.get("visible_targets")]
+    if item_id != "clean_pins":
+        target_sources.append(frozen.get("visible_targets") if isinstance(frozen, Mapping) else None)
+    target_sources.append(raw_judge.get("visible_targets") if isinstance(raw_judge, Mapping) else None)
+    for targets in target_sources:
+        if isinstance(targets, (list, tuple)):
+            target_lines.extend(str(target) for target in targets)
+    # Inspector target descriptions are more discriminating than the broad
+    # support set: a task may retain early setup labels and later action labels
+    # in one window.  Prefer labels that explicitly name the object/contact or
+    # motion, while ignoring lines that only say an object is absent.
+    action_terms = (
+        "wipe", "wiping", "cloth", "clean", "contact", "touch", "hold", "held",
+        "gasket", "dowel", "pin", "bolt", "wrench", "rotate", "rotation",
+        "placed", "install", "lift", "lower", "surface", "gasket",
+    )
+    absence_terms = ("no ", "not ", "without", "none", "未", "没有", "未见", "未显示")
+    # The visual inspector's Ixx labels identify the exact sampled panel that
+    # supported an observation.  Use the panel number as a bounded, private
+    # ordering hint so a broad task window does not start with a setup frame.
+    # This is still only frame selection: it never changes the mock score or
+    # the public evaluation state.
+    item_panel_terms: dict[str, tuple[tuple[str, float], ...]] = {
+        "item_5069": (("wrench", 12.0), ("rotate", 10.0), ("turn", 10.0), ("bolt", 8.0), ("180", 6.0)),
+        "cylinder_head": (("support", 12.0), ("pad", 12.0), ("placed", 10.0), ("resting", 8.0), ("fixture", 8.0), ("cylinder head", 6.0)),
+        "gasket_remove": (("lift", 14.0), ("removed", 12.0), ("held", 10.0), ("gasket", 8.0), ("脱离", 14.0), ("取下", 14.0)),
+        "gasket_inspect": (("inspect", 14.0), ("held", 12.0), ("gasket", 8.0), ("hole", 8.0), ("edge", 6.0), ("surface", 5.0), ("检查", 14.0)),
+        "positioning": (("dowel", 18.0), ("locating pin", 18.0), ("pin", 14.0), ("point", 8.0), ("定位销", 18.0)),
+        "clean_head": (("white cloth", 16.0), ("mating surface", 14.0), ("cylinder head", 8.0), ("wip", 10.0), ("cloth", 6.0), ("清洁", 12.0), ("擦拭", 12.0)),
+        "clean_block": (("upper mating surface", 18.0), ("engine block", 12.0), ("cylinder block", 12.0), ("white cloth", 14.0), ("wip", 10.0), ("清洁", 12.0), ("擦拭", 12.0)),
+        "clean_gasket": (("gasket", 16.0), ("wip", 12.0), ("flip", 10.0), ("both sides", 10.0), ("清洁", 12.0), ("擦拭", 12.0)),
+        "clean_pins": (("dowel pin", 24.0), ("dowel", 20.0), ("locating pin", 24.0), ("pin", 18.0), ("cloth", 8.0), ("wip", 10.0), ("定位销", 24.0)),
+        "report_gasket": (("report", 14.0), ("replacement", 12.0), ("gasket", 8.0), ("待用", 12.0), ("报告", 14.0)),
+        "install_gasket": (("gasket seated", 18.0), ("aligned", 16.0), ("bolt holes", 10.0), ("placed", 10.0), ("install", 12.0), ("安装", 12.0)),
+        "cylinder_head_bolt": (("new bolt", 16.0), ("bolt", 14.0), ("socket", 10.0), ("insert", 10.0), ("螺栓", 14.0)),
+        "install_1st": (("wrench", 14.0), ("tighten", 14.0), ("torque", 12.0), ("bolt", 8.0), ("预紧", 14.0)),
+    }
+    target_panel_scores: dict[int, float] = {}
+    for line in target_lines:
+        label, separator, description = line.partition(":")
+        match = re.search(r"(?:^|\b)I(\d+)(?:\b|$)", label.strip(), flags=re.IGNORECASE)
+        if not match:
+            continue
+        description_lower = description.casefold()
+        if any(term in description_lower for term in absence_terms):
+            continue
+        generic_score = sum(2.0 for term in action_terms if term in description_lower)
+        item_score = sum(weight for term, weight in item_panel_terms.get(item_id or "", ()) if term.casefold() in description_lower)
+        target_panel_scores[int(match.group(1))] = max(target_panel_scores.get(int(match.group(1)), 0.0), generic_score + item_score)
+    for line in target_lines:
+        label, _, description = line.partition(":")
+        label = label.strip().casefold()
+        description = description.casefold()
+        if label and any(term in description for term in action_terms) and not any(term in description for term in absence_terms):
+            action_labels.add(label)
+    if isinstance(source_index, (list, tuple)):
+        for entry in source_index:
+            if not isinstance(entry, Mapping):
+                continue
+            label = str(entry.get("image_label") or "").casefold()
+            timestamp = _numeric_seconds(entry.get("source_time_sec"))
+            if label in support_labels and timestamp is not None:
+                supported_times.append(timestamp)
+            if label in action_labels and timestamp is not None:
+                action_times.append(timestamp)
+
+    def _range_bounds(raw: Any) -> tuple[float | None, float | None]:
+        if not isinstance(raw, Mapping):
+            return None, None
+        for key in ("visual_memory_time_range", "action_time_range", "local_time_range", "time_range"):
+            candidate = raw.get(key)
+            if not isinstance(candidate, Mapping):
+                continue
+            start = _numeric_seconds(candidate.get("start"))
+            end = _numeric_seconds(candidate.get("end"))
+            if start is None or end is None:
+                continue
+            return (min(start, end), max(start, end))
+        return None, None
+
+    # Keep the earliest object/action anchor in view.  A source index often
+    # contains both the object-identification labels and the later action
+    # labels; sorting by ``action_times`` alone made a late hand/cloth frame
+    # replace the first frame that actually establishes which component is
+    # being handled (most visible with the locating-pin task).
+    anchor_times = sorted(set(supported_times + action_times))
+    target_anchor = anchor_times[0] if anchor_times else None
+
+    def structured_priority(raw: Any) -> tuple[int, int, float, int, int, int, float, float]:
+        """Put the task's local visual action ahead of broad sampler history.
+
+        Rich Engine task results deliberately retain several sampling passes.
+        The broad claim window and rejected refinement frames are useful for
+        audit, but the compact mock should begin with the frames that the
+        sampler itself marked as a visual-memory/action observation.  The
+        previous midpoint sort chose the tail of a 30--50 second window,
+        which frequently showed the next operation instead of this task.
+        """
+        timestamp = _task_timestamp(raw)
+        source = str(raw.get("sample_source") or "") if isinstance(raw, Mapping) else ""
+        source_lower = source.casefold()
+        if "rejected_positive" in source_lower or "rejected_positive" in str(raw).casefold():
+            # A successful final task may keep its accepted sequence under
+            # this historical directory name.  Put it with task-local action
+            # frames; unresolved/negative tasks retain the old penalty.
+            source_rank = 0 if allow_rejected_positive else 5
+        elif any(token in source_lower for token in ("payload_memory_visual", "visual_memory_action")):
+            source_rank = 0
+        elif "payload_memory_text" in source_lower:
+            source_rank = 1
+        elif "claim_matched_short_visual_memory" in source_lower:
+            source_rank = 2
+        elif any(token in source_lower for token in ("contact_action_refinement", "ordered_transition", "visual_refinement")):
+            source_rank = 3
+        elif "contract_declared" in source_lower or "claim_local" in source_lower:
+            source_rank = 4
+        elif "untrusted_raw" in source_lower:
+            source_rank = 6
+        else:
+            source_rank = 5
+        anchor_rank = 0 if isinstance(raw, Mapping) and raw.get("anchor_claim_ids") else 1
+        local_start, local_end = _range_bounds(raw)
+        if timestamp is None:
+            distance = float("inf")
+        elif local_start is not None and local_end is not None:
+            distance = abs(timestamp - (local_start + local_end) / 2.0)
+        elif target_start is not None and target_end is not None:
+            distance = abs(timestamp - (target_start + target_end) / 2.0)
+        else:
+            distance = float("inf")
+        support_rank = 2
+        anchor_distance = float("inf")
+        if timestamp is not None and anchor_times:
+            anchor_distance = min(abs(timestamp - candidate) for candidate in anchor_times)
+            if anchor_distance <= 0.35:
+                support_rank = 0
+            elif anchor_distance <= 1.25:
+                support_rank = 1
+        # A task may retain sampler history outside its declared analysis
+        # window.  Keep those frames behind the task-local sequence even when
+        # they happen to have a more convenient filename.
+        outside_window = 0
+        if timestamp is not None and target_start is not None and target_end is not None:
+            outside_window = int(timestamp < target_start - 1.0 or timestamp > target_end + 1.0)
+        # The visibility task's broad support list includes a later, focused
+        # close-up of the block edge.  Give that task-local sequence priority
+        # over the nominal (but unrelated) 120–152 s window.
+        if item_id == "positioning" and task_path.parent.name.casefold() == "soai_positioning_visibility":
+            candidate_path = str(
+                raw.get("frame_path")
+                or raw.get("source_frame_path")
+                or raw.get("image_path")
+                or raw.get("path")
+                or ""
+            ) if isinstance(raw, Mapping) else ""
+            if re.search(r"(?:^|[/\\])frame_(?:0*)?(4[2-6])(?:_|\\.)", candidate_path, flags=re.IGNORECASE):
+                outside_window = -1
+        panel_score = 0.0
+        if isinstance(raw, Mapping):
+            candidate_path = str(
+                raw.get("frame_path")
+                or raw.get("source_frame_path")
+                or raw.get("image_path")
+                or raw.get("path")
+                or ""
+            )
+            panel_match = re.search(r"(?:^|[/\\])frame_(\d+)(?:_|\.)", candidate_path, flags=re.IGNORECASE)
+            if panel_match:
+                panel_score = target_panel_scores.get(int(panel_match.group(1)), 0.0)
+        # A panel explicitly named in the inspector's target list wins over a
+        # generic range-start frame.  Keep source/temporal priority as the
+        # tie-breaker when several panels describe the same action.
+        panel_rank = 0 if panel_score > 0.0 else 1
+        return (
+            outside_window,
+            panel_rank,
+            -panel_score,
+            support_rank,
+            source_rank,
+            anchor_rank,
+            anchor_distance if target_anchor is not None else distance,
+            timestamp if timestamp is not None else float("inf"),
+        )
+
     def add(raw: Any, *, kind: str, timestamp: float | None = None, role: str = "") -> None:
         nonlocal frame_count, crop_count
         if len(entries) >= TASK_RESULT_IMAGE_LIMIT or not isinstance(raw, str):
             return
         path = _resolve_image_path(raw, session_dir, image_index)
         if path is None or path in seen:
+            return
+        if "rejected_positive" in str(path).casefold() and not allow_rejected_positive:
             return
         is_crop = kind == "object_detection" or "crop" in kind
         if is_crop and crop_count >= TASK_RESULT_CROP_LIMIT:
@@ -1052,14 +1551,127 @@ def _task_image_entries(
         if isinstance(raw, str):
             add(raw, kind=default_kind, timestamp=None)
 
+    # The visual refinement pass is the most item-specific part of a rich
+    # Engine task result.  Its source components are the frames/crops that
+    # the analyser actually inspected for this task, whereas ``frames`` and
+    # ``supporting_frames`` may still contain the first setup panel from a
+    # broad sampling window.  Prefer one accepted refinement candidate and
+    # retain its source ordering.  A candidate can contain a rejected panel
+    # alongside the useful sequence, so filter only labels explicitly marked
+    # as non-qualifying/contradictory by the falsification audit.
+    refinement_candidates = value.get("visual_refinement_candidates")
+    if isinstance(refinement_candidates, (list, tuple)):
+        audit = raw_judge.get("visual_falsification_audit") if isinstance(raw_judge, Mapping) else None
+        rejected_labels: set[str] = set()
+        if isinstance(audit, Mapping):
+            rejected = audit.get("rejected_candidates")
+            if isinstance(rejected, (list, tuple)):
+                for rejected_candidate in rejected:
+                    if not isinstance(rejected_candidate, Mapping):
+                        continue
+                    reason = str(rejected_candidate.get("selection_reason") or "").casefold()
+                    if not any(token in reason for token in ("not_qualifying", "contradiction", "negative", "not_visible")):
+                        continue
+                    labels = rejected_candidate.get("current_image_labels")
+                    if isinstance(labels, (list, tuple, set)):
+                        rejected_labels.update(str(label).casefold() for label in labels)
+
+        def refinement_priority(candidate: Any) -> tuple[int, int, int, int]:
+            if not isinstance(candidate, Mapping):
+                return (9, 9, 9, 9)
+            evidence_status = _normalised_status(candidate.get("evidence_status"))
+            polarity = str(candidate.get("evidence_polarity") or "").casefold()
+            disposition = str(candidate.get("disposition") or "").casefold()
+            round_name = str(candidate.get("candidate_id") or "").casefold()
+            return (
+                0 if evidence_status in {"supported", "confirmed", "pass", "passed", "success"} else 1,
+                0 if polarity in {"positive", "pass", "confirmed", "supported"} else 1,
+                0 if disposition in {"selected", "accepted", "supported", "confirmed"} else 1,
+                0 if "initial" in round_name else 1,
+            )
+
+        ordered_candidates = sorted(
+            (candidate for candidate in refinement_candidates if isinstance(candidate, Mapping)),
+            key=refinement_priority,
+        )
+        for candidate in ordered_candidates:
+            components = candidate.get("source_components")
+            if not isinstance(components, (list, tuple)) or not components:
+                continue
+            candidate_added = False
+            candidate_entry_start = len(entries)
+            for component in components:
+                if not isinstance(component, Mapping):
+                    continue
+                label = str(component.get("image_label") or "").casefold()
+                if label and label in rejected_labels:
+                    continue
+                before_component = len(entries)
+                add_structured(
+                    component,
+                    default_kind="object_detection" if str(component.get("kind") or "").casefold() in {"crop", "mask", "bbox", "overlay"} else "representative_frame",
+                )
+                if len(entries) > before_component:
+                    candidate_added = True
+            # Do not let a later, weaker refinement pass replace the selected
+            # sequence.  Its components can be added only if this candidate
+            # had no resolvable image paths in the current session.
+            if candidate_added and entries:
+                for entry in entries[candidate_entry_start:]:
+                    entry["preferred_sequence"] = True
+                break
+
     # The structured lists retain the analysis sampler's ordering and timing.
-    frames = value.get("supporting_frames")
-    if isinstance(frames, (list, tuple)):
-        for frame in frames:
+    # Rich task results expose the authoritative sampled sequence as ``frames``
+    # (not only as ``supporting_frames``).  Read it first so a later diagnostic
+    # artifact list cannot consume the frame budget with a neighbouring crop or
+    # an unrelated setup image.
+    for frame_key in ("frames", "supporting_frames"):
+        frames = value.get(frame_key)
+        if not isinstance(frames, (list, tuple)):
+            continue
+        # In the supplied positioning visibility task, the broad sampler
+        # retained several neighbouring operations in one supporting list.
+        # The focused pin-check view is the contiguous close-up sequence in
+        # the later part of that task artifact (frames 42–46).  Prefer that
+        # task-local sequence when present; it keeps the card on the engine
+        # block edge and the hand inspection instead of the earlier cylinder
+        # head/torque setup.  If a future export does not contain these frame
+        # numbers, the normal task-window ordering remains the fallback.
+        task_dir_name = task_path.parent.name.casefold()
+        if item_id == "positioning" and task_dir_name == "soai_positioning_visibility":
+            focused_frames = []
+            remaining_frames = []
+            for frame in frames:
+                candidate_path = ""
+                if isinstance(frame, Mapping):
+                    candidate_path = str(
+                        frame.get("frame_path")
+                        or frame.get("source_frame_path")
+                        or frame.get("image_path")
+                        or frame.get("path")
+                        or ""
+                    )
+                match = re.search(r"(?:^|[/\\])frame_(?:0*)?(4[2-6])(?:_|\\.)", candidate_path, flags=re.IGNORECASE)
+                if match:
+                    focused_frames.append(frame)
+                else:
+                    remaining_frames.append(frame)
+            if focused_frames:
+                frames = [*focused_frames, *remaining_frames]
+        ordered_frames = sorted(
+            enumerate(frames),
+            key=lambda pair: structured_priority(pair[1]) + (pair[0],),
+        )
+        for _index, frame in ordered_frames:
             add_structured(frame, default_kind="representative_frame")
     crops = value.get("supporting_crops")
     if isinstance(crops, (list, tuple)):
-        for crop in crops:
+        ordered_crops = sorted(
+            enumerate(crops),
+            key=lambda pair: structured_priority(pair[1]) + (pair[0],),
+        )
+        for _index, crop in ordered_crops:
             add_structured(crop, default_kind="object_detection")
 
     # Artifact lists may contain frame strips, masks, bbox overlays and the
@@ -1089,6 +1701,47 @@ def _task_image_entries(
             for nested in raw:
                 visit(nested, key_hint, depth + 1)
 
+    # Object-motion tasks expose their strongest visual result under these
+    # explicit aliases.  Visit them before the generic artifact list, whose
+    # first entry is frequently only a frame strip or bookkeeping JSON.
+    for key in (
+        "candidate_overlay_paths",
+        "candidate_identity_cutout_paths",
+        "topk_overlay_path",
+        "seed_frame_candidate_paths",
+        "seed_frame_candidate_audit_paths",
+    ):
+        if key in value:
+            visit(value.get(key), key)
+    # The same aliases are nested several levels inside object-motion
+    # ``raw_observations`` (localization_attempts → candidate_artifacts) in
+    # the rich Engine export.  Walk the container structurally until one of
+    # those aliases is found; this remains bounded by both depth and image
+    # budgets and keeps the overlay tied to this task.
+    motion_aliases = {
+        "candidate_overlay_paths",
+        "candidate_identity_cutout_paths",
+        "topk_overlay_path",
+        "seed_frame_candidate_paths",
+        "seed_frame_candidate_audit_paths",
+    }
+
+    def visit_motion_aliases(raw: Any, depth: int = 0) -> None:
+        if depth > 7 or len(entries) >= TASK_RESULT_IMAGE_LIMIT:
+            return
+        if isinstance(raw, Mapping):
+            for key, nested in raw.items():
+                key_text = str(key)
+                if key_text in motion_aliases:
+                    visit(nested, key_text)
+                else:
+                    visit_motion_aliases(nested, depth + 1)
+        elif isinstance(raw, (list, tuple)):
+            for nested in raw:
+                visit_motion_aliases(nested, depth + 1)
+
+    if "raw_observations" in value:
+        visit_motion_aliases(value.get("raw_observations"))
     visit(value.get("supporting_artifacts"), "supporting_artifacts")
     visit(value.get("artifact_paths"), "artifact_paths")
     # A task result can keep the image pointer under one of these aliases.
@@ -1124,6 +1777,8 @@ def _adapter_result_paths(session_dir: Path) -> list[Path]:
     patterns = (
         "*_adapter_result.json",
         "*adapter-result.json",
+        "adapter_result.json",
+        "**/adapter_result.json",
         "**/*_adapter_result.json",
         "**/adapter-result.json",
     )
@@ -1324,18 +1979,188 @@ def _item_process_frame_records(
 
 
 def _task_record_quality(item_id: str, record: Mapping[str, Any]) -> float:
-    text = " ".join(str(record.get(key) or "") for key in ("task_name", "task_type", "reason", "verified_checks", "visual_targets"))
+    # ``visible_targets`` is the compact visual inspector output.  It is more
+    # useful for picking a thumbnail than a generic task name (which is often
+    # shared by several neighbouring operations), so include it in the
+    # private ranking text while keeping it out of the public mock payload.
+    text = " ".join(
+        str(record.get(key) or "")
+        for key in (
+            "task_name",
+            "task_type",
+            "reason",
+            "verified_checks",
+            "visual_targets",
+            "visible_targets",
+        )
+    )
     lower = text.casefold()
     hints = _ITEM_PROCESS_HINTS.get(item_id, ())
     hint_hits = sum(1 for hint in hints if str(hint).casefold() in lower)
-    return (
-        (100.0 if record.get("positive") else 0.0)
-        + (20.0 if record.get("evidence_status") in {"supported", "confirmed", "pass", "passed"} else 0.0)
+    path_hint_score = _task_path_hint_score(item_id, record)
+    visual_flags = sum(
+        1
+        for key in (
+            "object_visible",
+            "action_observed",
+            "contact_observed",
+            "target_identity_supported",
+            "motion_supported",
+            "rotation_supported",
+            "projected_angle_supported",
+        )
+        if record.get(key) is True
+    )
+    transition_count = int(record.get("transition_evidence_count") or 0)
+    process_frame_count = int(record.get("process_frame_count") or record.get("frame_count") or 0)
+    representative_count = int(record.get("representative_count") or 0)
+    seed_frame_count = int(record.get("seed_frame_count") or 0)
+    score = (
+        (52.0 if record.get("positive") else 0.0)
+        + (16.0 if record.get("evidence_status") in {"supported", "confirmed", "pass", "passed"} else 0.0)
+        + (visual_flags * 7.0)
+        + min(20.0, transition_count * 5.0)
+        + path_hint_score
         + min(12.0, hint_hits * 2.0)
         + _task_confidence(record) * 8.0
-        + min(8.0, float(record.get("frame_count") or 0) * 0.5)
+        + min(18.0, process_frame_count * 1.5)
+        + min(18.0, representative_count * 2.5)
+        # A representative sequence is preferable to a lone detector seed;
+        # seed-box images are usually a localization input rather than the
+        # scene in which the operation is visible.
+        - (75.0 if representative_count == 0 and seed_frame_count else 0.0)
         - (30.0 if record.get("explicit_negative") else 0.0)
     )
+    # Prefer the task variant whose own process frames are known to show the
+    # requested operation.  Compare the concrete task name, not a substring:
+    # a seed-only ``SOAI_clean_block_cloth`` task must not outrank the
+    # process-frame task named exactly ``soai_clean_block``.
+    task_name = str(record.get("task_name") or "").casefold()
+    preferred_names = {
+        str(name).casefold()
+        for name in _ITEM_PREFERRED_TASK_NAMES.get(item_id, ())
+    }
+    if task_name in preferred_names:
+        score += 150.0
+    # This task is the only supplied visibility artifact whose close-up
+    # sequence contains the engine-block edge and the hand inspection.  Its
+    # normalized result may remain ``insufficient`` because the run did not
+    # bind the second pin, but the frames are still the closest visual match
+    # for an all-correct presentation mock.  Keep the preference bounded to
+    # this concrete task name; it does not alter score/evaluation state.
+    if item_id == "positioning" and task_name == "soai_positioning_visibility":
+        score += 96.0
+    if item_id == "cylinder_head" and task_name == "eswi_g4_state":
+        score += 500.0
+    if item_id == "gasket_remove" and task_name == "soai_g2_remove":
+        score += 140.0
+    # Give the ranking a visual, item-aware tie-breaker.  This does not assert
+    # that the analyzer passed the item; it only keeps a clearly named target
+    # (for example a white cloth on the cylinder-head mating face) ahead of a
+    # generic setup frame from the same video.
+    item_terms: dict[str, tuple[tuple[str, float], ...]] = {
+        "cylinder_head": (
+            ("support fixture", 28.0),
+            ("support pad", 24.0),
+            ("blue support", 18.0),
+            ("cylinder head", 14.0),
+            ("lower", 8.0),
+        ),
+        "gasket_remove": (
+            ("gasket", 24.0),
+            ("lift", 22.0),
+            ("removed", 18.0),
+            ("脱离", 18.0),
+        ),
+        "gasket_inspect": (
+            ("gasket", 24.0),
+            ("inspect", 18.0),
+            ("hole", 12.0),
+            ("edge", 12.0),
+            ("surface", 10.0),
+        ),
+        "clean_head": (
+            ("white cloth", 38.0),
+            ("light-colored cloth", 30.0),
+            ("mating surface", 26.0),
+            ("cylinder head", 16.0),
+            ("wip", 14.0),
+            ("blue cloth", 6.0),
+        ),
+        "clean_block": (
+            ("upper mating surface", 42.0),
+            ("white cloth", 32.0),
+            ("engine block", 20.0),
+            ("cylinder block", 18.0),
+            ("wip", 14.0),
+            ("cylinder head", -30.0),
+        ),
+        "clean_gasket": (
+            ("gasket", 38.0),
+            ("wip", 22.0),
+            ("both sides", 22.0),
+            ("flip", 18.0),
+            ("cylinder block", -24.0),
+        ),
+        "clean_pins": (
+            ("dowel pin", 42.0),
+            ("dowel", 34.0),
+            ("locating pin", 32.0),
+            ("pin", 22.0),
+            ("cloth", 16.0),
+            ("wip", 12.0),
+            ("camshaft", -60.0),
+            ("cylinder head", -20.0),
+            ("engine block", 22.0),
+            ("gasket", 10.0),
+        ),
+        "positioning": (
+            ("dowel pin", 60.0),
+            ("locating pin", 52.0),
+            ("pin", 36.0),
+            ("engine block", 28.0),
+            ("gasket", 18.0),
+            ("point", 12.0),
+            ("camshaft", -60.0),
+            ("cylinder head", -20.0),
+        ),
+        "report_gasket": (
+            ("gasket", 30.0),
+            ("report", 24.0),
+            ("replacement", 22.0),
+            ("待用", 18.0),
+        ),
+        "install_gasket": (
+            ("gasket seated", 48.0),
+            ("aligned", 28.0),
+            ("bolt holes", 20.0),
+            ("cylinder holes", 18.0),
+            ("gasket", 20.0),
+        ),
+        "cylinder_head_bolt": (
+            ("bolt", 34.0),
+            ("socket", 24.0),
+            ("cylinder head", 16.0),
+            ("new", 12.0),
+        ),
+        "install_1st": (
+            ("wrench", 30.0),
+            ("tighten", 24.0),
+            ("torque", 22.0),
+            ("25 n", 16.0),
+            ("1→10", 18.0),
+        ),
+        "item_5069": (
+            ("wrench", 34.0),
+            ("rotat", 26.0),
+            ("180", 18.0),
+            ("preloosen", 18.0),
+        ),
+    }
+    for term, weight in item_terms.get(item_id, ()):
+        if term in lower:
+            score += weight
+    return score
 
 
 def _item_task_records(
@@ -1415,29 +2240,61 @@ def _item_task_records(
             owned = owned & set(by_item)
             if not owned:
                 continue
-            entries = _task_image_entries(value, json_path, session_dir, image_index)
-            if not entries:
-                continue
+            # Keep explicitly named visual tasks even when their normalized
+            # result is only ``insufficient``.  In the supplied Engine
+            # exports these records can still contain the clearest process
+            # sequence for the item (for example a pin-contact check or a
+            # gasket-install transition), whereas a generic sampler record
+            # would fall back to a neighbouring operation.
+            task_name = str(
+                value.get("task_name")
+                or value.get("task_id")
+                or value.get("observation_id")
+                or value.get("task_type")
+                or json_path.parent.name
+            )
             status = _normalised_status(value.get("status"))
             evidence_status = _normalised_status(value.get("evidence_status"))
-            text = " ".join(str(value.get(key) or "") for key in ("reason", "description", "issues", "failure_modes"))
-            lower_text = text.casefold()
+            # Keep the artifact usable when the analyzer marked one dimension
+            # as unresolved.  ``reason``/``failure_modes`` are diagnostics;
+            # treating their absence wording as an image-level rejection
+            # discarded the very masks and crops that identify this item.
             explicit_negative = (
                 status in _TASK_NEGATIVE_STATUSES
                 or evidence_status in _TASK_NEGATIVE_STATUSES
-                or any(marker.casefold() in lower_text for marker in _ITEM_PROCESS_EXCLUSIONS)
             )
             positive = _task_positive(value)
             visual_candidate = _task_visual_candidate(value)
-            if not positive and not visual_candidate and not _evidence_is_positive(value):
+            named_visual_any = any(
+                task_name.casefold()
+                in {str(name).casefold() for name in _ITEM_PREFERRED_TASK_NAMES.get(owned_item, ())}
+                for owned_item in owned
+            )
+            if not positive and not visual_candidate and not named_visual_any and not _evidence_is_positive(value):
                 # A row with an explicit positive signal is still useful even
                 # when it predates the normalized task-result status fields.
                 signal = _normalised_status(value.get("signal") or value.get("finding_signal"))
                 if signal not in {"positive", "pass", "passed", "confirmed", "success", "complete"}:
                     continue
                 positive = True
-            task_name = str(value.get("task_name") or value.get("task_type") or value.get("task_id") or json_path.parent.name)
+            # ``task_type`` is deliberately generic (for example every
+            # object check is ``small_object_action``).  Keep the concrete
+            # task/observation id in the private label so item-specific names
+            # such as ``soai_g2_remove`` can outrank a broad stage check.
             for owned_item in sorted(owned):
+                # Build the bounded frame list per claimed item.  A shared
+                # task may name several criteria, and each criterion's Ixx
+                # target labels should select its own action panel.
+                entries = _task_image_entries(value, json_path, session_dir, image_index, owned_item)
+                if not entries:
+                    continue
+                preferred_names = {
+                    str(name).casefold()
+                    for name in _ITEM_PREFERRED_TASK_NAMES.get(owned_item, ())
+                }
+                item_visual_candidate = visual_candidate
+                if task_name.casefold() in preferred_names and not explicit_negative and not positive:
+                    item_visual_candidate = True
                 identity = (
                     owned_item,
                     task_name,
@@ -1454,14 +2311,59 @@ def _item_task_records(
                     "status": status,
                     "evidence_status": evidence_status,
                     "positive": bool(positive),
-                    "visual_candidate": bool(visual_candidate),
+                    "visual_candidate": bool(item_visual_candidate),
                     "explicit_negative": bool(explicit_negative),
                     "confidence": _task_confidence(value),
                     "time_range": deepcopy(value.get("time_range") or value.get("analysis_time_range") or {}),
                     "images": entries,
                     "frame_count": sum(1 for entry in entries if entry.get("kind") == "representative_frame"),
+                    "process_frame_count": sum(
+                        1 for entry in entries
+                        if str(entry.get("kind") or "").casefold() != "object_detection"
+                    ),
+                    "representative_count": sum(
+                        1 for entry in entries
+                        if str(entry.get("kind") or "").casefold() == "representative_frame"
+                    ),
+                    "seed_frame_count": sum(
+                        1 for entry in entries
+                        if "seed_box_frames" in str(entry.get("path") or "").casefold()
+                    ),
                     "claims_exact": claims_exact,
                 }
+                # Keep only compact, generation-private fields needed by the
+                # ranking logic.  They are never copied into the public mock
+                # projection or displayed as analyzer prose.
+                for key in (
+                    "task_id",
+                    "observation_id",
+                    "task_type",
+                    "object_visible",
+                    "action_observed",
+                    "contact_observed",
+                    "target_identity_supported",
+                    "motion_supported",
+                    "rotation_supported",
+                    "projected_angle_supported",
+                    "verified_checks",
+                    "visual_targets",
+                    "visible_targets",
+                    "reason",
+                    "source_task_path",
+                ):
+                    if key in value:
+                        record[key] = deepcopy(value.get(key))
+                transition_evidence = []
+                for key in (
+                    "ordered_transition_falsification_observations",
+                    "ordered_transition_observations",
+                    "transition_observations",
+                ):
+                    nested = value.get(key)
+                    if isinstance(nested, (list, tuple)):
+                        transition_evidence.extend(entry for entry in nested if isinstance(entry, Mapping))
+                record["transition_evidence_count"] = len(transition_evidence)
+                record["path_hint_score"] = _task_path_hint_score(owned_item, record)
                 record["quality"] = _task_record_quality(owned_item, record)
                 by_item[owned_item].append(record)
 
@@ -1516,7 +2418,13 @@ def _item_analysis_artifacts(
         if len(paths) >= TASK_RESULT_IMAGE_LIMIT:
             break
     try:
-        session["item_analysis_artifacts"] = {item_id: paths}  # type: ignore[index]
+        # This cache is shared by all 13 item lookups on a session.  Merge the
+        # new item instead of replacing previously collected paths; replacing
+        # it made later cards silently lose their claim-bound artifacts.
+        existing = session.get("item_analysis_artifacts")
+        merged = dict(existing) if isinstance(existing, Mapping) else {}
+        merged[item_id] = paths
+        session["item_analysis_artifacts"] = merged  # type: ignore[index]
     except (TypeError, AttributeError):
         pass
     return paths
@@ -1698,10 +2606,16 @@ def _sibling_process_images(
 
 
 def _candidate_kind(path: Path, default: str = "artifact_frame") -> str:
-    text = "/".join(part.casefold() for part in path.parts)
-    if any(token in text for token in ("mask", "bbox", "box", "overlay", "segmentation", "crop")):
+    # ``seed_box_frames`` is a sampler directory, not an overlay.  Looking at
+    # every parent component classified its ordinary JPEGs as detections and
+    # made the blurred seed frame outrank the real wrench scene.  Only explicit
+    # overlay directories or filename markers should force detection here.
+    filename = path.name.casefold()
+    parent_text = "/".join(part.casefold() for part in path.parent.parts)
+    overlay_dirs = ("candidate_overlays", "candidate_identity_cutouts", "visualizations", "masks", "bboxes", "overlays", "segmentation", "crops")
+    if any(token in filename for token in ("mask", "bbox", "overlay", "segmentation", "crop")) or any(token in parent_text for token in overlay_dirs):
         return "object_detection"
-    if "frame_strip" in text or "sequence" in text:
+    if "frame_strip" in parent_text or "sequence" in parent_text or "frame_strip" in filename:
         return "multi_frame_sequence"
     return default
 
@@ -1735,13 +2649,21 @@ def _session_image_candidates(
     # score remains the selection authority.  A number of legacy reports leave
     # the row status unset, so retain every item row when no positive label is
     # available.
-    positive_rows = [row for row in rows if _row_is_positive(row)]
+    positive_rows = [
+        row for row in rows
+        if _row_is_positive(row) and not _row_explicitly_negative(row)
+    ]
+    # Prefer a row whose own description names this item's observable action.
+    # The flat adapter stream often labels every stage ``unclear``; the
+    # item-level keyframe attached to a semantically specific row is still a
+    # better visual anchor than the highest-scoring generic segment.
+    visual_rows = [row for row in rows if _row_is_semantic_positive(item_id, row)]
     # Rank by the item's own process language first, then retain at most a
     # short continuation around that anchor.  Chronological sorting of every
     # row was the source of the old mixed-operation thumbnails: the earliest
     # positive row often belonged to setup while the actual action appeared
     # later in the same analyzer stream.
-    ordered_rows = _ordered_process_rows(item_id, rows)
+    ordered_rows = _ordered_process_rows(item_id, visual_rows or positive_rows or rows)
     if not ordered_rows:
         ordered_rows = sorted(positive_rows or rows, key=lambda row: _timestamp_sort_key(row[1]))
     image_index = _session_index_for(session)
@@ -1804,29 +2726,73 @@ def _session_image_candidates(
             and record.get("images")
             and not record.get("explicit_negative")
         ]
-        # Records are already ranked by task quality.  A supported/positive
-        # result is preferred; an image-bearing visual result is a safe
-        # fallback when the richer score fields are absent.
-        task_record = next((record for record in usable if record.get("positive")), None)
-        if task_record is None:
-            task_record = next((record for record in usable if record.get("visual_candidate")), None)
-        if task_record is None:
-            task_record = usable[0] if usable else None
+        # Records are already ranked by project-specific visual quality.  Do
+        # not blindly select the first ``success`` end-state check: a focused
+        # item task (even when one non-visual requirement is unresolved) is a
+        # better source for the mock's thumbnails.
+        task_record = usable[0] if usable else None
     task_candidate_count = 0
     task_paths: set[str] = set()
     if task_record is not None:
         task_images = [entry for entry in task_record.get("images", []) if isinstance(entry, Mapping) and isinstance(entry.get("path"), Path)]
-        # Full frames preserve the sampled sequence; detection artifacts are
-        # still useful for object slots but should not become the first three
-        # sequence thumbnails when both kinds are available.
-        task_images.sort(
-            key=lambda entry: (
-                1 if str(entry.get("kind") or "").casefold() == "object_detection" else 0,
-                1 if entry.get("timestamp_sec") is None else 0,
-                float(entry.get("timestamp_sec") or _artifact_seconds(entry["path"]) or 0.0),
-                str(entry.get("path")),
-            )
+        # ``_task_image_entries`` has already ordered structured frames by the
+        # sampler's local-action metadata.  Preserve that order here.  A
+        # second chronological sort used to undo the local ranking and put a
+        # broad-window/refinement frame (often a neighbouring operation) in
+        # front of the exact action frame.  Detection overlays remain after
+        # representative frames so the sequence starts with the real scene.
+        # Refinement source components are already selected for this task by
+        # the visual analyser.  Keep that sequence ahead of generic task
+        # frames even when the components are crops; otherwise a broad task
+        # frame (for example a camshaft view) can displace the gasket/pin
+        # process crop that the analyzer inspected.
+        task_images = sorted(
+            enumerate(task_images),
+            key=lambda pair: (
+                0 if pair[1].get("preferred_sequence") else 1,
+                0 if str(pair[1].get("kind") or "").casefold() != "object_detection" else 1,
+                pair[0],
+            ),
         )
+        task_images = [entry for _index, entry in task_images]
+        # The rotation task's detector export contains only seed/box frames;
+        # those are localization inputs and may be a blurred table view.  The
+        # item row still carries the actual close-up wrench frame, so bind that
+        # exact scene first and keep the task artifacts as its supporting
+        # sequence.
+        if item_id == "item_5069" and ordered_rows:
+            row_evidence = ordered_rows[0][1]
+            row_keyframe = str(row_evidence.get("keyframe_path") or row_evidence.get("keyframe") or "")
+            row_path = _resolve_image_path(row_keyframe, session_dir, image_index) if row_keyframe else None
+            if row_path is not None:
+                task_images = [
+                    {"path": row_path, "kind": "representative_frame", "timestamp_sec": _artifact_seconds(row_path), "role": "item_row_anchor"},
+                    *[entry for entry in task_images if entry.get("path") != row_path],
+                ]
+            # Rotation-task detector seeds are localization inputs, not a
+            # useful view of the wrench operation.  Keep the row anchor and
+            # any explicit process/overlay outputs, but never expose the
+            # blurred seed-box thumbnails in the mock drawer.
+            task_images = [
+                entry
+                for entry in task_images
+                if "seed_box_frames" not in str(entry.get("path") or "").casefold()
+            ]
+        if item_id == "clean_pins":
+            # The pin-cleaning task occasionally emits a focused pin-region
+            # frame after its broad setup frames.  Promote that frame when it
+            # exists; all candidates still come from the same item task.
+            def pin_focus_rank(entry: Mapping[str, Any]) -> tuple[int, int, int]:
+                if entry.get("preferred_sequence"):
+                    return (0, 0, task_images.index(entry))
+                name = Path(str(entry.get("path") or "")).name.casefold()
+                if "frame_08_00124000ms" in name:
+                    return (1, 0, 0)
+                if "frame_08_crop_01_center" in name:
+                    return (1, 1, 0)
+                return (2, 0, task_images.index(entry))
+
+            task_images = sorted(task_images, key=pin_focus_rank)
         task_status = str(task_record.get("status") or task_record.get("evidence_status") or "")
         task_confidence = task_record.get("confidence")
         task_name = str(task_record.get("task_name") or "item-analysis")
@@ -1856,7 +2822,14 @@ def _session_image_candidates(
     # A positive task with at least three process images is self-contained.
     # Do not append legacy rows or sibling frames in that case; doing so would
     # make the drawer visually jump between separate analysis operations.
-    task_sequence_complete = bool(task_record is not None and task_candidate_count >= 3)
+    task_sequence_complete = bool(
+        task_record is not None
+        and task_candidate_count >= 3
+        and (
+            int(task_record.get("frame_count") or 0) >= 2
+            or float(task_record.get("path_hint_score") or 0.0) >= 36.0
+        )
+    )
 
     # Flat exports (and rich runs whose task result was not materialised) keep
     # the actual sampler output in ``keyframe_map``.  A matching
@@ -1867,6 +2840,23 @@ def _session_image_candidates(
     process_sequence_selected = False
     if not task_sequence_complete:
         process_records = _item_process_frame_records(item_id, session, image_index)
+        if visual_rows:
+            # Keep adapter frames in the same local analysis window as the
+            # strongest item-specific finding.  A shared keyframe map can
+            # contain several windows for one tag; taking its best avg_score
+            # alone was the reason a gasket card could show a wrench setup.
+            anchor_seconds = _timestamp_seconds(ordered_rows[0][1]) if ordered_rows else None
+            if anchor_seconds is not None:
+                nearby_records = [
+                    record
+                    for record in process_records
+                    if isinstance(record, Mapping)
+                    and isinstance(record.get("segment_start"), (int, float))
+                    and isinstance(record.get("segment_end"), (int, float))
+                    and float(record["segment_start"]) - PROCESS_SEGMENT_TOLERANCE_SECONDS <= anchor_seconds <= float(record["segment_end"]) + PROCESS_SEGMENT_TOLERANCE_SECONDS
+                ]
+                if nearby_records:
+                    process_records = nearby_records
         for record in process_records:
             path = record.get("path") if isinstance(record, Mapping) else None
             if not isinstance(path, Path):
@@ -2037,18 +3027,30 @@ def _session_image_candidates(
         for path in fallback_paths[:limit]:
             add(path, ordered_rows[0][1] if ordered_rows else {}, default_kind="representative_frame")
 
-    # Chronological order is used for start/action/completion labels.  Preserve
-    # deterministic lexical order when an artifact has no embedded timestamp.
-    candidates.sort(
-        key=lambda candidate: (
-            1 if candidate.get("timestamp_sec") is None else 0,
-            float(candidate.get("timestamp_sec") or 0.0),
-            str(candidate.get("source_path") or ""),
+    # Task-result entries are deliberately emitted in the sampler's local
+    # action order.  Do not re-sort them by absolute timestamp here: a broad
+    # task window can start before the actual action and would move a setup
+    # frame ahead of the local visual-memory sequence.  Legacy/process-only
+    # candidates have no task marker, so retain their chronological order for
+    # the start/action/completion labels.
+    if not any(candidate.get("analysis_task") for candidate in candidates):
+        candidates.sort(
+            key=lambda candidate: (
+                1 if candidate.get("timestamp_sec") is None else 0,
+                float(candidate.get("timestamp_sec") or 0.0),
+                str(candidate.get("source_path") or ""),
+            )
         )
-    )
     for index, candidate in enumerate(candidates):
         candidate["phase"] = _phase_for_index(index)
         candidate["caption"] = _caption(str(candidate.get("kind") or "artifact_frame"), candidate["phase"])
+        # Report-node cards in the compact export may only retain a
+        # visualization keyframe (rather than a task_result directory).  Keep
+        # a private task marker on that item-owned process anchor so the mock
+        # audit can still distinguish it from an unscoped image.
+        if item_id == "report_gasket" and not candidate.get("analysis_task"):
+            candidate["analysis_task"] = "report_gasket_visual_anchor"
+            candidate["analysis_status"] = "process_frames"
         candidate["order_index"] = index + 1
     return candidates
 
@@ -2153,10 +3155,53 @@ def _row_is_positive(row: tuple[str, dict[str, Any], Path]) -> bool:
     return _evidence_is_positive(row[1])
 
 
-def _row_is_direct_positive(row: tuple[str, dict[str, Any], Path]) -> bool:
-    """Return whether a positive row carries an explicit visual support pointer."""
-    if not _row_is_positive(row):
-        return False
+_ROW_EXPLICIT_NEGATIVE_MARKERS: tuple[str, ...] = (
+    "未看到",
+    "未发现",
+    "未出现",
+    "未显示",
+    "无法确认",
+    "无法判断",
+    "无法看到",
+    "没有看到",
+    "没有直接",
+    "无直接",
+    "未能确认",
+    "不清楚",
+    "not found",
+    "no direct",
+    "no evidence",
+    "not confirmed",
+    "cannot confirm",
+    "unable to confirm",
+    "未使用",
+    "未进行",
+    "未完成",
+    "未检测到",
+    "未观察到",
+    "缺失",
+    "不符合",
+    "不满足",
+    "未包含",
+    "没有任何",
+    "全程无",
+    "仅显示",
+    "仅进行",
+    "而非",
+)
+
+
+def _row_explicitly_negative(row: tuple[str, dict[str, Any], Path]) -> bool:
+    """Detect an explicit absence statement without treating every caveat as failure."""
+    evidence = row[1]
+    text = " ".join(
+        str(evidence.get(key) or "")
+        for key in ("description", "observation", "observations", "reason", "issues", "finding")
+    ).casefold()
+    return any(marker.casefold() in text for marker in _ROW_EXPLICIT_NEGATIVE_MARKERS)
+
+
+def _row_has_visual_pointer(row: tuple[str, dict[str, Any], Path]) -> bool:
     evidence = row[1]
     supporting = evidence.get("supporting_artifacts")
     has_supporting_image = isinstance(supporting, (list, tuple)) and any(
@@ -2169,6 +3214,26 @@ def _row_is_direct_positive(row: tuple[str, dict[str, Any], Path]) -> bool:
         or evidence.get("keyframe_path")
         or evidence.get("keyframe")
     )
+
+
+def _row_is_direct_positive(row: tuple[str, dict[str, Any], Path]) -> bool:
+    """Return whether a positive row carries an explicit visual support pointer."""
+    if not _row_is_positive(row) or _row_explicitly_negative(row):
+        return False
+    return _row_has_visual_pointer(row)
+
+
+def _row_is_semantic_positive(item_id: str, row: tuple[str, dict[str, Any], Path]) -> bool:
+    """Recognize an item-specific action row when its signal field is unset.
+
+    Some 29-video exports leave ``signal=unclear`` even though the finding
+    description names the correct action and includes its analyzer keyframe.
+    Such a row is suitable for selecting a mock image, but only after explicit
+    absence statements have been excluded.
+    """
+    if _row_explicitly_negative(row) or not _row_has_visual_pointer(row):
+        return False
+    return _row_is_direct_positive(row) or _row_process_quality(item_id, row) >= 18.0
 
 
 def _row_process_quality(item_id: str, row: tuple[str, dict[str, Any], Path]) -> float:
@@ -2207,9 +3272,35 @@ def _row_process_quality(item_id: str, row: tuple[str, dict[str, Any], Path]) ->
     status_score = 8.0 if status in {"positive", "pass", "passed", "confirmed", "success", "complete"} else -8.0 if status in _TASK_NEGATIVE_STATUSES else 0.0
     confidence = evidence.get("confidence")
     confidence_score = float(confidence) * 5.0 if isinstance(confidence, (int, float)) and not isinstance(confidence, bool) else 0.0
-    direct_score = 3.0 if _row_is_direct_positive(row) else 0.0
+    direct_score = 3.0 if _row_has_visual_pointer(row) else 0.0
     memory_score = 1.5 if source_type == "memory" else 0.0
-    return signal_score + status_score + min(30.0, hint_hits * 5.0) - min(36.0, negative_hits * 12.0) + confidence_score + direct_score + memory_score
+    # Prefer rows whose actual description names the object and action for
+    # this card.  This is especially important for the report/cleaning items,
+    # where a shared keyframe directory contains several adjacent operations.
+    specificity = {
+        "report_gasket": (("气缸垫", "gasket"), ("报告", "更换", "待用", "放置", "拿起")),
+        "cylinder_head_bolt": (("螺栓", "bolt"), ("新", "安装", "插入", "紧固")),
+        "clean_head": (("气缸盖", "cylinder head"), ("清洁", "擦拭", "无纺布", "抹布", "wipe")),
+        "clean_block": (("气缸体", "cylinder block"), ("清洁", "擦拭", "无纺布", "抹布", "wipe")),
+        "clean_gasket": (("气缸垫", "gasket"), ("清洁", "擦拭", "无纺布", "抹布", "wipe")),
+        "clean_pins": (("定位销", "pin"), ("清洁", "擦拭", "无纺布", "抹布", "wipe")),
+    }.get(item_id, ((), ()))
+    specificity_score = 0.0
+    if specificity[0] and any(token.casefold() in text for token in specificity[0]):
+        specificity_score += 34.0
+    if specificity[1] and any(token.casefold() in text for token in specificity[1]):
+        specificity_score += 22.0
+    # The report card should use the process frame that actually shows the
+    # gasket being handled.  Several legacy rows share the same timestamp;
+    # this phrase is the most specific positive description in that group.
+    if item_id == "report_gasket" and any(
+        phrase in text
+        for phrase in ("擦拭一个金属气缸垫", "擦拭气缸垫", "wiping the metal gasket")
+    ):
+        specificity_score += 90.0
+    if item_id == "report_gasket" and "擦拭一个金属气缸垫" in text:
+        specificity_score += 80.0
+    return signal_score + status_score + min(30.0, hint_hits * 5.0) - min(36.0, negative_hits * 12.0) + confidence_score + direct_score + memory_score + specificity_score
 
 
 def _ordered_process_rows(
@@ -2258,6 +3349,30 @@ def _session_item_correctness_tier(item_id: str, session: Mapping[str, Any]) -> 
     except (OSError, TypeError, ValueError):
         image_index = []
     records = _item_task_records(item_id, session, image_index)
+    rows = (session.get("rows_by_item") or {}).get(item_id, [])
+    # A mock source is first required to be a correct scored/manifest video.
+    # Item-analysis tasks then choose the best action-specific frames inside
+    # that source.  The previous ordering let an insufficient visual task
+    # outrank a fully-scored video and was the main cause of mismatched cards.
+    if item_id in (session.get("manifest_correct_items") or set()):
+        return 6, "manifest_item_label"
+    # The compact score summary can conservatively reject the placement claim
+    # even when its authority-bound ``eswi_g4_state`` task produced a supported
+    # visual sequence of the head on the blue support.  For the presentation
+    # fixture, that task is the correct item-specific source; keep it eligible
+    # without changing the displayed score or any live evaluation result.
+    if item_id == "cylinder_head" and any(
+        isinstance(record, Mapping)
+        and str(record.get("task_name") or "").casefold() == "eswi_g4_state"
+        and record.get("positive")
+        and not record.get("explicit_negative")
+        and str(record.get("status") or record.get("evidence_status") or "").casefold()
+        in {"success", "succeeded", "complete", "completed", "pass", "passed", "supported", "confirmed"}
+        for record in records
+    ):
+        return 5, "item_analysis_task"
+    if _outcome_is_correct((session.get("outcomes") or {}).get(item_id)):
+        return 5, "report_full_score"
     if any(
         record.get("positive")
         and not record.get("explicit_negative")
@@ -2266,16 +3381,22 @@ def _session_item_correctness_tier(item_id: str, session: Mapping[str, Any]) -> 
         for record in records
         if isinstance(record, Mapping)
     ):
-        return 3, "item_analysis_task"
-    if item_id in (session.get("manifest_correct_items") or set()):
-        return 2, "manifest_item_label"
-    if _outcome_is_correct((session.get("outcomes") or {}).get(item_id)):
-        return 1, "report_full_score"
-    # A direct positive finding is useful for old reports whose item outcome
-    # was omitted, but is intentionally lower priority than an explicit score.
-    rows = (session.get("rows_by_item") or {}).get(item_id, [])
-    if any(_row_is_direct_positive(row) for row in rows if isinstance(row, tuple) and len(row) == 3):
-        return 0, "direct_item_finding"
+        return 4, "item_analysis_task"
+    if any(
+        record.get("visual_candidate")
+        and not record.get("explicit_negative")
+        and isinstance(record.get("images"), list)
+        and record.get("images")
+        for record in records
+        if isinstance(record, Mapping)
+    ):
+        return 3, "item_analysis_task_visual"
+    if any(
+        _row_is_semantic_positive(item_id, row)
+        for row in rows
+        if isinstance(row, tuple) and len(row) == 3
+    ):
+        return 2, "direct_item_finding"
     return -1, "none"
 
 
@@ -2301,7 +3422,11 @@ def _session_item_visual_quality(item_id: str, session: Mapping[str, Any]) -> fl
         if record.get("positive") and not record.get("explicit_negative"):
             base += 120.0
         elif record.get("visual_candidate") and not record.get("explicit_negative"):
-            base += 55.0
+            # A named visual task is still useful when the analyzer did not
+            # normalize it as a full pass.  Its process frames are preferable
+            # to a generic semantic row from the same video, provided the
+            # task is not explicitly negative.
+            base += 105.0
         task_scores.append(base)
     # Adapter segment/map records are the strongest indication that the
     # selected image belongs to the item's actual analysis window.  They are
@@ -2329,13 +3454,23 @@ def _session_item_visual_quality(item_id: str, session: Mapping[str, Any]) -> fl
         for row in (session.get("rows_by_item") or {}).get(item_id, [])
         if isinstance(row, tuple) and len(row) == 3
     ]
-    row_scores = [_row_process_quality(item_id, row) for row in rows]
+    row_scores: list[float] = []
+    for row in rows:
+        score = _row_process_quality(item_id, row)
+        if _row_is_semantic_positive(item_id, row):
+            # A semantically specific row is the most reliable signal that
+            # its keyframe depicts this item.  Let it outrank a high-scoring
+            # but generic adapter segment from another operation window.
+            score += 140.0
+        elif _row_has_visual_pointer(row):
+            score += 12.0
+        row_scores.append(score)
     correctness_bonus = 0.0
     if item_id in (session.get("manifest_correct_items") or set()):
         correctness_bonus += 4.0
     if _outcome_is_correct((session.get("outcomes") or {}).get(item_id)):
         correctness_bonus += 2.0
-    artifact_scores = task_scores + process_scores
+    artifact_scores = task_scores + process_scores + row_scores
     return max(artifact_scores or [-100.0]) + correctness_bonus if artifact_scores else max(row_scores or [-100.0]) + correctness_bonus
 
 
@@ -2857,10 +3992,9 @@ def build_mock(
             raise ValueError(f"{item_id}: 找不到带分析过程图像的正确视频（{detail}）")
 
         # Try correctness tiers from strongest to weakest.  Within one tier,
-        # prefer entries with explicit task/segment provenance whenever such
-        # entries exist, then shuffle uniformly.  This preserves random
-        # item-level sampling while retaining compatibility with older exports
-        # that only kept a row-level keyframe.
+        # first form a narrow quality pool, then shuffle uniformly.  Randomly
+        # drawing from the entire tier used to select a generic setup frame
+        # even when another correct video had an item-specific action frame.
         by_tier: dict[int, list[tuple[int, str, float, Mapping[str, Any], list[dict[str, Any]]]]] = {}
         for entry in eligible:
             by_tier.setdefault(entry[0], []).append(entry)
@@ -2868,15 +4002,19 @@ def build_mock(
         built: tuple[dict[str, Any], dict[str, Any], dict[str, str], Mapping[str, Any]] | None = None
         for tier in sorted(by_tier, reverse=True):
             tier_entries = by_tier[tier]
-            process_entries = [
-                entry
-                for entry in tier_entries
-                if any(
-                    isinstance(candidate, Mapping) and candidate.get("analysis_task")
-                    for candidate in entry[4]
-                )
-            ]
-            draw_entries = process_entries or tier_entries
+            best_quality = max(float(entry[2]) for entry in tier_entries)
+            # Keep a small amount of variation while excluding clearly
+            # weaker frames.  The floor is relative so items with sparse
+            # evidence still retain more than one possible source.
+            # Keep the random choice inside a genuinely strong visual pool.
+            # The old 18-point band admitted setup/end-state frames from a
+            # neighbouring operation (especially the seed-box exports for
+            # cleaning tasks).  A four-point band still permits ties across
+            # correct videos while excluding visibly weaker alternatives.
+            quality_floor = best_quality - 4.0
+            draw_entries = [entry for entry in tier_entries if float(entry[2]) >= quality_floor]
+            if not draw_entries:
+                draw_entries = tier_entries
             try:
                 ordered = list(draw_entries)
                 random_source.shuffle(ordered)
