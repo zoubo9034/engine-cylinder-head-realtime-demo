@@ -13,7 +13,11 @@ from pathlib import Path
 from detail_rules import DETAIL_CHECK_STATUSES, DETAIL_EVALUATION_STATES, DETAIL_RULES, DETAIL_RULES_BY_ITEM
 from report_schema import DIFFICULTY_LABELS, ITEM_DEFINITIONS, template_payload, validate_report
 from render_report import FORBIDDEN_HTML_MARKERS, _clean_text, public_projection, render_html
-from serve_demo import DemoState
+from serve_demo import (
+    ANALYSIS_DURATION_MAX_MS,
+    ANALYSIS_DURATION_MIN_MS,
+    DemoState,
+)
 from workflow_tool_stats import _is_visual_tool
 
 
@@ -42,6 +46,15 @@ class ReportContractTest(unittest.TestCase):
         self.assertTrue(all("oral_policy" not in item for item in payload["items"]))
         self.assertNotIn("oral_gate", payload["demo_policy"])
         self.assertNotIn("oral_replacement", payload["demo_policy"])
+        for item in payload["items"]:
+            preset = item["prefilled_result"]
+            self.assertEqual(item["prefilled_score"], 1)
+            self.assertEqual(preset["score"], 1)
+            self.assertEqual(preset["detail_evaluation"]["state"], "unlocked")
+            self.assertTrue(preset["detail_evaluation"]["high_level_evaluation"])
+            self.assertTrue(preset["detail_evaluation"]["checks"])
+            self.assertTrue(all(check["status"] == "confirmed" for check in preset["detail_evaluation"]["checks"]))
+            self.assertTrue(all(check["evidence_ids"] == [] for check in preset["detail_evaluation"]["checks"]))
 
     def test_template_has_exact_live_scope(self) -> None:
         payload = template_payload()
@@ -133,6 +146,7 @@ class ReportContractTest(unittest.TestCase):
         self.assertNotIn("source", projection)
         self.assertEqual(projection["score_summary"], {"current_score": 0, "max_score": 13, "resolved_item_count": 0, "manual_review_count": 0})
         self.assertTrue(all("prefilled_score" not in item for item in projection["items"]))
+        self.assertTrue(all("prefilled_result" not in item for item in projection["items"]))
         self.assertTrue(all("realtime_target" not in item for item in projection["items"]))
         self.assertTrue(all("difficulty_label" not in item for item in projection["items"]))
         self.assertTrue(all("analysis_tools" not in item for item in projection["items"]))
@@ -373,9 +387,14 @@ class ReportContractTest(unittest.TestCase):
         self.assertEqual(len(payload.get("events", [])), len(ITEM_DEFINITIONS))
         self.assertTrue(all(not item["live_binding"]["evidence"] for item in payload["items"]))
         self.assertTrue(all(event.get("item_patch") for event in payload["events"]))
-        self.assertTrue(all(event["item_patch"]["live_binding"]["state"] in {"已完成评分", "证据生成中", "待人工确认"} for event in payload["events"]))
+        self.assertTrue(all(event["item_patch"]["live_binding"]["state"] == "已完成评分" for event in payload["events"]))
+        self.assertTrue(all(ANALYSIS_DURATION_MIN_MS <= event["processing_ms"] <= ANALYSIS_DURATION_MAX_MS for event in payload["events"]))
         self.assertTrue(all(
-            event["item_patch"].get("score") == ({"已完成评分": 1, "待人工确认": 0}.get(event["item_patch"]["live_binding"]["state"]))
+            event["item_patch"].get("score") == 1
+            for event in payload["events"]
+        ))
+        self.assertTrue(all(
+            all(check["status"] == "confirmed" for check in event["item_patch"]["detail_evaluation"]["checks"])
             for event in payload["events"]
         ))
 
@@ -416,6 +435,69 @@ class ReportContractTest(unittest.TestCase):
             })
             completed = json.loads(report_path.read_text(encoding="utf-8"))
             self.assertEqual(completed["items"][0]["score"], 1)
+
+    def test_complete_required_evidence_runs_bounded_analysis_before_completion(self) -> None:
+        class FakeClock:
+            def __init__(self) -> None:
+                self.value = 100.0
+
+            def __call__(self) -> float:
+                return self.value
+
+        class FixedRandom:
+            def randint(self, lower: int, upper: int) -> int:
+                self.args = (lower, upper)
+                return 12_000
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            report_path = root / "report.json"
+            report_path.write_text(json.dumps(template_payload(), ensure_ascii=False), encoding="utf-8")
+            clock = FakeClock()
+            random_source = FixedRandom()
+            state = DemoState(root, report_path, clock=clock, rng=random_source)
+            item = deepcopy(state.read()["items"][0])
+            evidence = []
+            for index, slot in enumerate(item["required_evidence_slots"]):
+                slot_id = slot["slot_id"]
+                record = {
+                    "evidence_id": f"ev-live-{index}",
+                    "item_id": item["item_id"],
+                    "kind": "timestamp" if slot_id == "live_timestamp" else "representative_frame",
+                    "source_path": f"/tmp/{item['item_id']}-{index}.jpg",
+                    "confidence": 0.94,
+                }
+                slot["status"] = "bound"
+                slot["evidence"] = [record]
+                evidence.append(record)
+            item["live_binding"].update({
+                "state": "已定位",
+                "live_timestamp": "00:10",
+                "time_confidence": 0.94,
+                "evidence": evidence,
+            })
+            analysing = state.update({"item_id": item["item_id"], "item_patch": item})
+            live_item = analysing["items"][0]
+            self.assertEqual(live_item["live_binding"]["state"], "证据生成中")
+            self.assertIsNone(live_item["score"])
+            self.assertEqual(live_item["detail_evaluation"]["state"], "analyzing")
+            self.assertEqual(random_source.args, (ANALYSIS_DURATION_MIN_MS, ANALYSIS_DURATION_MAX_MS))
+            self.assertEqual(state._analysis_jobs[item["item_id"]]["duration_ms"], 12_000)
+
+            clock.value = 111.999
+            self.assertEqual(state.read()["items"][0]["live_binding"]["state"], "证据生成中")
+            clock.value = 112.0
+            completed = state.read()["items"][0]
+            self.assertEqual(completed["live_binding"]["state"], "已完成评分")
+            self.assertEqual(completed["score"], 1)
+            self.assertEqual(completed["detail_evaluation"]["state"], "unlocked")
+            self.assertTrue(completed["detail_evaluation"]["checks"])
+            self.assertTrue(all(check["status"] == "confirmed" for check in completed["detail_evaluation"]["checks"]))
+            self.assertTrue(all(
+                ref in {record["evidence_id"] for record in evidence}
+                for check in completed["detail_evaluation"]["checks"]
+                for ref in check["evidence_ids"]
+            ))
 
     def test_update_accepts_detail_evaluation_without_changing_score_rule(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -465,7 +547,7 @@ class ReportContractTest(unittest.TestCase):
             self.skipTest("mock fixture has not been generated")
         payload = json.loads(path.read_text(encoding="utf-8"))
         event_states = {event["item_patch"]["live_binding"]["state"] for event in payload["events"]}
-        self.assertTrue({"已完成评分", "证据生成中", "待人工确认"}.issubset(event_states))
+        self.assertEqual(event_states, {"已完成评分"})
         patches = {event["item_id"]: event["item_patch"] for event in payload["events"]}
         self.assertIn("第二次预松", {entry.get("round") for entry in patches["item_5069"]["live_binding"]["evidence"]})
         self.assertTrue(any(entry.get("phase") == "动作中" for entry in patches["clean_gasket"]["live_binding"]["evidence"]))

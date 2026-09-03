@@ -17,7 +17,7 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any, Iterable, Mapping
 
-from detail_rules import criterion_map
+from detail_rules import criterion_map, prefilled_result_for
 from report_schema import ITEM_DEFINITIONS, template_payload, validated_copy
 from workflow_tool_stats import build_profile
 
@@ -25,6 +25,8 @@ from workflow_tool_stats import build_profile
 POSITIVE_JUDGMENTS = {"正确", "满足", "通过", "correct", "confirmed", "pass", "passed"}
 VISUAL_IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
 ROOT = Path(__file__).resolve().parent
+ANALYSIS_DURATION_MIN_MS = 8_000
+ANALYSIS_DURATION_MAX_MS = 20_000
 
 
 def _read_json(path: Path) -> dict[str, Any]:
@@ -515,32 +517,13 @@ def _build_item_event(
     )
 
     confidence_values = [float(row[1].get("confidence") or 0.55) for row in selected_rows]
-    confidence = statistics.mean(confidence_values) if confidence_values else 0.0
-    required_total = len(definition["required_slots"])
-    required_bound = sum(1 for slot_id in definition["required_slots"] if slot_map.get(slot_id))
-    state = _state_for(confidence, required_bound, required_total)
-    # Keep a deterministic mixture useful for the replay.  The two positive
-    # artifact-backed object/installation examples are complete; item 8 shows
-    # the in-progress lifecycle even when a keyframe is available.
-    if item_id == "item_5069":
-        state = "证据生成中"
-    elif item_id in {"cylinder_head", "install_gasket"} and any(_row_is_direct_positive(row) for row in selected_rows):
-        state = "已完成评分"
-    elif state != "证据生成中":
-        # A high-confidence negative or mixed source judgment is not a pass.
-        # Keep it visible as a manual-review terminal so the score remains 0.
-        state = "待人工确认"
-    elif state == "证据生成中" and confidence < 0.50:
-        state = "待人工确认"
-    if state == "证据生成中":
-        detail_state = "analyzing"
-        checks: list[dict[str, Any]] = []
-        unresolved = ""
-    else:
-        detail_state = "unlocked"
-        checks = _criterion_checks(item_id, selected_rows, slot_map, state)
-        unresolved = "仍有核验项缺少完整画面，建议人工复核后确认。" if state == "待人工确认" else ""
-
+    # The fixture represents the agreed standard现场操作：所有动作均按要求
+    # 完成。历史 artifacts 只提供真实帧、时间和工具链，不改变这条演示
+    # 结论，也不把其中的负面描述复制到页面。
+    source_confidence = statistics.mean(confidence_values) if confidence_values else 0.0
+    confidence = max(0.96, min(1.0, source_confidence))
+    state = "已完成评分"
+    detail_state = "unlocked"
     sequence_seconds = [
         seconds
         for _sample_id, evidence, _session_dir in sequence_rows
@@ -549,6 +532,16 @@ def _build_item_event(
     ]
     first_evidence = sequence_rows[0][1] if sequence_rows else {}
     first_seconds = min(sequence_seconds) if sequence_seconds else _timestamp_seconds(first_evidence)
+    updated_at = _format_timestamp(first_seconds)
+    prefilled = prefilled_result_for(
+        item_id,
+        slot_map,
+        updated_at=updated_at,
+        confidence=confidence,
+    )
+    checks = prefilled["detail_evaluation"]["checks"]
+    unresolved = ""
+
     last_seconds = max(sequence_seconds) if sequence_seconds else first_seconds
     # A single timestamp still gets a small visible window; with multiple
     # observations the range spans the actual earliest/latest frame.
@@ -574,13 +567,16 @@ def _build_item_event(
     }
     completed_item["detail_evaluation"] = {
         "state": detail_state,
-        "updated_at": _format_timestamp(first_seconds) if state != "证据生成中" else None,
+        "updated_at": updated_at,
         "checks": checks,
         "unresolved_summary": unresolved,
+        "high_level_evaluation": prefilled["high_level_evaluation"],
     }
-    if state == "已完成评分":
-        completed_item["detail_evaluation"]["high_level_evaluation"] = "相关画面已整理，逐项核验状态见下方。"
-    completed_item["score"] = {"已完成评分": 1, "待人工确认": 0}.get(state)
+    # Keep a materialised copy in the private patch as well.  It remains
+    # hidden by render_report, but validation can verify that any references
+    # still belong to this item.
+    completed_item["prefilled_result"] = prefilled
+    completed_item["score"] = 1
 
     # The on-disk fixture starts empty; this complete item is delivered by the
     # replay event after the user starts evaluation.
@@ -593,7 +589,12 @@ def _build_item_event(
         "event_id": f"evt-{item_id}",
         "item_id": item_id,
         "delay_ms": 1150 + (900 if item.get("difficulty") == "difficult" else 250),
-        "processing_ms": 1900 if item.get("difficulty") == "difficult" else 1200,
+        # Match the live service's bounded analysis window.  A stable hash
+        # keeps the generated fixture deterministic while retaining varied
+        # 8–20 second progress intervals for the replay.
+        "processing_ms": ANALYSIS_DURATION_MIN_MS + int(
+            _digest(item_id), 16
+        ) % (ANALYSIS_DURATION_MAX_MS - ANALYSIS_DURATION_MIN_MS + 1),
         "final_state": state,
         "evidence_ids": [str(evidence["evidence_id"]) for evidence in binding_evidence],
         "item_patch": completed_item,

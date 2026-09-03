@@ -19,8 +19,11 @@ from detail_rules import (
     DETAIL_RULES,
     DETAIL_RULES_BY_ITEM,
     DETAIL_SCHEMA,
+    PREFILLED_RESULT_SCHEMA,
+    PREFILLED_SCORE,
     criterion_map,
     detail_form_for,
+    prefilled_result_for,
 )
 
 
@@ -243,7 +246,7 @@ def _slot(slot_id: str, *, required: bool, kind: str = "image") -> dict[str, Any
 
 
 def template_payload(profile: Mapping[str, Any] | None = None) -> dict[str, Any]:
-    """Return a fresh, JSON-serialisable live-only report template."""
+    """Return a fresh live template with a private all-correct baseline."""
     profile_items = dict((profile or load_tool_profile()).get("items", {}) or {})
     items = []
     for order, definition in enumerate(ITEM_DEFINITIONS, start=1):
@@ -266,7 +269,13 @@ def template_payload(profile: Mapping[str, Any] | None = None) -> dict[str, Any]
             # The internal template keeps the rubric snapshot available to
             # auditors.  render_report.public_projection deliberately omits
             # these fields so the audience only sees live analysis.
+            # ``prefilled_result`` 是标准现场的全对基线。
+            # It is intentionally separate from the live result below: the
+            # latter remains empty until the recogniser binds complete
+            # evidence and the analysis window finishes.
+            "prefilled_score": PREFILLED_SCORE,
             "prefilled_standard_text": definition["target_text"],
+            "prefilled_result": prefilled_result_for(definition["item_id"]),
             "realtime_target": definition["target_text"],
             "retrieval_queries": definition["queries"],
             "required_evidence_slots": required,
@@ -486,6 +495,78 @@ def _validate_detail_evaluation(
         errors.append(f"{item_id}: unresolved_summary must be a string")
 
 
+def _validate_prefilled_result(
+    item: Mapping[str, Any],
+    criterion_ids: set[str],
+    evidence_ids: set[str],
+    errors: list[str],
+) -> None:
+    """Validate the hidden all-correct baseline without scoring from it.
+
+    The baseline is a rubric fixture, not a second live score source.  It is
+    nevertheless checked strictly so a template or replay event cannot carry
+    a partial/negative preset by accident.  References, when materialised by
+    the mock or live state machine, must still belong to this item.
+    """
+    item_id = str(item.get("item_id") or "")
+    result = item.get("prefilled_result")
+    if result is None:
+        # Older hand-authored payloads may omit the optional hidden field.  The
+        # generated standard and mock templates always include it.
+        return
+    if not isinstance(result, Mapping):
+        errors.append(f"{item_id}: prefilled_result must be an object")
+        return
+    if result.get("schema") != PREFILLED_RESULT_SCHEMA:
+        errors.append(f"{item_id}: prefilled_result.schema must be {PREFILLED_RESULT_SCHEMA}")
+    if result.get("score") != PREFILLED_SCORE:
+        errors.append(f"{item_id}: prefilled_result.score must be {PREFILLED_SCORE}")
+    high_level = result.get("high_level_evaluation")
+    if not isinstance(high_level, str) or not high_level.strip():
+        errors.append(f"{item_id}: prefilled_result.high_level_evaluation is required")
+    evaluation = result.get("detail_evaluation")
+    if not isinstance(evaluation, Mapping):
+        errors.append(f"{item_id}: prefilled_result.detail_evaluation must be an object")
+        return
+    if evaluation.get("state") != "unlocked":
+        errors.append(f"{item_id}: prefilled detail state must be unlocked")
+    if evaluation.get("unresolved_summary") not in (None, ""):
+        errors.append(f"{item_id}: prefilled detail must not have unresolved items")
+    if evaluation.get("high_level_evaluation") != high_level:
+        errors.append(f"{item_id}: prefilled high-level evaluation mismatch")
+    checks = evaluation.get("checks")
+    if not isinstance(checks, list):
+        errors.append(f"{item_id}: prefilled detail checks must be a list")
+        return
+    seen: set[str] = set()
+    for check in checks:
+        if not isinstance(check, Mapping):
+            errors.append(f"{item_id}: prefilled detail check must be an object")
+            continue
+        criterion_id = str(check.get("criterion_id") or "")
+        if criterion_id not in criterion_ids:
+            errors.append(f"{item_id}: prefilled check references unknown criterion {criterion_id}")
+        if criterion_id in seen:
+            errors.append(f"{item_id}: duplicate prefilled detail check {criterion_id}")
+        seen.add(criterion_id)
+        if check.get("status") != "confirmed":
+            errors.append(f"{item_id}/{criterion_id}: prefilled status must be confirmed")
+        confidence = check.get("confidence")
+        if isinstance(confidence, bool) or not isinstance(confidence, (int, float)) or not 0 <= float(confidence) <= 1:
+            errors.append(f"{item_id}/{criterion_id}: prefilled confidence must be between 0 and 1")
+        refs = check.get("evidence_ids", [])
+        if not isinstance(refs, list):
+            errors.append(f"{item_id}/{criterion_id}: prefilled evidence_ids must be a list")
+        else:
+            for evidence_id in refs:
+                if str(evidence_id) not in evidence_ids:
+                    errors.append(f"{item_id}/{criterion_id}: prefilled evidence ID is not owned by item")
+        if check.get("reason") not in (None, ""):
+            errors.append(f"{item_id}/{criterion_id}: prefilled check reason must be empty")
+    if set(seen) != criterion_ids or len(checks) != len(criterion_ids):
+        errors.append(f"{item_id}: prefilled detail checks do not cover every criterion")
+
+
 def validate_report(payload: Mapping[str, Any], *, allow_mock: bool = True) -> list[str]:
     """Return validation errors; callers decide whether to raise them."""
     errors: list[str] = []
@@ -547,6 +628,8 @@ def validate_report(payload: Mapping[str, Any], *, allow_mock: bool = True) -> l
             errors.append(f"{item.get('item_id')}: difficulty label mismatch")
         if item.get("score_max") != 1:
             errors.append(f"{item.get('item_id')}: score_max must be 1")
+        if "prefilled_score" in item and item.get("prefilled_score") != PREFILLED_SCORE:
+            errors.append(f"{item.get('item_id')}: prefilled_score must be {PREFILLED_SCORE}")
         binding = item.get("live_binding", {}) or {}
         if not isinstance(binding, Mapping):
             errors.append(f"{item.get('item_id')}: live_binding must be an object")
@@ -582,6 +665,7 @@ def validate_report(payload: Mapping[str, Any], *, allow_mock: bool = True) -> l
                 errors.append(f"{item.get('item_id')}: evidence item_id does not match owner")
         criterion_ids = _validate_detail_form(item, set(slot_ids), errors)
         _validate_detail_evaluation(item, criterion_ids, item_evidence_ids, errors)
+        _validate_prefilled_result(item, criterion_ids, item_evidence_ids, errors)
         state = str(binding.get("state") or "")
         if state and state not in LIVE_STATES:
             errors.append(f"{item.get('item_id')}: unknown live state {state}")
@@ -693,6 +777,13 @@ def validate_report(payload: Mapping[str, Any], *, allow_mock: bool = True) -> l
         elif "detail_evaluation" in patch:
             criterion_ids = set(criterion_map(patch_item_id)) if patch_item_id in DETAIL_RULES_BY_ITEM else set()
             _validate_detail_evaluation(patch, criterion_ids, patch_ids, errors)
+        if "prefilled_result" in patch:
+            patch_criterion_ids = (
+                _validate_detail_form(patch, patch_slot_ids, errors)
+                if "detail_form" in patch
+                else set(criterion_map(patch_item_id)) if patch_item_id in DETAIL_RULES_BY_ITEM else set()
+            )
+            _validate_prefilled_result(patch, patch_criterion_ids, patch_ids, errors)
     if not allow_mock and payload.get("demo_mode"):
         errors.append("mock payload is not allowed")
     return errors

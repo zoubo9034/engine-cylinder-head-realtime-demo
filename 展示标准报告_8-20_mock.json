@@ -99,7 +99,53 @@
           "trace_count": 10
         }
       ],
+      "prefilled_score": 1,
       "prefilled_standard_text": "识别指针式扳手对气缸盖螺栓完成第二次180°预松，并确认动作连续、轮次正确。",
+      "prefilled_result": {
+        "schema": "realtime-prefilled-result/v1",
+        "score": 1,
+        "high_level_evaluation": "第二次预松的工具、目标螺栓、转动角度和动作顺序均已确认。",
+        "detail_evaluation": {
+          "state": "unlocked",
+          "updated_at": null,
+          "checks": [
+            {
+              "criterion_id": "wrench_bolt_identity",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [],
+              "observation": "指针式扳手和目标气缸盖螺栓清晰可辨。",
+              "reason": ""
+            },
+            {
+              "criterion_id": "wrench_head_contact",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [],
+              "observation": "扳手头部稳定套住目标螺栓并持续转动。",
+              "reason": ""
+            },
+            {
+              "criterion_id": "second_round_angle",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [],
+              "observation": "第二次预松轮次清楚，转动关系为一次 180°或两次 90°。",
+              "reason": ""
+            },
+            {
+              "criterion_id": "continuous_rotation_sequence",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [],
+              "observation": "开始、动作中和完成三个阶段按先后连续呈现。",
+              "reason": ""
+            }
+          ],
+          "unresolved_summary": "",
+          "high_level_evaluation": "第二次预松的工具、目标螺栓、转动角度和动作顺序均已确认。"
+        }
+      },
       "realtime_target": "识别指针式扳手对气缸盖螺栓完成第二次180°预松，并确认动作连续、轮次正确。",
       "retrieval_queries": [
         "第二次预松180度 指针扳手",
@@ -333,7 +379,53 @@
           "trace_count": 10
         }
       ],
+      "prefilled_score": 1,
       "prefilled_standard_text": "识别双手扶持气缸盖缓慢落到支撑垫块，并确认没有与工作台直接接触。",
+      "prefilled_result": {
+        "schema": "realtime-prefilled-result/v1",
+        "score": 1,
+        "high_level_evaluation": "气缸盖由双手控制并稳定落在垫块上，支撑关系清晰。",
+        "detail_evaluation": {
+          "state": "unlocked",
+          "updated_at": null,
+          "checks": [
+            {
+              "criterion_id": "two_hand_support",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [],
+              "observation": "双手稳定扶住气缸盖并控制下降。",
+              "reason": ""
+            },
+            {
+              "criterion_id": "pad_under_head",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [],
+              "observation": "垫块位于气缸盖下方并形成支撑面。",
+              "reason": ""
+            },
+            {
+              "criterion_id": "stable_pad_support",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [],
+              "observation": "气缸盖落位后由垫块稳定托住，与工作台保持间隙。",
+              "reason": ""
+            },
+            {
+              "criterion_id": "placement_sequence",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [],
+              "observation": "抬起、移动、下降和落位四个阶段连续呈现。",
+              "reason": ""
+            }
+          ],
+          "unresolved_summary": "",
+          "high_level_evaluation": "气缸盖由双手控制并稳定落在垫块上，支撑关系清晰。"
+        }
+      },
       "realtime_target": "识别双手扶持气缸盖缓慢落到支撑垫块，并确认没有与工作台直接接触。",
       "retrieval_queries": [
         "气缸盖 放置 垫块",
@@ -558,7 +650,53 @@
           "trace_count": 10
         }
       ],
+      "prefilled_score": 1,
       "prefilled_standard_text": "识别手部与旧气缸垫的接触、抬起和移出结合面，确认气缸垫进入待检区域。",
+      "prefilled_result": {
+        "schema": "realtime-prefilled-result/v1",
+        "score": 1,
+        "high_level_evaluation": "旧气缸垫已从结合面完整取下并移至待检区域。",
+        "detail_evaluation": {
+          "state": "unlocked",
+          "updated_at": null,
+          "checks": [
+            {
+              "criterion_id": "old_gasket_identity",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [],
+              "observation": "待取下的旧气缸垫整体清晰可辨。",
+              "reason": ""
+            },
+            {
+              "criterion_id": "hand_edge_contact",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [],
+              "observation": "手部接触薄片边缘并将气缸垫抬起。",
+              "reason": ""
+            },
+            {
+              "criterion_id": "lift_clear_separation",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [],
+              "observation": "气缸垫从结合面抬起并完全分开。",
+              "reason": ""
+            },
+            {
+              "criterion_id": "inspection_area_transfer",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [],
+              "observation": "取下后的气缸垫已移动到待检区域。",
+              "reason": ""
+            }
+          ],
+          "unresolved_summary": "",
+          "high_level_evaluation": "旧气缸垫已从结合面完整取下并移至待检区域。"
+        }
+      },
       "realtime_target": "识别手部与旧气缸垫的接触、抬起和移出结合面，确认气缸垫进入待检区域。",
       "retrieval_queries": [
         "取下 旧气缸垫",
@@ -784,7 +922,61 @@
           "trace_count": 10
         }
       ],
+      "prefilled_score": 1,
       "prefilled_standard_text": "近景检查气缸垫的孔位、边缘和表面，并分别观察正面与反面。",
+      "prefilled_result": {
+        "schema": "realtime-prefilled-result/v1",
+        "score": 1,
+        "high_level_evaluation": "气缸垫孔位、边缘和表面均完成近景检查，正反面状态清楚。",
+        "detail_evaluation": {
+          "state": "unlocked",
+          "updated_at": null,
+          "checks": [
+            {
+              "criterion_id": "gasket_close_view",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [],
+              "observation": "近景清楚呈现气缸垫整体、孔位、边缘和表面。",
+              "reason": ""
+            },
+            {
+              "criterion_id": "hole_region_check",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [],
+              "observation": "孔位区域已在近景中完成检查。",
+              "reason": ""
+            },
+            {
+              "criterion_id": "edge_region_check",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [],
+              "observation": "外缘和内缘均在近景中完成检查。",
+              "reason": ""
+            },
+            {
+              "criterion_id": "surface_condition_check",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [],
+              "observation": "近景显示表面完整，变形、缺失或破损检查未见明显异常。",
+              "reason": ""
+            },
+            {
+              "criterion_id": "front_back_observation",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [],
+              "observation": "正面和反面均出现清晰观察画面。",
+              "reason": ""
+            }
+          ],
+          "unresolved_summary": "",
+          "high_level_evaluation": "气缸垫孔位、边缘和表面均完成近景检查，正反面状态清楚。"
+        }
+      },
       "realtime_target": "近景检查气缸垫的孔位、边缘和表面，并分别观察正面与反面。",
       "retrieval_queries": [
         "检查气缸垫 变形 缺失",
@@ -929,14 +1121,14 @@
             "criterion_id": "surface_condition_check",
             "group": "完成状态",
             "label": "表面状态",
-            "basis": "画面中能观察表面并记录变形、缺失或破损情况。",
+            "basis": "近景画面显示表面状态，并记录变形、缺失或破损情况；本次检查未见明显异常。",
             "evidence_slot_ids": [
               "inspection_regions",
               "inspection_result_card"
             ],
             "required": true,
             "demo_gate": "required",
-            "boundary": "表面近景清晰呈现变形、缺失或破损情况。"
+            "boundary": "表面近景清晰呈现完整状态，变形、缺失和破损均可辨认。"
           },
           {
             "criterion_id": "front_back_observation",
@@ -1032,7 +1224,61 @@
           "trace_count": 10
         }
       ],
+      "prefilled_score": 1,
       "prefilled_standard_text": "识别气缸体边缘附近两枚金属圆柱定位销，并确认检查动作覆盖两枚目标。",
+      "prefilled_result": {
+        "schema": "realtime-prefilled-result/v1",
+        "score": 1,
+        "high_level_evaluation": "两枚定位销均已分别检查，位置和外观保持完整。",
+        "detail_evaluation": {
+          "state": "unlocked",
+          "updated_at": null,
+          "checks": [
+            {
+              "criterion_id": "two_pin_identity",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [],
+              "observation": "两枚金属圆柱定位销清晰可辨。",
+              "reason": ""
+            },
+            {
+              "criterion_id": "pin_one_close_view",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [],
+              "observation": "定位销 1 已进入清晰近景。",
+              "reason": ""
+            },
+            {
+              "criterion_id": "pin_two_close_view",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [],
+              "observation": "定位销 2 已进入清晰近景。",
+              "reason": ""
+            },
+            {
+              "criterion_id": "pin_check_relation",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [],
+              "observation": "手部对定位销 1 和定位销 2 分别完成检查。",
+              "reason": ""
+            },
+            {
+              "criterion_id": "pin_condition",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [],
+              "observation": "两枚定位销位置稳定，表面未见明显损伤。",
+              "reason": ""
+            }
+          ],
+          "unresolved_summary": "",
+          "high_level_evaluation": "两枚定位销均已分别检查，位置和外观保持完整。"
+        }
+      },
       "realtime_target": "识别气缸体边缘附近两枚金属圆柱定位销，并确认检查动作覆盖两枚目标。",
       "retrieval_queries": [
         "检查定位销 金属圆柱",
@@ -1281,7 +1527,61 @@
           "trace_count": 10
         }
       ],
+      "prefilled_score": 1,
       "prefilled_standard_text": "识别白色无纺布与气缸盖下方结合面的直接擦拭接触，并确认主要密封区域被覆盖。",
+      "prefilled_result": {
+        "schema": "realtime-prefilled-result/v1",
+        "score": 1,
+        "high_level_evaluation": "气缸盖结合面已由白色无纺布完整擦拭，主要密封区域均有覆盖。",
+        "detail_evaluation": {
+          "state": "unlocked",
+          "updated_at": null,
+          "checks": [
+            {
+              "criterion_id": "head_mating_surface_identity",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [],
+              "observation": "气缸盖下方结合面及燃烧室/气门侧特征清晰可辨。",
+              "reason": ""
+            },
+            {
+              "criterion_id": "white_nonwoven_contact",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [],
+              "observation": "白色无纺布直接接触气缸盖结合面。",
+              "reason": ""
+            },
+            {
+              "criterion_id": "head_seal_coverage",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [],
+              "observation": "主要密封区域和边缘均有擦拭覆盖。",
+              "reason": ""
+            },
+            {
+              "criterion_id": "head_object_disambiguation",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [],
+              "observation": "清洁对象明确为气缸盖。",
+              "reason": ""
+            },
+            {
+              "criterion_id": "head_wipe_sequence",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [],
+              "observation": "连续画面显示无纺布在结合面上移动擦拭。",
+              "reason": ""
+            }
+          ],
+          "unresolved_summary": "",
+          "high_level_evaluation": "气缸盖结合面已由白色无纺布完整擦拭，主要密封区域均有覆盖。"
+        }
+      },
       "realtime_target": "识别白色无纺布与气缸盖下方结合面的直接擦拭接触，并确认主要密封区域被覆盖。",
       "retrieval_queries": [
         "清洁气缸盖 结合面 白色无纺布",
@@ -1538,7 +1838,61 @@
           "trace_count": 10
         }
       ],
+      "prefilled_score": 1,
       "prefilled_standard_text": "识别白色无纺布擦拭气缸体上方结合面，并确认气缸孔周边和主要密封区域被覆盖。",
+      "prefilled_result": {
+        "schema": "realtime-prefilled-result/v1",
+        "score": 1,
+        "high_level_evaluation": "气缸体结合面已由白色无纺布连续擦拭，气缸孔周边和密封区域均有覆盖。",
+        "detail_evaluation": {
+          "state": "unlocked",
+          "updated_at": null,
+          "checks": [
+            {
+              "criterion_id": "block_mating_surface_identity",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [],
+              "observation": "气缸体上方结合面及气缸孔周边清晰可辨。",
+              "reason": ""
+            },
+            {
+              "criterion_id": "block_cloth_contact",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [],
+              "observation": "白色无纺布直接接触气缸体结合面。",
+              "reason": ""
+            },
+            {
+              "criterion_id": "block_seal_coverage",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [],
+              "observation": "气缸孔周边和主要密封区域均有擦拭覆盖。",
+              "reason": ""
+            },
+            {
+              "criterion_id": "block_object_disambiguation",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [],
+              "observation": "清洁对象明确为气缸体。",
+              "reason": ""
+            },
+            {
+              "criterion_id": "block_wipe_sequence",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [],
+              "observation": "连续画面显示无纺布在气缸体表面移动擦拭。",
+              "reason": ""
+            }
+          ],
+          "unresolved_summary": "",
+          "high_level_evaluation": "气缸体结合面已由白色无纺布连续擦拭，气缸孔周边和密封区域均有覆盖。"
+        }
+      },
       "realtime_target": "识别白色无纺布擦拭气缸体上方结合面，并确认气缸孔周边和主要密封区域被覆盖。",
       "retrieval_queries": [
         "清洁气缸体 结合面 无纺布",
@@ -1794,7 +2148,61 @@
           "trace_count": 10
         }
       ],
+      "prefilled_score": 1,
       "prefilled_standard_text": "识别白色无纺布对气缸垫正面和反面的擦拭，并确认清洁发生在安装前。",
+      "prefilled_result": {
+        "schema": "realtime-prefilled-result/v1",
+        "score": 1,
+        "high_level_evaluation": "气缸垫正面和反面均完成擦拭，清洁顺序位于安装之前。",
+        "detail_evaluation": {
+          "state": "unlocked",
+          "updated_at": null,
+          "checks": [
+            {
+              "criterion_id": "gasket_identity",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [],
+              "observation": "待清洁的气缸垫整体清晰可辨。",
+              "reason": ""
+            },
+            {
+              "criterion_id": "front_wipe",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [],
+              "observation": "无纺布与气缸垫正面接触并完成擦拭。",
+              "reason": ""
+            },
+            {
+              "criterion_id": "flip_action",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [],
+              "observation": "画面清楚显示气缸垫由正面翻到反面。",
+              "reason": ""
+            },
+            {
+              "criterion_id": "back_wipe",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [],
+              "observation": "无纺布与气缸垫反面接触并完成擦拭。",
+              "reason": ""
+            },
+            {
+              "criterion_id": "pre_install_timing",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [],
+              "observation": "清洁过程明确发生在气缸垫安装之前。",
+              "reason": ""
+            }
+          ],
+          "unresolved_summary": "",
+          "high_level_evaluation": "气缸垫正面和反面均完成擦拭，清洁顺序位于安装之前。"
+        }
+      },
       "realtime_target": "识别白色无纺布对气缸垫正面和反面的擦拭，并确认清洁发生在安装前。",
       "retrieval_queries": [
         "清洁气缸垫 两面 无纺布",
@@ -2059,7 +2467,61 @@
           "trace_count": 10
         }
       ],
+      "prefilled_score": 1,
       "prefilled_standard_text": "识别白色无纺布逐一接触两枚金属定位销，并确认没有遗漏任一目标。",
+      "prefilled_result": {
+        "schema": "realtime-prefilled-result/v1",
+        "score": 1,
+        "high_level_evaluation": "两枚定位销均已按顺序完成擦拭，清洁范围完整。",
+        "detail_evaluation": {
+          "state": "unlocked",
+          "updated_at": null,
+          "checks": [
+            {
+              "criterion_id": "both_pin_identity",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [],
+              "observation": "同一画面中两枚金属定位销均清晰可辨。",
+              "reason": ""
+            },
+            {
+              "criterion_id": "pin_one_wipe",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [],
+              "observation": "无纺布与定位销 1 直接接触并完成擦拭。",
+              "reason": ""
+            },
+            {
+              "criterion_id": "pin_two_wipe",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [],
+              "observation": "无纺布与定位销 2 直接接触并完成擦拭。",
+              "reason": ""
+            },
+            {
+              "criterion_id": "pin_wipe_order",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [],
+              "observation": "清洁动作按定位销1→定位销2的顺序呈现。",
+              "reason": ""
+            },
+            {
+              "criterion_id": "pin_coverage_complete",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [],
+              "observation": "两枚定位销均出现对应的擦拭过程。",
+              "reason": ""
+            }
+          ],
+          "unresolved_summary": "",
+          "high_level_evaluation": "两枚定位销均已按顺序完成擦拭，清洁范围完整。"
+        }
+      },
       "realtime_target": "识别白色无纺布逐一接触两枚金属定位销，并确认没有遗漏任一目标。",
       "retrieval_queries": [
         "清洁两枚定位销 无纺布",
@@ -2308,7 +2770,53 @@
           "trace_count": 10
         }
       ],
+      "prefilled_score": 1,
       "prefilled_standard_text": "识别安装新气缸垫前的流程停顿和更换确认节点，并确认随后才进入安装阶段。",
+      "prefilled_result": {
+        "schema": "realtime-prefilled-result/v1",
+        "score": 1,
+        "high_level_evaluation": "气缸垫更换节点、待用状态和安装先后关系清晰。",
+        "detail_evaluation": {
+          "state": "unlocked",
+          "updated_at": null,
+          "checks": [
+            {
+              "criterion_id": "replacement_process_node",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [],
+              "observation": "更换流程中出现清晰的节点画面。",
+              "reason": ""
+            },
+            {
+              "criterion_id": "new_gasket_ready",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [],
+              "observation": "新气缸垫在安装前处于待用位置。",
+              "reason": ""
+            },
+            {
+              "criterion_id": "node_before_install",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [],
+              "observation": "流程节点先于气缸垫进入安装位置。",
+              "reason": ""
+            },
+            {
+              "criterion_id": "replacement_sequence",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [],
+              "observation": "待用、节点和安装三个阶段顺序清晰。",
+              "reason": ""
+            }
+          ],
+          "unresolved_summary": "",
+          "high_level_evaluation": "气缸垫更换节点、待用状态和安装先后关系清晰。"
+        }
+      },
       "realtime_target": "识别安装新气缸垫前的流程停顿和更换确认节点，并确认随后才进入安装阶段。",
       "retrieval_queries": [
         "报告更换气缸垫 安装前",
@@ -2533,7 +3041,61 @@
           "trace_count": 10
         }
       ],
+      "prefilled_score": 1,
       "prefilled_standard_text": "识别新气缸垫方向、孔位与两枚定位销的匹配，以及平稳落座后的无明显错位状态。",
+      "prefilled_result": {
+        "schema": "realtime-prefilled-result/v1",
+        "score": 1,
+        "high_level_evaluation": "新气缸垫方向和孔位匹配正确，并平整落座。",
+        "detail_evaluation": {
+          "state": "unlocked",
+          "updated_at": null,
+          "checks": [
+            {
+              "criterion_id": "new_gasket_identity",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [],
+              "observation": "穿孔新气缸垫及其外轮廓清晰可辨。",
+              "reason": ""
+            },
+            {
+              "criterion_id": "gasket_orientation",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [],
+              "observation": "方向和正反面线索与安装位置相符。",
+              "reason": ""
+            },
+            {
+              "criterion_id": "hole_outline_match",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [],
+              "observation": "气缸孔、螺栓孔、定位销孔和外轮廓相互对应。",
+              "reason": ""
+            },
+            {
+              "criterion_id": "flat_seat",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [],
+              "observation": "气缸垫平整落座，没有明显错位。",
+              "reason": ""
+            },
+            {
+              "criterion_id": "align_place_seat_sequence",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [],
+              "observation": "对准、放置和落座三个阶段按先后呈现。",
+              "reason": ""
+            }
+          ],
+          "unresolved_summary": "",
+          "high_level_evaluation": "新气缸垫方向和孔位匹配正确，并平整落座。"
+        }
+      },
       "realtime_target": "识别新气缸垫方向、孔位与两枚定位销的匹配，以及平稳落座后的无明显错位状态。",
       "retrieval_queries": [
         "安装气缸垫 定位销 孔位",
@@ -2788,7 +3350,53 @@
           "trace_count": 10
         }
       ],
+      "prefilled_score": 1,
       "prefilled_standard_text": "展示新螺栓待用、流程节点和后续安装动作的先后关系。",
+      "prefilled_result": {
+        "schema": "realtime-prefilled-result/v1",
+        "score": 1,
+        "high_level_evaluation": "新螺栓待用节点先于安装动作出现，流程顺序清晰。",
+        "detail_evaluation": {
+          "state": "unlocked",
+          "updated_at": null,
+          "checks": [
+            {
+              "criterion_id": "new_bolt_ready",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [],
+              "observation": "新螺栓在安装前出现在待安装区域。",
+              "reason": ""
+            },
+            {
+              "criterion_id": "pre_install_node",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [],
+              "observation": "螺栓安装前出现清晰的流程节点。",
+              "reason": ""
+            },
+            {
+              "criterion_id": "node_before_bolt_action",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [],
+              "observation": "流程节点先于螺栓插入或紧固。",
+              "reason": ""
+            },
+            {
+              "criterion_id": "bolt_report_sequence",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [],
+              "observation": "待用、节点和安装三个阶段按先后出现。",
+              "reason": ""
+            }
+          ],
+          "unresolved_summary": "",
+          "high_level_evaluation": "新螺栓待用节点先于安装动作出现，流程顺序清晰。"
+        }
+      },
       "realtime_target": "展示新螺栓待用、流程节点和后续安装动作的先后关系。",
       "retrieval_queries": [
         "报告更换气缸盖螺栓 安装前",
@@ -3004,7 +3612,69 @@
           "trace_count": 10
         }
       ],
+      "prefilled_score": 1,
       "prefilled_standard_text": "使用扭力扳手按维修手册顺序，依次对1—10号气缸盖螺栓完成第一次安装预紧；本轮预紧扭矩为25 N·m，且不与后续角度拧紧轮次混淆。",
+      "prefilled_result": {
+        "schema": "realtime-prefilled-result/v1",
+        "score": 1,
+        "high_level_evaluation": "第一次预紧使用扭力扳手按 1—10 顺序完成，工艺参数为 25 N·m。",
+        "detail_evaluation": {
+          "state": "unlocked",
+          "updated_at": null,
+          "checks": [
+            {
+              "criterion_id": "torque_wrench_contact",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [],
+              "observation": "扭力扳手与目标螺栓接触并出现可见旋转。",
+              "reason": ""
+            },
+            {
+              "criterion_id": "first_pass_anchor",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [],
+              "observation": "第一次安装预紧轮次清楚可定位。",
+              "reason": ""
+            },
+            {
+              "criterion_id": "bolt_order_1_to_10",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [],
+              "observation": "顺序条按 1→10 展示螺栓处理先后。",
+              "reason": ""
+            },
+            {
+              "criterion_id": "torque_25_nm_card",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [],
+              "observation": "第一次预紧对应的工艺参数为 25 N·m。",
+              "reason": ""
+            },
+            {
+              "criterion_id": "round_disambiguation",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [],
+              "observation": "第一次预紧、角度轮次和徒手补紧在画面中清楚区分。",
+              "reason": ""
+            },
+            {
+              "criterion_id": "no_manual_retightening",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [],
+              "observation": "第一次预紧完成后未出现手动补拧动作。",
+              "reason": ""
+            }
+          ],
+          "unresolved_summary": "",
+          "high_level_evaluation": "第一次预紧使用扭力扳手按 1—10 顺序完成，工艺参数为 25 N·m。"
+        }
+      },
       "realtime_target": "使用扭力扳手按维修手册顺序，依次对1—10号气缸盖螺栓完成第一次安装预紧；本轮预紧扭矩为25 N·m，且不与后续角度拧紧轮次混淆。",
       "retrieval_queries": [
         "第一次安装预紧 1-10 25Nm",
@@ -3236,8 +3906,8 @@
       "event_id": "evt-item_5069",
       "item_id": "item_5069",
       "delay_ms": 2050,
-      "processing_ms": 1900,
-      "final_state": "证据生成中",
+      "processing_ms": 18003,
+      "final_state": "已完成评分",
       "evidence_ids": [
         "ev-1736ce83d4669b",
         "ev-27f9b663880bf4",
@@ -3291,7 +3961,65 @@
             "trace_count": 10
           }
         ],
+        "prefilled_score": 1,
         "prefilled_standard_text": "识别指针式扳手对气缸盖螺栓完成第二次180°预松，并确认动作连续、轮次正确。",
+        "prefilled_result": {
+          "schema": "realtime-prefilled-result/v1",
+          "score": 1,
+          "high_level_evaluation": "第二次预松的工具、目标螺栓、转动角度和动作顺序均已确认。",
+          "detail_evaluation": {
+            "state": "unlocked",
+            "updated_at": "02:08",
+            "checks": [
+              {
+                "criterion_id": "wrench_bolt_identity",
+                "status": "confirmed",
+                "confidence": 0.96,
+                "evidence_ids": [
+                  "ev-1736ce83d4669b"
+                ],
+                "observation": "指针式扳手和目标气缸盖螺栓清晰可辨。",
+                "reason": ""
+              },
+              {
+                "criterion_id": "wrench_head_contact",
+                "status": "confirmed",
+                "confidence": 0.96,
+                "evidence_ids": [
+                  "ev-1736ce83d4669b"
+                ],
+                "observation": "扳手头部稳定套住目标螺栓并持续转动。",
+                "reason": ""
+              },
+              {
+                "criterion_id": "second_round_angle",
+                "status": "confirmed",
+                "confidence": 0.96,
+                "evidence_ids": [
+                  "ev-1736ce83d4669b",
+                  "ev-27f9b663880bf4",
+                  "ev-3c3094f003ab55"
+                ],
+                "observation": "第二次预松轮次清楚，转动关系为一次 180°或两次 90°。",
+                "reason": ""
+              },
+              {
+                "criterion_id": "continuous_rotation_sequence",
+                "status": "confirmed",
+                "confidence": 0.96,
+                "evidence_ids": [
+                  "ev-1736ce83d4669b",
+                  "ev-27f9b663880bf4",
+                  "ev-3c3094f003ab55"
+                ],
+                "observation": "开始、动作中和完成三个阶段按先后连续呈现。",
+                "reason": ""
+              }
+            ],
+            "unresolved_summary": "",
+            "high_level_evaluation": "第二次预松的工具、目标螺栓、转动角度和动作顺序均已确认。"
+          }
+        },
         "realtime_target": "识别指针式扳手对气缸盖螺栓完成第二次180°预松，并确认动作连续、轮次正确。",
         "retrieval_queries": [
           "第二次预松180度 指针扳手",
@@ -3580,10 +4308,56 @@
           ]
         },
         "detail_evaluation": {
-          "state": "analyzing",
-          "updated_at": null,
-          "checks": [],
-          "unresolved_summary": ""
+          "state": "unlocked",
+          "updated_at": "02:08",
+          "checks": [
+            {
+              "criterion_id": "wrench_bolt_identity",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [
+                "ev-1736ce83d4669b"
+              ],
+              "observation": "指针式扳手和目标气缸盖螺栓清晰可辨。",
+              "reason": ""
+            },
+            {
+              "criterion_id": "wrench_head_contact",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [
+                "ev-1736ce83d4669b"
+              ],
+              "observation": "扳手头部稳定套住目标螺栓并持续转动。",
+              "reason": ""
+            },
+            {
+              "criterion_id": "second_round_angle",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [
+                "ev-1736ce83d4669b",
+                "ev-27f9b663880bf4",
+                "ev-3c3094f003ab55"
+              ],
+              "observation": "第二次预松轮次清楚，转动关系为一次 180°或两次 90°。",
+              "reason": ""
+            },
+            {
+              "criterion_id": "continuous_rotation_sequence",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [
+                "ev-1736ce83d4669b",
+                "ev-27f9b663880bf4",
+                "ev-3c3094f003ab55"
+              ],
+              "observation": "开始、动作中和完成三个阶段按先后连续呈现。",
+              "reason": ""
+            }
+          ],
+          "unresolved_summary": "",
+          "high_level_evaluation": "第二次预松的工具、目标螺栓、转动角度和动作顺序均已确认。"
         },
         "completion_condition": {
           "required_slot_ids": [
@@ -3597,7 +4371,7 @@
           "missing_state": "evidence_generating"
         },
         "live_binding": {
-          "state": "证据生成中",
+          "state": "已完成评分",
           "revision": 1,
           "changed_slot_ids": [
             "live_timestamp",
@@ -3612,8 +4386,8 @@
           "live_start_sec": 128.0,
           "live_end_sec": 238.1,
           "time_source": "mock_live_stream",
-          "time_confidence": 0.405,
-          "evidence_explanation": "正在整理当前项目的连续画面。",
+          "time_confidence": 0.96,
+          "evidence_explanation": "对象、动作和时序画面已整理。",
           "evidence": [
             {
               "evidence_id": "ev-1736ce83d4669b",
@@ -3673,7 +4447,7 @@
             }
           ]
         },
-        "score": null,
+        "score": 1,
         "score_max": 1,
         "display_order": 1
       }
@@ -3682,7 +4456,7 @@
       "event_id": "evt-cylinder_head",
       "item_id": "cylinder_head",
       "delay_ms": 1400,
-      "processing_ms": 1200,
+      "processing_ms": 14759,
       "final_state": "已完成评分",
       "evidence_ids": [
         "ev-2ee1424fb725eb",
@@ -3736,7 +4510,65 @@
             "trace_count": 10
           }
         ],
+        "prefilled_score": 1,
         "prefilled_standard_text": "识别双手扶持气缸盖缓慢落到支撑垫块，并确认没有与工作台直接接触。",
+        "prefilled_result": {
+          "schema": "realtime-prefilled-result/v1",
+          "score": 1,
+          "high_level_evaluation": "气缸盖由双手控制并稳定落在垫块上，支撑关系清晰。",
+          "detail_evaluation": {
+            "state": "unlocked",
+            "updated_at": "05:08",
+            "checks": [
+              {
+                "criterion_id": "two_hand_support",
+                "status": "confirmed",
+                "confidence": 0.96,
+                "evidence_ids": [
+                  "ev-2ee1424fb725eb",
+                  "ev-a2f76a4f3fa28a",
+                  "ev-ecebfa31a8e001"
+                ],
+                "observation": "双手稳定扶住气缸盖并控制下降。",
+                "reason": ""
+              },
+              {
+                "criterion_id": "pad_under_head",
+                "status": "confirmed",
+                "confidence": 0.96,
+                "evidence_ids": [
+                  "ev-2ee1424fb725eb"
+                ],
+                "observation": "垫块位于气缸盖下方并形成支撑面。",
+                "reason": ""
+              },
+              {
+                "criterion_id": "stable_pad_support",
+                "status": "confirmed",
+                "confidence": 0.96,
+                "evidence_ids": [
+                  "ev-2ee1424fb725eb"
+                ],
+                "observation": "气缸盖落位后由垫块稳定托住，与工作台保持间隙。",
+                "reason": ""
+              },
+              {
+                "criterion_id": "placement_sequence",
+                "status": "confirmed",
+                "confidence": 0.96,
+                "evidence_ids": [
+                  "ev-2ee1424fb725eb",
+                  "ev-a2f76a4f3fa28a",
+                  "ev-ecebfa31a8e001"
+                ],
+                "observation": "抬起、移动、下降和落位四个阶段连续呈现。",
+                "reason": ""
+              }
+            ],
+            "unresolved_summary": "",
+            "high_level_evaluation": "气缸盖由双手控制并稳定落在垫块上，支撑关系清晰。"
+          }
+        },
         "realtime_target": "识别双手扶持气缸盖缓慢落到支撑垫块，并确认没有与工作台直接接触。",
         "retrieval_queries": [
           "气缸盖 放置 垫块",
@@ -4006,51 +4838,51 @@
           "checks": [
             {
               "criterion_id": "two_hand_support",
-              "status": "manual_review",
-              "confidence": 0.95,
+              "status": "confirmed",
+              "confidence": 0.96,
               "evidence_ids": [
                 "ev-2ee1424fb725eb",
                 "ev-a2f76a4f3fa28a",
                 "ev-ecebfa31a8e001"
               ],
-              "observation": "相关画面已经出现，完整过程仍待确认。",
-              "reason": "请继续查看动作顺序和完成状态。"
+              "observation": "双手稳定扶住气缸盖并控制下降。",
+              "reason": ""
             },
             {
               "criterion_id": "pad_under_head",
               "status": "confirmed",
-              "confidence": 0.95,
+              "confidence": 0.96,
               "evidence_ids": [
                 "ev-2ee1424fb725eb"
               ],
-              "observation": "相关对象关系在清晰画面中得到确认。",
+              "observation": "垫块位于气缸盖下方并形成支撑面。",
               "reason": ""
             },
             {
               "criterion_id": "stable_pad_support",
               "status": "confirmed",
-              "confidence": 0.95,
+              "confidence": 0.96,
               "evidence_ids": [
                 "ev-2ee1424fb725eb"
               ],
-              "observation": "相关对象关系在清晰画面中得到确认。",
+              "observation": "气缸盖落位后由垫块稳定托住，与工作台保持间隙。",
               "reason": ""
             },
             {
               "criterion_id": "placement_sequence",
-              "status": "manual_review",
-              "confidence": 0.95,
+              "status": "confirmed",
+              "confidence": 0.96,
               "evidence_ids": [
                 "ev-2ee1424fb725eb",
                 "ev-a2f76a4f3fa28a",
                 "ev-ecebfa31a8e001"
               ],
-              "observation": "相关画面已经出现，完整过程仍待确认。",
-              "reason": "请继续查看动作顺序和完成状态。"
+              "observation": "抬起、移动、下降和落位四个阶段连续呈现。",
+              "reason": ""
             }
           ],
           "unresolved_summary": "",
-          "high_level_evaluation": "相关画面已整理，逐项核验状态见下方。"
+          "high_level_evaluation": "气缸盖由双手控制并稳定落在垫块上，支撑关系清晰。"
         },
         "completion_condition": {
           "required_slot_ids": [
@@ -4078,7 +4910,7 @@
           "live_start_sec": 308.0,
           "live_end_sec": 1108.0,
           "time_source": "mock_live_stream",
-          "time_confidence": 0.93,
+          "time_confidence": 0.96,
           "evidence_explanation": "对象、动作和时序画面已整理。",
           "evidence": [
             {
@@ -4148,8 +4980,8 @@
       "event_id": "evt-gasket_remove",
       "item_id": "gasket_remove",
       "delay_ms": 1400,
-      "processing_ms": 1200,
-      "final_state": "待人工确认",
+      "processing_ms": 12618,
+      "final_state": "已完成评分",
       "evidence_ids": [
         "ev-c18ba6dacfbf4d",
         "ev-264b4c44842646",
@@ -4202,7 +5034,67 @@
             "trace_count": 10
           }
         ],
+        "prefilled_score": 1,
         "prefilled_standard_text": "识别手部与旧气缸垫的接触、抬起和移出结合面，确认气缸垫进入待检区域。",
+        "prefilled_result": {
+          "schema": "realtime-prefilled-result/v1",
+          "score": 1,
+          "high_level_evaluation": "旧气缸垫已从结合面完整取下并移至待检区域。",
+          "detail_evaluation": {
+            "state": "unlocked",
+            "updated_at": "06:48",
+            "checks": [
+              {
+                "criterion_id": "old_gasket_identity",
+                "status": "confirmed",
+                "confidence": 0.96,
+                "evidence_ids": [
+                  "ev-c18ba6dacfbf4d"
+                ],
+                "observation": "待取下的旧气缸垫整体清晰可辨。",
+                "reason": ""
+              },
+              {
+                "criterion_id": "hand_edge_contact",
+                "status": "confirmed",
+                "confidence": 0.96,
+                "evidence_ids": [
+                  "ev-c18ba6dacfbf4d",
+                  "ev-264b4c44842646",
+                  "ev-f672a3c20ae311"
+                ],
+                "observation": "手部接触薄片边缘并将气缸垫抬起。",
+                "reason": ""
+              },
+              {
+                "criterion_id": "lift_clear_separation",
+                "status": "confirmed",
+                "confidence": 0.96,
+                "evidence_ids": [
+                  "ev-c18ba6dacfbf4d",
+                  "ev-264b4c44842646",
+                  "ev-f672a3c20ae311"
+                ],
+                "observation": "气缸垫从结合面抬起并完全分开。",
+                "reason": ""
+              },
+              {
+                "criterion_id": "inspection_area_transfer",
+                "status": "confirmed",
+                "confidence": 0.96,
+                "evidence_ids": [
+                  "ev-c18ba6dacfbf4d",
+                  "ev-264b4c44842646",
+                  "ev-f672a3c20ae311"
+                ],
+                "observation": "取下后的气缸垫已移动到待检区域。",
+                "reason": ""
+              }
+            ],
+            "unresolved_summary": "",
+            "high_level_evaluation": "旧气缸垫已从结合面完整取下并移至待检区域。"
+          }
+        },
         "realtime_target": "识别手部与旧气缸垫的接触、抬起和移出结合面，确认气缸垫进入待检区域。",
         "retrieval_queries": [
           "取下 旧气缸垫",
@@ -4473,52 +5365,53 @@
           "checks": [
             {
               "criterion_id": "old_gasket_identity",
-              "status": "manual_review",
-              "confidence": 0.95,
+              "status": "confirmed",
+              "confidence": 0.96,
               "evidence_ids": [
                 "ev-c18ba6dacfbf4d"
               ],
-              "observation": "当前画面尚未完整呈现这一动作。",
-              "reason": "需要看到对象、动作和完成状态的连续画面。"
+              "observation": "待取下的旧气缸垫整体清晰可辨。",
+              "reason": ""
             },
             {
               "criterion_id": "hand_edge_contact",
-              "status": "manual_review",
-              "confidence": 0.95,
+              "status": "confirmed",
+              "confidence": 0.96,
               "evidence_ids": [
                 "ev-c18ba6dacfbf4d",
                 "ev-264b4c44842646",
                 "ev-f672a3c20ae311"
               ],
-              "observation": "当前画面尚未完整呈现这一动作。",
-              "reason": "需要看到对象、动作和完成状态的连续画面。"
+              "observation": "手部接触薄片边缘并将气缸垫抬起。",
+              "reason": ""
             },
             {
               "criterion_id": "lift_clear_separation",
-              "status": "manual_review",
-              "confidence": 0.95,
+              "status": "confirmed",
+              "confidence": 0.96,
               "evidence_ids": [
                 "ev-c18ba6dacfbf4d",
                 "ev-264b4c44842646",
                 "ev-f672a3c20ae311"
               ],
-              "observation": "当前画面尚未完整呈现这一动作。",
-              "reason": "需要看到对象、动作和完成状态的连续画面。"
+              "observation": "气缸垫从结合面抬起并完全分开。",
+              "reason": ""
             },
             {
               "criterion_id": "inspection_area_transfer",
-              "status": "manual_review",
-              "confidence": 0.95,
+              "status": "confirmed",
+              "confidence": 0.96,
               "evidence_ids": [
                 "ev-c18ba6dacfbf4d",
                 "ev-264b4c44842646",
                 "ev-f672a3c20ae311"
               ],
-              "observation": "当前画面尚未完整呈现这一动作。",
-              "reason": "需要看到对象、动作和完成状态的连续画面。"
+              "observation": "取下后的气缸垫已移动到待检区域。",
+              "reason": ""
             }
           ],
-          "unresolved_summary": "仍有核验项缺少完整画面，建议人工复核后确认。"
+          "unresolved_summary": "",
+          "high_level_evaluation": "旧气缸垫已从结合面完整取下并移至待检区域。"
         },
         "completion_condition": {
           "required_slot_ids": [
@@ -4532,7 +5425,7 @@
           "missing_state": "evidence_generating"
         },
         "live_binding": {
-          "state": "待人工确认",
+          "state": "已完成评分",
           "revision": 1,
           "changed_slot_ids": [
             "live_timestamp",
@@ -4546,8 +5439,8 @@
           "live_start_sec": 408.0,
           "live_end_sec": 1018.0,
           "time_source": "mock_live_stream",
-          "time_confidence": 0.93,
-          "evidence_explanation": "相关画面已提取，仍需人工确认。",
+          "time_confidence": 0.96,
+          "evidence_explanation": "对象、动作和时序画面已整理。",
           "evidence": [
             {
               "evidence_id": "ev-c18ba6dacfbf4d",
@@ -4607,7 +5500,7 @@
             }
           ]
         },
-        "score": 0,
+        "score": 1,
         "score_max": 1,
         "display_order": 3
       }
@@ -4616,8 +5509,8 @@
       "event_id": "evt-gasket_inspect",
       "item_id": "gasket_inspect",
       "delay_ms": 1400,
-      "processing_ms": 1200,
-      "final_state": "待人工确认",
+      "processing_ms": 12141,
+      "final_state": "已完成评分",
       "evidence_ids": [
         "ev-82bf14cab19cb9",
         "ev-96ab04035b6707",
@@ -4670,7 +5563,73 @@
             "trace_count": 10
           }
         ],
+        "prefilled_score": 1,
         "prefilled_standard_text": "近景检查气缸垫的孔位、边缘和表面，并分别观察正面与反面。",
+        "prefilled_result": {
+          "schema": "realtime-prefilled-result/v1",
+          "score": 1,
+          "high_level_evaluation": "气缸垫孔位、边缘和表面均完成近景检查，正反面状态清楚。",
+          "detail_evaluation": {
+            "state": "unlocked",
+            "updated_at": "06:48",
+            "checks": [
+              {
+                "criterion_id": "gasket_close_view",
+                "status": "confirmed",
+                "confidence": 0.96,
+                "evidence_ids": [
+                  "ev-82bf14cab19cb9"
+                ],
+                "observation": "近景清楚呈现气缸垫整体、孔位、边缘和表面。",
+                "reason": ""
+              },
+              {
+                "criterion_id": "hole_region_check",
+                "status": "confirmed",
+                "confidence": 0.96,
+                "evidence_ids": [
+                  "ev-82bf14cab19cb9"
+                ],
+                "observation": "孔位区域已在近景中完成检查。",
+                "reason": ""
+              },
+              {
+                "criterion_id": "edge_region_check",
+                "status": "confirmed",
+                "confidence": 0.96,
+                "evidence_ids": [
+                  "ev-82bf14cab19cb9"
+                ],
+                "observation": "外缘和内缘均在近景中完成检查。",
+                "reason": ""
+              },
+              {
+                "criterion_id": "surface_condition_check",
+                "status": "confirmed",
+                "confidence": 0.96,
+                "evidence_ids": [
+                  "ev-82bf14cab19cb9"
+                ],
+                "observation": "近景显示表面完整，变形、缺失或破损检查未见明显异常。",
+                "reason": ""
+              },
+              {
+                "criterion_id": "front_back_observation",
+                "status": "confirmed",
+                "confidence": 0.96,
+                "evidence_ids": [
+                  "ev-82bf14cab19cb9",
+                  "ev-96ab04035b6707",
+                  "ev-00acda783c748a"
+                ],
+                "observation": "正面和反面均出现清晰观察画面。",
+                "reason": ""
+              }
+            ],
+            "unresolved_summary": "",
+            "high_level_evaluation": "气缸垫孔位、边缘和表面均完成近景检查，正反面状态清楚。"
+          }
+        },
         "realtime_target": "近景检查气缸垫的孔位、边缘和表面，并分别观察正面与反面。",
         "retrieval_queries": [
           "检查气缸垫 变形 缺失",
@@ -4948,14 +5907,14 @@
               "criterion_id": "surface_condition_check",
               "group": "完成状态",
               "label": "表面状态",
-              "basis": "画面中能观察表面并记录变形、缺失或破损情况。",
+              "basis": "近景画面显示表面状态，并记录变形、缺失或破损情况；本次检查未见明显异常。",
               "evidence_slot_ids": [
                 "inspection_regions",
                 "inspection_result_card"
               ],
               "required": true,
               "demo_gate": "required",
-              "boundary": "表面近景清晰呈现变形、缺失或破损情况。"
+              "boundary": "表面近景清晰呈现完整状态，变形、缺失和破损均可辨认。"
             },
             {
               "criterion_id": "front_back_observation",
@@ -4978,58 +5937,59 @@
           "checks": [
             {
               "criterion_id": "gasket_close_view",
-              "status": "manual_review",
-              "confidence": 0.95,
+              "status": "confirmed",
+              "confidence": 0.96,
               "evidence_ids": [
                 "ev-82bf14cab19cb9"
               ],
-              "observation": "当前画面尚未完整呈现这一动作。",
-              "reason": "需要看到对象、动作和完成状态的连续画面。"
+              "observation": "近景清楚呈现气缸垫整体、孔位、边缘和表面。",
+              "reason": ""
             },
             {
               "criterion_id": "hole_region_check",
-              "status": "manual_review",
-              "confidence": 0.95,
+              "status": "confirmed",
+              "confidence": 0.96,
               "evidence_ids": [
                 "ev-82bf14cab19cb9"
               ],
-              "observation": "当前画面尚未完整呈现这一动作。",
-              "reason": "需要看到对象、动作和完成状态的连续画面。"
+              "observation": "孔位区域已在近景中完成检查。",
+              "reason": ""
             },
             {
               "criterion_id": "edge_region_check",
-              "status": "manual_review",
-              "confidence": 0.95,
+              "status": "confirmed",
+              "confidence": 0.96,
               "evidence_ids": [
                 "ev-82bf14cab19cb9"
               ],
-              "observation": "当前画面尚未完整呈现这一动作。",
-              "reason": "需要看到对象、动作和完成状态的连续画面。"
+              "observation": "外缘和内缘均在近景中完成检查。",
+              "reason": ""
             },
             {
               "criterion_id": "surface_condition_check",
-              "status": "manual_review",
-              "confidence": 0.95,
+              "status": "confirmed",
+              "confidence": 0.96,
               "evidence_ids": [
                 "ev-82bf14cab19cb9"
               ],
-              "observation": "当前画面尚未完整呈现这一动作。",
-              "reason": "需要看到对象、动作和完成状态的连续画面。"
+              "observation": "近景显示表面完整，变形、缺失或破损检查未见明显异常。",
+              "reason": ""
             },
             {
               "criterion_id": "front_back_observation",
-              "status": "manual_review",
-              "confidence": 0.95,
+              "status": "confirmed",
+              "confidence": 0.96,
               "evidence_ids": [
                 "ev-82bf14cab19cb9",
                 "ev-96ab04035b6707",
                 "ev-00acda783c748a"
               ],
-              "observation": "当前画面尚未完整呈现这一动作。",
-              "reason": "需要看到对象、动作和完成状态的连续画面。"
+              "observation": "正面和反面均出现清晰观察画面。",
+              "reason": ""
             }
           ],
-          "unresolved_summary": "仍有核验项缺少完整画面，建议人工复核后确认。"
+          "unresolved_summary": "",
+          "high_level_evaluation": "气缸垫孔位、边缘和表面均完成近景检查，正反面状态清楚。"
         },
         "completion_condition": {
           "required_slot_ids": [
@@ -5042,7 +6002,7 @@
           "missing_state": "evidence_generating"
         },
         "live_binding": {
-          "state": "待人工确认",
+          "state": "已完成评分",
           "revision": 1,
           "changed_slot_ids": [
             "live_timestamp",
@@ -5057,8 +6017,8 @@
           "live_start_sec": 408.0,
           "live_end_sec": 978.0,
           "time_source": "mock_live_stream",
-          "time_confidence": 0.925,
-          "evidence_explanation": "相关画面已提取，仍需人工确认。",
+          "time_confidence": 0.96,
+          "evidence_explanation": "对象、动作和时序画面已整理。",
           "evidence": [
             {
               "evidence_id": "ev-82bf14cab19cb9",
@@ -5118,7 +6078,7 @@
             }
           ]
         },
-        "score": 0,
+        "score": 1,
         "score_max": 1,
         "display_order": 4
       }
@@ -5127,8 +6087,8 @@
       "event_id": "evt-positioning",
       "item_id": "positioning",
       "delay_ms": 2050,
-      "processing_ms": 1900,
-      "final_state": "证据生成中",
+      "processing_ms": 17203,
+      "final_state": "已完成评分",
       "evidence_ids": [
         "ev-38f12fd1e5e937",
         "ev-de36f5e0913d14",
@@ -5182,7 +6142,73 @@
             "trace_count": 10
           }
         ],
+        "prefilled_score": 1,
         "prefilled_standard_text": "识别气缸体边缘附近两枚金属圆柱定位销，并确认检查动作覆盖两枚目标。",
+        "prefilled_result": {
+          "schema": "realtime-prefilled-result/v1",
+          "score": 1,
+          "high_level_evaluation": "两枚定位销均已分别检查，位置和外观保持完整。",
+          "detail_evaluation": {
+            "state": "unlocked",
+            "updated_at": "01:38",
+            "checks": [
+              {
+                "criterion_id": "two_pin_identity",
+                "status": "confirmed",
+                "confidence": 0.96,
+                "evidence_ids": [
+                  "ev-38f12fd1e5e937"
+                ],
+                "observation": "两枚金属圆柱定位销清晰可辨。",
+                "reason": ""
+              },
+              {
+                "criterion_id": "pin_one_close_view",
+                "status": "confirmed",
+                "confidence": 0.96,
+                "evidence_ids": [
+                  "ev-38f12fd1e5e937"
+                ],
+                "observation": "定位销 1 已进入清晰近景。",
+                "reason": ""
+              },
+              {
+                "criterion_id": "pin_two_close_view",
+                "status": "confirmed",
+                "confidence": 0.96,
+                "evidence_ids": [
+                  "ev-38f12fd1e5e937"
+                ],
+                "observation": "定位销 2 已进入清晰近景。",
+                "reason": ""
+              },
+              {
+                "criterion_id": "pin_check_relation",
+                "status": "confirmed",
+                "confidence": 0.96,
+                "evidence_ids": [
+                  "ev-38f12fd1e5e937",
+                  "ev-de36f5e0913d14",
+                  "ev-93232a545254bf"
+                ],
+                "observation": "手部对定位销 1 和定位销 2 分别完成检查。",
+                "reason": ""
+              },
+              {
+                "criterion_id": "pin_condition",
+                "status": "confirmed",
+                "confidence": 0.96,
+                "evidence_ids": [
+                  "ev-38f12fd1e5e937"
+                ],
+                "observation": "两枚定位销位置稳定，表面未见明显损伤。",
+                "reason": ""
+              }
+            ],
+            "unresolved_summary": "",
+            "high_level_evaluation": "两枚定位销均已分别检查，位置和外观保持完整。"
+          }
+        },
         "realtime_target": "识别气缸体边缘附近两枚金属圆柱定位销，并确认检查动作覆盖两枚目标。",
         "retrieval_queries": [
           "检查定位销 金属圆柱",
@@ -5485,10 +6511,64 @@
           ]
         },
         "detail_evaluation": {
-          "state": "analyzing",
-          "updated_at": null,
-          "checks": [],
-          "unresolved_summary": ""
+          "state": "unlocked",
+          "updated_at": "01:38",
+          "checks": [
+            {
+              "criterion_id": "two_pin_identity",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [
+                "ev-38f12fd1e5e937"
+              ],
+              "observation": "两枚金属圆柱定位销清晰可辨。",
+              "reason": ""
+            },
+            {
+              "criterion_id": "pin_one_close_view",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [
+                "ev-38f12fd1e5e937"
+              ],
+              "observation": "定位销 1 已进入清晰近景。",
+              "reason": ""
+            },
+            {
+              "criterion_id": "pin_two_close_view",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [
+                "ev-38f12fd1e5e937"
+              ],
+              "observation": "定位销 2 已进入清晰近景。",
+              "reason": ""
+            },
+            {
+              "criterion_id": "pin_check_relation",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [
+                "ev-38f12fd1e5e937",
+                "ev-de36f5e0913d14",
+                "ev-93232a545254bf"
+              ],
+              "observation": "手部对定位销 1 和定位销 2 分别完成检查。",
+              "reason": ""
+            },
+            {
+              "criterion_id": "pin_condition",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [
+                "ev-38f12fd1e5e937"
+              ],
+              "observation": "两枚定位销位置稳定，表面未见明显损伤。",
+              "reason": ""
+            }
+          ],
+          "unresolved_summary": "",
+          "high_level_evaluation": "两枚定位销均已分别检查，位置和外观保持完整。"
         },
         "completion_condition": {
           "required_slot_ids": [
@@ -5502,7 +6582,7 @@
           "missing_state": "evidence_generating"
         },
         "live_binding": {
-          "state": "证据生成中",
+          "state": "已完成评分",
           "revision": 1,
           "changed_slot_ids": [
             "live_timestamp",
@@ -5517,8 +6597,8 @@
           "live_start_sec": 97.5,
           "live_end_sec": 1108.0,
           "time_source": "mock_live_stream",
-          "time_confidence": 0.563,
-          "evidence_explanation": "正在整理当前项目的连续画面。",
+          "time_confidence": 0.96,
+          "evidence_explanation": "对象、动作和时序画面已整理。",
           "evidence": [
             {
               "evidence_id": "ev-38f12fd1e5e937",
@@ -5578,7 +6658,7 @@
             }
           ]
         },
-        "score": null,
+        "score": 1,
         "score_max": 1,
         "display_order": 5
       }
@@ -5587,8 +6667,8 @@
       "event_id": "evt-clean_head",
       "item_id": "clean_head",
       "delay_ms": 2050,
-      "processing_ms": 1900,
-      "final_state": "待人工确认",
+      "processing_ms": 18169,
+      "final_state": "已完成评分",
       "evidence_ids": [
         "ev-a7c7e22568f3f3",
         "ev-3a943c6a90bb4a",
@@ -5642,7 +6722,73 @@
             "trace_count": 10
           }
         ],
+        "prefilled_score": 1,
         "prefilled_standard_text": "识别白色无纺布与气缸盖下方结合面的直接擦拭接触，并确认主要密封区域被覆盖。",
+        "prefilled_result": {
+          "schema": "realtime-prefilled-result/v1",
+          "score": 1,
+          "high_level_evaluation": "气缸盖结合面已由白色无纺布完整擦拭，主要密封区域均有覆盖。",
+          "detail_evaluation": {
+            "state": "unlocked",
+            "updated_at": "02:48",
+            "checks": [
+              {
+                "criterion_id": "head_mating_surface_identity",
+                "status": "confirmed",
+                "confidence": 0.96,
+                "evidence_ids": [
+                  "ev-a7c7e22568f3f3"
+                ],
+                "observation": "气缸盖下方结合面及燃烧室/气门侧特征清晰可辨。",
+                "reason": ""
+              },
+              {
+                "criterion_id": "white_nonwoven_contact",
+                "status": "confirmed",
+                "confidence": 0.96,
+                "evidence_ids": [
+                  "ev-a7c7e22568f3f3"
+                ],
+                "observation": "白色无纺布直接接触气缸盖结合面。",
+                "reason": ""
+              },
+              {
+                "criterion_id": "head_seal_coverage",
+                "status": "confirmed",
+                "confidence": 0.96,
+                "evidence_ids": [
+                  "ev-a7c7e22568f3f3"
+                ],
+                "observation": "主要密封区域和边缘均有擦拭覆盖。",
+                "reason": ""
+              },
+              {
+                "criterion_id": "head_object_disambiguation",
+                "status": "confirmed",
+                "confidence": 0.96,
+                "evidence_ids": [
+                  "ev-a7c7e22568f3f3"
+                ],
+                "observation": "清洁对象明确为气缸盖。",
+                "reason": ""
+              },
+              {
+                "criterion_id": "head_wipe_sequence",
+                "status": "confirmed",
+                "confidence": 0.96,
+                "evidence_ids": [
+                  "ev-a7c7e22568f3f3",
+                  "ev-3a943c6a90bb4a",
+                  "ev-72d9fd2b917d3c"
+                ],
+                "observation": "连续画面显示无纺布在结合面上移动擦拭。",
+                "reason": ""
+              }
+            ],
+            "unresolved_summary": "",
+            "high_level_evaluation": "气缸盖结合面已由白色无纺布完整擦拭，主要密封区域均有覆盖。"
+          }
+        },
         "realtime_target": "识别白色无纺布与气缸盖下方结合面的直接擦拭接触，并确认主要密封区域被覆盖。",
         "retrieval_queries": [
           "清洁气缸盖 结合面 白色无纺布",
@@ -5973,58 +7119,59 @@
           "checks": [
             {
               "criterion_id": "head_mating_surface_identity",
-              "status": "manual_review",
-              "confidence": 0.95,
+              "status": "confirmed",
+              "confidence": 0.96,
               "evidence_ids": [
                 "ev-a7c7e22568f3f3"
               ],
-              "observation": "当前画面尚未完整呈现这一动作。",
-              "reason": "需要看到对象、动作和完成状态的连续画面。"
+              "observation": "气缸盖下方结合面及燃烧室/气门侧特征清晰可辨。",
+              "reason": ""
             },
             {
               "criterion_id": "white_nonwoven_contact",
-              "status": "manual_review",
-              "confidence": 0.95,
+              "status": "confirmed",
+              "confidence": 0.96,
               "evidence_ids": [
                 "ev-a7c7e22568f3f3"
               ],
-              "observation": "当前画面尚未完整呈现这一动作。",
-              "reason": "需要看到对象、动作和完成状态的连续画面。"
+              "observation": "白色无纺布直接接触气缸盖结合面。",
+              "reason": ""
             },
             {
               "criterion_id": "head_seal_coverage",
-              "status": "manual_review",
-              "confidence": 0.95,
+              "status": "confirmed",
+              "confidence": 0.96,
               "evidence_ids": [
                 "ev-a7c7e22568f3f3"
               ],
-              "observation": "当前画面尚未完整呈现这一动作。",
-              "reason": "需要看到对象、动作和完成状态的连续画面。"
+              "observation": "主要密封区域和边缘均有擦拭覆盖。",
+              "reason": ""
             },
             {
               "criterion_id": "head_object_disambiguation",
-              "status": "manual_review",
-              "confidence": 0.95,
+              "status": "confirmed",
+              "confidence": 0.96,
               "evidence_ids": [
                 "ev-a7c7e22568f3f3"
               ],
-              "observation": "当前画面尚未完整呈现这一动作。",
-              "reason": "需要看到对象、动作和完成状态的连续画面。"
+              "observation": "清洁对象明确为气缸盖。",
+              "reason": ""
             },
             {
               "criterion_id": "head_wipe_sequence",
-              "status": "manual_review",
-              "confidence": 0.95,
+              "status": "confirmed",
+              "confidence": 0.96,
               "evidence_ids": [
                 "ev-a7c7e22568f3f3",
                 "ev-3a943c6a90bb4a",
                 "ev-72d9fd2b917d3c"
               ],
-              "observation": "当前画面尚未完整呈现这一动作。",
-              "reason": "需要看到对象、动作和完成状态的连续画面。"
+              "observation": "连续画面显示无纺布在结合面上移动擦拭。",
+              "reason": ""
             }
           ],
-          "unresolved_summary": "仍有核验项缺少完整画面，建议人工复核后确认。"
+          "unresolved_summary": "",
+          "high_level_evaluation": "气缸盖结合面已由白色无纺布完整擦拭，主要密封区域均有覆盖。"
         },
         "completion_condition": {
           "required_slot_ids": [
@@ -6038,7 +7185,7 @@
           "missing_state": "evidence_generating"
         },
         "live_binding": {
-          "state": "待人工确认",
+          "state": "已完成评分",
           "revision": 1,
           "changed_slot_ids": [
             "live_timestamp",
@@ -6054,8 +7201,8 @@
           "live_start_sec": 168.0,
           "live_end_sec": 1238.0,
           "time_source": "mock_live_stream",
-          "time_confidence": 0.95,
-          "evidence_explanation": "相关画面已提取，仍需人工确认。",
+          "time_confidence": 0.96,
+          "evidence_explanation": "对象、动作和时序画面已整理。",
           "evidence": [
             {
               "evidence_id": "ev-a7c7e22568f3f3",
@@ -6115,7 +7262,7 @@
             }
           ]
         },
-        "score": 0,
+        "score": 1,
         "score_max": 1,
         "display_order": 6
       }
@@ -6124,8 +7271,8 @@
       "event_id": "evt-clean_block",
       "item_id": "clean_block",
       "delay_ms": 2050,
-      "processing_ms": 1900,
-      "final_state": "证据生成中",
+      "processing_ms": 15930,
+      "final_state": "已完成评分",
       "evidence_ids": [
         "ev-e5112ec4575bda",
         "ev-65bc8f46215a87",
@@ -6179,7 +7326,73 @@
             "trace_count": 10
           }
         ],
+        "prefilled_score": 1,
         "prefilled_standard_text": "识别白色无纺布擦拭气缸体上方结合面，并确认气缸孔周边和主要密封区域被覆盖。",
+        "prefilled_result": {
+          "schema": "realtime-prefilled-result/v1",
+          "score": 1,
+          "high_level_evaluation": "气缸体结合面已由白色无纺布连续擦拭，气缸孔周边和密封区域均有覆盖。",
+          "detail_evaluation": {
+            "state": "unlocked",
+            "updated_at": "04:00",
+            "checks": [
+              {
+                "criterion_id": "block_mating_surface_identity",
+                "status": "confirmed",
+                "confidence": 0.96,
+                "evidence_ids": [
+                  "ev-e5112ec4575bda"
+                ],
+                "observation": "气缸体上方结合面及气缸孔周边清晰可辨。",
+                "reason": ""
+              },
+              {
+                "criterion_id": "block_cloth_contact",
+                "status": "confirmed",
+                "confidence": 0.96,
+                "evidence_ids": [
+                  "ev-e5112ec4575bda"
+                ],
+                "observation": "白色无纺布直接接触气缸体结合面。",
+                "reason": ""
+              },
+              {
+                "criterion_id": "block_seal_coverage",
+                "status": "confirmed",
+                "confidence": 0.96,
+                "evidence_ids": [
+                  "ev-e5112ec4575bda"
+                ],
+                "observation": "气缸孔周边和主要密封区域均有擦拭覆盖。",
+                "reason": ""
+              },
+              {
+                "criterion_id": "block_object_disambiguation",
+                "status": "confirmed",
+                "confidence": 0.96,
+                "evidence_ids": [
+                  "ev-e5112ec4575bda"
+                ],
+                "observation": "清洁对象明确为气缸体。",
+                "reason": ""
+              },
+              {
+                "criterion_id": "block_wipe_sequence",
+                "status": "confirmed",
+                "confidence": 0.96,
+                "evidence_ids": [
+                  "ev-e5112ec4575bda",
+                  "ev-65bc8f46215a87",
+                  "ev-cb90cc71d3a758"
+                ],
+                "observation": "连续画面显示无纺布在气缸体表面移动擦拭。",
+                "reason": ""
+              }
+            ],
+            "unresolved_summary": "",
+            "high_level_evaluation": "气缸体结合面已由白色无纺布连续擦拭，气缸孔周边和密封区域均有覆盖。"
+          }
+        },
         "realtime_target": "识别白色无纺布擦拭气缸体上方结合面，并确认气缸孔周边和主要密封区域被覆盖。",
         "retrieval_queries": [
           "清洁气缸体 结合面 无纺布",
@@ -6505,10 +7718,64 @@
           ]
         },
         "detail_evaluation": {
-          "state": "analyzing",
-          "updated_at": null,
-          "checks": [],
-          "unresolved_summary": ""
+          "state": "unlocked",
+          "updated_at": "04:00",
+          "checks": [
+            {
+              "criterion_id": "block_mating_surface_identity",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [
+                "ev-e5112ec4575bda"
+              ],
+              "observation": "气缸体上方结合面及气缸孔周边清晰可辨。",
+              "reason": ""
+            },
+            {
+              "criterion_id": "block_cloth_contact",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [
+                "ev-e5112ec4575bda"
+              ],
+              "observation": "白色无纺布直接接触气缸体结合面。",
+              "reason": ""
+            },
+            {
+              "criterion_id": "block_seal_coverage",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [
+                "ev-e5112ec4575bda"
+              ],
+              "observation": "气缸孔周边和主要密封区域均有擦拭覆盖。",
+              "reason": ""
+            },
+            {
+              "criterion_id": "block_object_disambiguation",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [
+                "ev-e5112ec4575bda"
+              ],
+              "observation": "清洁对象明确为气缸体。",
+              "reason": ""
+            },
+            {
+              "criterion_id": "block_wipe_sequence",
+              "status": "confirmed",
+              "confidence": 0.96,
+              "evidence_ids": [
+                "ev-e5112ec4575bda",
+                "ev-65bc8f46215a87",
+                "ev-cb90cc71d3a758"
+              ],
+              "observation": "连续画面显示无纺布在气缸体表面移动擦拭。",
+              "reason": ""
+            }
+          ],
+          "unresolved_summary": "",
+          "high_level_evaluation": "气缸体结合面已由白色无纺布连续擦拭，气缸孔周边和密封区域均有覆盖。"
         },
         "completion_condition": {
           "required_slot_ids": [
@@ -6522,7 +7789,7 @@
           "missing_state": "evidence_generating"
         },
         "live_binding": {
-          "state": "证据生成中",
+          "state": "已完成评分",
           "revision": 1,
           "changed_slot_ids": [
             "live_timestamp",
@@ -6538,8 +7805,8 @@
           "live_start_sec": 239.5,
           "live_end_sec": 968.0,
           "time_source": "mock_live_stream",
-          "time_confidence": 0.689,
-          "evidence_explanation": "正在整理当前项目的连续画面。",
+          "time_confidence": 0.96,
+          "evidence_explanation": "对象、动作和时序画面已整理。",
           "evidence": [
             {
               "evidence_id": "ev-e5112ec4575bda",
@@ -6599,7 +7866,7 @@
             }
           ]
         },
-        "score": null,
+        "score": 1,
         "score_max": 1,
         "display_order": 7
       }
@@ -6608,8 +7875,8 @@
       "event_id": "evt-clean_gasket",
       "item_id": "clean_gasket",
       "delay_ms": 1400,
-      "processing_ms": 1200,
-      "final_state": "待人工确认",
+      "processing_ms": 19031,
+      "final_state": "已完成评分",
       "evidence_ids": [
         "ev-a1188461dd6965",
         "ev-7c98dc7a4f56c6",
@@ -6662,7 +7929,75 @@
             "trace_count": 10
           }
         ],
+        "prefilled_score": 1,
         "prefilled_standard_text": "识别白色无纺布对气缸垫正面和反面的擦拭，并确认清洁发生在安装前。",
+        "prefilled_result": {
+          "schema": "realtime-prefilled-result/v1",
+          "score": 1,
+          "high_level_evaluation": "气缸垫正面和反面均完成擦拭，清洁顺序位于安装之前。",
+          "detail_evaluation": {
+            "state": "unlocked",
+            "updated_at": "04:58",
+            "checks": [
+              {
+                "criterion_id": "gasket_identity",
+                "status": "confirmed",
+                "confidence": 0.96,
+                "evidence_ids": [
+                  "ev-a1188461dd6965"
+                ],
+                "observation": "待清洁的气缸垫整体清晰可辨。",
+                "reason": ""
+              },
+              {
+                "criterion_id": "front_wipe",
+                "status": "confirmed",
+                "confidence": 0.96,
+                "evidence_ids": [
+                  "ev-a1188461dd6965"
+                ],
+                "observation": "无纺布与气缸垫正面接触并完成擦拭。",
+                "reason": ""
+              },
+              {
+                "criterion_id": "flip_action",
+                "status": "confirmed",
+                "confidence": 0.96,
+                "evidence_ids": [
+                  "ev-a1188461dd6965",
+                  "ev-7c98dc7a4f56c6",
+                  "ev-baea3d2cf869d0"
+                ],
+                "observation": "画面清楚显示气缸垫由正面翻到反面。",
+                "reason": ""
+              },
+              {
+                "criterion_id": "back_wipe",
+                "status": "confirmed",
+                "confidence": 0.96,
+                "evidence_ids": [
+                  "ev-a1188461dd6965"
+                ],
+                "observation": "无纺布与气缸垫反面接触并完成擦拭。",
+                "reason": ""
+              },
+              {
+                "criterion_id": "pre_install_timing",
+                "status": "confirmed",
+                "confidence": 0.96,
+                "evidence_ids": [
+                  "ev-a1188461dd6965",
+                  "ev-7c98dc7a4f56c6",
+                  "ev-baea3d2cf869d0"
+                ],
+                "observation": "清洁过程明确发生在气缸垫安装之前。",
+                "reason": ""
+              }
+            ],
+            "unresolved_summary": "",
+            "high_level_evaluation": "气缸垫正面和反面均完成擦拭，清洁顺序位于安装之前。"
+          }
+        },
         "realtime_target": "识别白色无纺布对气缸垫正面和反面的擦拭，并确认清洁发生在安装前。",
         "retrieval_queries": [
           "清洁气缸垫 两面 无纺布",
@@ -7044,60 +8379,61 @@
           "checks": [
             {
               "criterion_id": "gasket_identity",
-              "status": "manual_review",
-              "confidence": 0.95,
+              "status": "confirmed",
+              "confidence": 0.96,
               "evidence_ids": [
                 "ev-a1188461dd6965"
               ],
-              "observation": "当前画面尚未完整呈现这一动作。",
-              "reason": "需要看到对象、动作和完成状态的连续画面。"
+              "observation": "待清洁的气缸垫整体清晰可辨。",
+              "reason": ""
             },
             {
               "criterion_id": "front_wipe",
-              "status": "manual_review",
-              "confidence": 0.95,
+              "status": "confirmed",
+              "confidence": 0.96,
               "evidence_ids": [
                 "ev-a1188461dd6965"
               ],
-              "observation": "当前画面尚未完整呈现这一动作。",
-              "reason": "需要看到对象、动作和完成状态的连续画面。"
+              "observation": "无纺布与气缸垫正面接触并完成擦拭。",
+              "reason": ""
             },
             {
               "criterion_id": "flip_action",
-              "status": "manual_review",
-              "confidence": 0.95,
+              "status": "confirmed",
+              "confidence": 0.96,
               "evidence_ids": [
                 "ev-a1188461dd6965",
                 "ev-7c98dc7a4f56c6",
                 "ev-baea3d2cf869d0"
               ],
-              "observation": "当前画面尚未完整呈现这一动作。",
-              "reason": "需要看到对象、动作和完成状态的连续画面。"
+              "observation": "画面清楚显示气缸垫由正面翻到反面。",
+              "reason": ""
             },
             {
               "criterion_id": "back_wipe",
-              "status": "manual_review",
-              "confidence": 0.95,
+              "status": "confirmed",
+              "confidence": 0.96,
               "evidence_ids": [
                 "ev-a1188461dd6965"
               ],
-              "observation": "当前画面尚未完整呈现这一动作。",
-              "reason": "需要看到对象、动作和完成状态的连续画面。"
+              "observation": "无纺布与气缸垫反面接触并完成擦拭。",
+              "reason": ""
             },
             {
               "criterion_id": "pre_install_timing",
-              "status": "manual_review",
-              "confidence": 0.95,
+              "status": "confirmed",
+              "confidence": 0.96,
               "evidence_ids": [
                 "ev-a1188461dd6965",
                 "ev-7c98dc7a4f56c6",
                 "ev-baea3d2cf869d0"
               ],
-              "observation": "当前画面尚未完整呈现这一动作。",
-              "reason": "需要看到对象、动作和完成状态的连续画面。"
+              "observation": "清洁过程明确发生在气缸垫安装之前。",
+              "reason": ""
             }
           ],
-          "unresolved_summary": "仍有核验项缺少完整画面，建议人工复核后确认。"
+          "unresolved_summary": "",
+          "high_level_evaluation": "气缸垫正面和反面均完成擦拭，清洁顺序位于安装之前。"
         },
         "completion_condition": {
           "required_slot_ids": [
@@ -7111,7 +8447,7 @@
           "missing_state": "evidence_generating"
         },
         "live_binding": {
-          "state": "待人工确认",
+          "state": "已完成评分",
           "revision": 1,
           "changed_slot_ids": [
             "live_timestamp",
@@ -7128,8 +8464,8 @@
           "live_start_sec": 298.0,
           "live_end_sec": 978.0,
           "time_source": "mock_live_stream",
-          "time_confidence": 0.94,
-          "evidence_explanation": "相关画面已提取，仍需人工确认。",
+          "time_confidence": 0.96,
+          "evidence_explanation": "对象、动作和时序画面已整理。",
           "evidence": [
             {
               "evidence_id": "ev-a1188461dd6965",
@@ -7189,7 +8525,7 @@
             }
           ]
         },
-        "score": 0,
+        "score": 1,
         "score_max": 1,
         "display_order": 8
       }
@@ -7198,8 +8534,8 @@
       "event_id": "evt-clean_pins",
       "item_id": "clean_pins",
       "delay_ms": 2050,
-      "processing_ms": 1900,
-      "final_state": "待人工确认",
+      "processing_ms": 17219,
+      "final_state": "已完成评分",
       "evidence_ids": [
         "ev-7263789ef770cd",
         "ev-231be22f66a929",
@@ -7253,7 +8589,75 @@
             "trace_count": 10
           }
         ],
+        "prefilled_score": 1,
         "prefilled_standard_text": "识别白色无纺布逐一接触两枚金属定位销，并确认没有遗漏任一目标。",
+        "prefilled_result": {
+          "schema": "realtime-prefilled-result/v1",
+          "score": 1,
+          "high_level_evaluation": "两枚定位销均已按顺序完成擦拭，清洁范围完整。",
+          "detail_evaluation": {
+            "state": "unlocked",
+            "updated_at": "02:00",
+            "checks": [
+              {
+                "criterion_id": "both_pin_identity",
+                "status": "confirmed",
+                "confidence": 0.96,
+                "evidence_ids": [
+                  "ev-7263789ef770cd"
+                ],
+                "observation": "同一画面中两枚金属定位销均清晰可辨。",
+                "reason": ""
+              },
+              {
+                "criterion_id": "pin_one_wipe",
+                "status": "confirmed",
+                "confidence": 0.96,
+                "evidence_ids": [
+                  "ev-7263789ef770cd"
+                ],
+                "observation": "无纺布与定位销 1 直接接触并完成擦拭。",
+                "reason": ""
+              },
+              {
+                "criterion_id": "pin_two_wipe",
+                "status": "confirmed",
+                "confidence": 0.96,
+                "evidence_ids": [
+                  "ev-7263789ef770cd"
+                ],
+                "observation": "无纺布与定位销 2 直接接触并完成擦拭。",
+                "reason": ""
+              },
+              {
+                "criterion_id": "pin_wipe_order",
+                "status": "confirmed",
+                "confidence": 0.96,
+                "evidence_ids": [
+                  "ev-7263789ef770cd",
+                  "ev-231be22f66a929",
+                  "ev-33e6f6740a09d3"
+                ],
+                "observation": "清洁动作按定位销1→定位销2的顺序呈现。",
+                "reason": ""
+              },
+              {
+                "criterion_id": "pin_coverage_complete",
+                "status": "confirmed",
+                "confidence": 0.96,
+                "evidence_ids": [
+                  "ev-7263789ef770cd",
+                  "ev-231be22f66a929",
+                  "ev-33e6f6740a09d3"
+                ],
+                "observation": "两枚定位销均出现对应的擦拭过程。",
+                "reason": ""
+              }
+            ],
+            "unresolved_summary": "",
+            "high_level_evaluation": "两枚定位销均已按顺序完成擦拭，清洁范围完整。"
+          }
+        },
         "realtime_target": "识别白色无纺布逐一接触两枚金属定位销，并确认没有遗漏任一目标。",
         "retrieval_queries": [
           "清洁两枚定位销 无纺布",
@@ -7589,60 +8993,61 @@
           "checks": [
             {
               "criterion_id": "both_pin_identity",
-              "status": "manual_review",
-              "confidence": 0.413,
+              "status": "confirmed",
+              "confidence": 0.96,
               "evidence_ids": [
                 "ev-7263789ef770cd"
               ],
-              "observation": "当前画面尚未完整呈现这一动作。",
-              "reason": "需要看到对象、动作和完成状态的连续画面。"
+              "observation": "同一画面中两枚金属定位销均清晰可辨。",
+              "reason": ""
             },
             {
               "criterion_id": "pin_one_wipe",
-              "status": "manual_review",
-              "confidence": 0.413,
+              "status": "confirmed",
+              "confidence": 0.96,
               "evidence_ids": [
                 "ev-7263789ef770cd"
               ],
-              "observation": "当前画面尚未完整呈现这一动作。",
-              "reason": "需要看到对象、动作和完成状态的连续画面。"
+              "observation": "无纺布与定位销 1 直接接触并完成擦拭。",
+              "reason": ""
             },
             {
               "criterion_id": "pin_two_wipe",
-              "status": "manual_review",
-              "confidence": 0.413,
+              "status": "confirmed",
+              "confidence": 0.96,
               "evidence_ids": [
                 "ev-7263789ef770cd"
               ],
-              "observation": "当前画面尚未完整呈现这一动作。",
-              "reason": "需要看到对象、动作和完成状态的连续画面。"
+              "observation": "无纺布与定位销 2 直接接触并完成擦拭。",
+              "reason": ""
             },
             {
               "criterion_id": "pin_wipe_order",
-              "status": "manual_review",
-              "confidence": 0.413,
+              "status": "confirmed",
+              "confidence": 0.96,
               "evidence_ids": [
                 "ev-7263789ef770cd",
                 "ev-231be22f66a929",
                 "ev-33e6f6740a09d3"
               ],
-              "observation": "当前画面尚未完整呈现这一动作。",
-              "reason": "需要看到对象、动作和完成状态的连续画面。"
+              "observation": "清洁动作按定位销1→定位销2的顺序呈现。",
+              "reason": ""
             },
             {
               "criterion_id": "pin_coverage_complete",
-              "status": "manual_review",
-              "confidence": 0.413,
+              "status": "confirmed",
+              "confidence": 0.96,
               "evidence_ids": [
                 "ev-7263789ef770cd",
                 "ev-231be22f66a929",
                 "ev-33e6f6740a09d3"
               ],
-              "observation": "当前画面尚未完整呈现这一动作。",
-              "reason": "需要看到对象、动作和完成状态的连续画面。"
+              "observation": "两枚定位销均出现对应的擦拭过程。",
+              "reason": ""
             }
           ],
-          "unresolved_summary": "仍有核验项缺少完整画面，建议人工复核后确认。"
+          "unresolved_summary": "",
+          "high_level_evaluation": "两枚定位销均已按顺序完成擦拭，清洁范围完整。"
         },
         "completion_condition": {
           "required_slot_ids": [
@@ -7656,7 +9061,7 @@
           "missing_state": "evidence_generating"
         },
         "live_binding": {
-          "state": "待人工确认",
+          "state": "已完成评分",
           "revision": 1,
           "changed_slot_ids": [
             "live_timestamp",
@@ -7671,8 +9076,8 @@
           "live_start_sec": 120.0,
           "live_end_sec": 245.0,
           "time_source": "mock_live_stream",
-          "time_confidence": 0.4,
-          "evidence_explanation": "相关画面已提取，仍需人工确认。",
+          "time_confidence": 0.96,
+          "evidence_explanation": "对象、动作和时序画面已整理。",
           "evidence": [
             {
               "evidence_id": "ev-7263789ef770cd",
@@ -7732,7 +9137,7 @@
             }
           ]
         },
-        "score": 0,
+        "score": 1,
         "score_max": 1,
         "display_order": 9
       }
@@ -7741,8 +9146,8 @@
       "event_id": "evt-report_gasket",
       "item_id": "report_gasket",
       "delay_ms": 2050,
-      "processing_ms": 1900,
-      "final_state": "待人工确认",
+      "processing_ms": 18099,
+      "final_state": "已完成评分",
       "evidence_ids": [
         "ev-5c5e22de3bab69",
         "ev-9afd6d42608f8b",
@@ -7796,7 +9201,67 @@
             "trace_count": 10
           }
         ],
+        "prefilled_score": 1,
         "prefilled_standard_text": "识别安装新气缸垫前的流程停顿和更换确认节点，并确认随后才进入安装阶段。",
+        "prefilled_result": {
+          "schema": "realtime-prefilled-result/v1",
+          "score": 1,
+          "high_level_evaluation": "气缸垫更换节点、待用状态和安装先后关系清晰。",
+          "detail_evaluation": {
+            "state": "unlocked",
+            "updated_at": "03:08",
+            "checks": [
+              {
+                "criterion_id": "replacement_process_node",
+                "status": "confirmed",
+                "confidence": 0.96,
+                "evidence_ids": [
+                  "ev-5c5e22de3bab69",
+                  "ev-9afd6d42608f8b",
+                  "ev-ea9f4caf463e36"
+                ],
+                "observation": "更换流程中出现清晰的节点画面。",
+                "reason": ""
+              },
+              {
+                "criterion_id": "new_gasket_ready",
+                "status": "confirmed",
+                "confidence": 0.96,
+                "evidence_ids": [
+                  "ev-5c5e22de3bab69"
+                ],
+                "observation": "新气缸垫在安装前处于待用位置。",
+                "reason": ""
+              },
+              {
+                "criterion_id": "node_before_install",
+                "status": "confirmed",
+                "confidence": 0.96,
+                "evidence_ids": [
+                  "ev-5c5e22de3bab69",
+                  "ev-9afd6d42608f8b",
+                  "ev-ea9f4caf463e36"
+                ],
+                "observation": "流程节点先于气缸垫进入安装位置。",
+                "reason": ""
+              },
+              {
+                "criterion_id": "replacement_sequence",
+                "status": "confirmed",
+                "confidence": 0.96,
+                "evidence_ids": [
+                  "ev-5c5e22de3bab69",
+                  "ev-9afd6d42608f8b",
+                  "ev-ea9f4caf463e36"
+                ],
+                "observation": "待用、节点和安装三个阶段顺序清晰。",
+                "reason": ""
+              }
+            ],
+            "unresolved_summary": "",
+            "high_level_evaluation": "气缸垫更换节点、待用状态和安装先后关系清晰。"
+          }
+        },
         "realtime_target": "识别安装新气缸垫前的流程停顿和更换确认节点，并确认随后才进入安装阶段。",
         "retrieval_queries": [
           "报告更换气缸垫 安装前",
@@ -8094,52 +9559,53 @@
           "checks": [
             {
               "criterion_id": "replacement_process_node",
-              "status": "manual_review",
-              "confidence": 0.92,
+              "status": "confirmed",
+              "confidence": 0.96,
               "evidence_ids": [
                 "ev-5c5e22de3bab69",
                 "ev-9afd6d42608f8b",
                 "ev-ea9f4caf463e36"
               ],
-              "observation": "当前画面尚未完整呈现这一动作。",
-              "reason": "需要看到对象、动作和完成状态的连续画面。"
+              "observation": "更换流程中出现清晰的节点画面。",
+              "reason": ""
             },
             {
               "criterion_id": "new_gasket_ready",
-              "status": "manual_review",
-              "confidence": 0.92,
+              "status": "confirmed",
+              "confidence": 0.96,
               "evidence_ids": [
                 "ev-5c5e22de3bab69"
               ],
-              "observation": "当前画面尚未完整呈现这一动作。",
-              "reason": "需要看到对象、动作和完成状态的连续画面。"
+              "observation": "新气缸垫在安装前处于待用位置。",
+              "reason": ""
             },
             {
               "criterion_id": "node_before_install",
-              "status": "manual_review",
-              "confidence": 0.92,
+              "status": "confirmed",
+              "confidence": 0.96,
               "evidence_ids": [
                 "ev-5c5e22de3bab69",
                 "ev-9afd6d42608f8b",
                 "ev-ea9f4caf463e36"
               ],
-              "observation": "当前画面尚未完整呈现这一动作。",
-              "reason": "需要看到对象、动作和完成状态的连续画面。"
+              "observation": "流程节点先于气缸垫进入安装位置。",
+              "reason": ""
             },
             {
               "criterion_id": "replacement_sequence",
-              "status": "manual_review",
-              "confidence": 0.92,
+              "status": "confirmed",
+              "confidence": 0.96,
               "evidence_ids": [
                 "ev-5c5e22de3bab69",
                 "ev-9afd6d42608f8b",
                 "ev-ea9f4caf463e36"
               ],
-              "observation": "当前画面尚未完整呈现这一动作。",
-              "reason": "需要看到对象、动作和完成状态的连续画面。"
+              "observation": "待用、节点和安装三个阶段顺序清晰。",
+              "reason": ""
             }
           ],
-          "unresolved_summary": "仍有核验项缺少完整画面，建议人工复核后确认。"
+          "unresolved_summary": "",
+          "high_level_evaluation": "气缸垫更换节点、待用状态和安装先后关系清晰。"
         },
         "completion_condition": {
           "required_slot_ids": [
@@ -8152,7 +9618,7 @@
           "missing_state": "evidence_generating"
         },
         "live_binding": {
-          "state": "待人工确认",
+          "state": "已完成评分",
           "revision": 1,
           "changed_slot_ids": [
             "live_timestamp",
@@ -8166,8 +9632,8 @@
           "live_start_sec": 188.0,
           "live_end_sec": 698.0,
           "time_source": "mock_live_stream",
-          "time_confidence": 0.838,
-          "evidence_explanation": "相关画面已提取，仍需人工确认。",
+          "time_confidence": 0.96,
+          "evidence_explanation": "对象、动作和时序画面已整理。",
           "evidence": [
             {
               "evidence_id": "ev-5c5e22de3bab69",
@@ -8227,7 +9693,7 @@
             }
           ]
         },
-        "score": 0,
+        "score": 1,
         "score_max": 1,
         "display_order": 10
       }
@@ -8236,7 +9702,7 @@
       "event_id": "evt-install_gasket",
       "item_id": "install_gasket",
       "delay_ms": 1400,
-      "processing_ms": 1200,
+      "processing_ms": 13916,
       "final_state": "已完成评分",
       "evidence_ids": [
         "ev-c141133458cb22",
@@ -8291,7 +9757,73 @@
             "trace_count": 10
           }
         ],
+        "prefilled_score": 1,
         "prefilled_standard_text": "识别新气缸垫方向、孔位与两枚定位销的匹配，以及平稳落座后的无明显错位状态。",
+        "prefilled_result": {
+          "schema": "realtime-prefilled-result/v1",
+          "score": 1,
+          "high_level_evaluation": "新气缸垫方向和孔位匹配正确，并平整落座。",
+          "detail_evaluation": {
+            "state": "unlocked",
+            "updated_at": "05:58",
+            "checks": [
+              {
+                "criterion_id": "new_gasket_identity",
+                "status": "confirmed",
+                "confidence": 0.96,
+                "evidence_ids": [
+                  "ev-c141133458cb22"
+                ],
+                "observation": "穿孔新气缸垫及其外轮廓清晰可辨。",
+                "reason": ""
+              },
+              {
+                "criterion_id": "gasket_orientation",
+                "status": "confirmed",
+                "confidence": 0.96,
+                "evidence_ids": [
+                  "ev-c141133458cb22"
+                ],
+                "observation": "方向和正反面线索与安装位置相符。",
+                "reason": ""
+              },
+              {
+                "criterion_id": "hole_outline_match",
+                "status": "confirmed",
+                "confidence": 0.96,
+                "evidence_ids": [
+                  "ev-c141133458cb22"
+                ],
+                "observation": "气缸孔、螺栓孔、定位销孔和外轮廓相互对应。",
+                "reason": ""
+              },
+              {
+                "criterion_id": "flat_seat",
+                "status": "confirmed",
+                "confidence": 0.96,
+                "evidence_ids": [
+                  "ev-c141133458cb22"
+                ],
+                "observation": "气缸垫平整落座，没有明显错位。",
+                "reason": ""
+              },
+              {
+                "criterion_id": "align_place_seat_sequence",
+                "status": "confirmed",
+                "confidence": 0.96,
+                "evidence_ids": [
+                  "ev-c141133458cb22",
+                  "ev-b9a131bd1735f3",
+                  "ev-104069f6a54d7e"
+                ],
+                "observation": "对准、放置和落座三个阶段按先后呈现。",
+                "reason": ""
+              }
+            ],
+            "unresolved_summary": "",
+            "high_level_evaluation": "新气缸垫方向和孔位匹配正确，并平整落座。"
+          }
+        },
         "realtime_target": "识别新气缸垫方向、孔位与两枚定位销的匹配，以及平稳落座后的无明显错位状态。",
         "retrieval_queries": [
           "安装气缸垫 定位销 孔位",
@@ -8674,58 +10206,58 @@
             {
               "criterion_id": "new_gasket_identity",
               "status": "confirmed",
-              "confidence": 0.95,
+              "confidence": 0.96,
               "evidence_ids": [
                 "ev-c141133458cb22"
               ],
-              "observation": "相关对象关系在清晰画面中得到确认。",
+              "observation": "穿孔新气缸垫及其外轮廓清晰可辨。",
               "reason": ""
             },
             {
               "criterion_id": "gasket_orientation",
-              "status": "manual_review",
-              "confidence": 0.95,
+              "status": "confirmed",
+              "confidence": 0.96,
               "evidence_ids": [
                 "ev-c141133458cb22"
               ],
-              "observation": "相关画面已经出现，完整过程仍待确认。",
-              "reason": "请继续查看动作顺序和完成状态。"
+              "observation": "方向和正反面线索与安装位置相符。",
+              "reason": ""
             },
             {
               "criterion_id": "hole_outline_match",
               "status": "confirmed",
-              "confidence": 0.95,
+              "confidence": 0.96,
               "evidence_ids": [
                 "ev-c141133458cb22"
               ],
-              "observation": "相关对象关系在清晰画面中得到确认。",
+              "observation": "气缸孔、螺栓孔、定位销孔和外轮廓相互对应。",
               "reason": ""
             },
             {
               "criterion_id": "flat_seat",
               "status": "confirmed",
-              "confidence": 0.95,
+              "confidence": 0.96,
               "evidence_ids": [
                 "ev-c141133458cb22"
               ],
-              "observation": "相关对象关系在清晰画面中得到确认。",
+              "observation": "气缸垫平整落座，没有明显错位。",
               "reason": ""
             },
             {
               "criterion_id": "align_place_seat_sequence",
-              "status": "manual_review",
-              "confidence": 0.95,
+              "status": "confirmed",
+              "confidence": 0.96,
               "evidence_ids": [
                 "ev-c141133458cb22",
                 "ev-b9a131bd1735f3",
                 "ev-104069f6a54d7e"
               ],
-              "observation": "相关画面已经出现，完整过程仍待确认。",
-              "reason": "请继续查看动作顺序和完成状态。"
+              "observation": "对准、放置和落座三个阶段按先后呈现。",
+              "reason": ""
             }
           ],
           "unresolved_summary": "",
-          "high_level_evaluation": "相关画面已整理，逐项核验状态见下方。"
+          "high_level_evaluation": "新气缸垫方向和孔位匹配正确，并平整落座。"
         },
         "completion_condition": {
           "required_slot_ids": [
@@ -8756,7 +10288,7 @@
           "live_start_sec": 358.0,
           "live_end_sec": 998.0,
           "time_source": "mock_live_stream",
-          "time_confidence": 0.95,
+          "time_confidence": 0.96,
           "evidence_explanation": "对象、动作和时序画面已整理。",
           "evidence": [
             {
@@ -8826,8 +10358,8 @@
       "event_id": "evt-cylinder_head_bolt",
       "item_id": "cylinder_head_bolt",
       "delay_ms": 2050,
-      "processing_ms": 1900,
-      "final_state": "待人工确认",
+      "processing_ms": 13074,
+      "final_state": "已完成评分",
       "evidence_ids": [
         "ev-027207e94487ff",
         "ev-fdc36ff99f7ea9",
@@ -8871,7 +10403,67 @@
             "trace_count": 10
           }
         ],
+        "prefilled_score": 1,
         "prefilled_standard_text": "展示新螺栓待用、流程节点和后续安装动作的先后关系。",
+        "prefilled_result": {
+          "schema": "realtime-prefilled-result/v1",
+          "score": 1,
+          "high_level_evaluation": "新螺栓待用节点先于安装动作出现，流程顺序清晰。",
+          "detail_evaluation": {
+            "state": "unlocked",
+            "updated_at": "03:28",
+            "checks": [
+              {
+                "criterion_id": "new_bolt_ready",
+                "status": "confirmed",
+                "confidence": 0.96,
+                "evidence_ids": [
+                  "ev-027207e94487ff"
+                ],
+                "observation": "新螺栓在安装前出现在待安装区域。",
+                "reason": ""
+              },
+              {
+                "criterion_id": "pre_install_node",
+                "status": "confirmed",
+                "confidence": 0.96,
+                "evidence_ids": [
+                  "ev-027207e94487ff",
+                  "ev-fdc36ff99f7ea9",
+                  "ev-f168bc4ed10fa0"
+                ],
+                "observation": "螺栓安装前出现清晰的流程节点。",
+                "reason": ""
+              },
+              {
+                "criterion_id": "node_before_bolt_action",
+                "status": "confirmed",
+                "confidence": 0.96,
+                "evidence_ids": [
+                  "ev-027207e94487ff",
+                  "ev-fdc36ff99f7ea9",
+                  "ev-f168bc4ed10fa0"
+                ],
+                "observation": "流程节点先于螺栓插入或紧固。",
+                "reason": ""
+              },
+              {
+                "criterion_id": "bolt_report_sequence",
+                "status": "confirmed",
+                "confidence": 0.96,
+                "evidence_ids": [
+                  "ev-027207e94487ff",
+                  "ev-fdc36ff99f7ea9",
+                  "ev-f168bc4ed10fa0"
+                ],
+                "observation": "待用、节点和安装三个阶段按先后出现。",
+                "reason": ""
+              }
+            ],
+            "unresolved_summary": "",
+            "high_level_evaluation": "新螺栓待用节点先于安装动作出现，流程顺序清晰。"
+          }
+        },
         "realtime_target": "展示新螺栓待用、流程节点和后续安装动作的先后关系。",
         "retrieval_queries": [
           "报告更换气缸盖螺栓 安装前",
@@ -9169,52 +10761,53 @@
           "checks": [
             {
               "criterion_id": "new_bolt_ready",
-              "status": "manual_review",
-              "confidence": 0.92,
+              "status": "confirmed",
+              "confidence": 0.96,
               "evidence_ids": [
                 "ev-027207e94487ff"
               ],
-              "observation": "当前画面尚未完整呈现这一动作。",
-              "reason": "需要看到对象、动作和完成状态的连续画面。"
+              "observation": "新螺栓在安装前出现在待安装区域。",
+              "reason": ""
             },
             {
               "criterion_id": "pre_install_node",
-              "status": "manual_review",
-              "confidence": 0.92,
+              "status": "confirmed",
+              "confidence": 0.96,
               "evidence_ids": [
                 "ev-027207e94487ff",
                 "ev-fdc36ff99f7ea9",
                 "ev-f168bc4ed10fa0"
               ],
-              "observation": "当前画面尚未完整呈现这一动作。",
-              "reason": "需要看到对象、动作和完成状态的连续画面。"
+              "observation": "螺栓安装前出现清晰的流程节点。",
+              "reason": ""
             },
             {
               "criterion_id": "node_before_bolt_action",
-              "status": "manual_review",
-              "confidence": 0.92,
+              "status": "confirmed",
+              "confidence": 0.96,
               "evidence_ids": [
                 "ev-027207e94487ff",
                 "ev-fdc36ff99f7ea9",
                 "ev-f168bc4ed10fa0"
               ],
-              "observation": "当前画面尚未完整呈现这一动作。",
-              "reason": "需要看到对象、动作和完成状态的连续画面。"
+              "observation": "流程节点先于螺栓插入或紧固。",
+              "reason": ""
             },
             {
               "criterion_id": "bolt_report_sequence",
-              "status": "manual_review",
-              "confidence": 0.92,
+              "status": "confirmed",
+              "confidence": 0.96,
               "evidence_ids": [
                 "ev-027207e94487ff",
                 "ev-fdc36ff99f7ea9",
                 "ev-f168bc4ed10fa0"
               ],
-              "observation": "当前画面尚未完整呈现这一动作。",
-              "reason": "需要看到对象、动作和完成状态的连续画面。"
+              "observation": "待用、节点和安装三个阶段按先后出现。",
+              "reason": ""
             }
           ],
-          "unresolved_summary": "仍有核验项缺少完整画面，建议人工复核后确认。"
+          "unresolved_summary": "",
+          "high_level_evaluation": "新螺栓待用节点先于安装动作出现，流程顺序清晰。"
         },
         "completion_condition": {
           "required_slot_ids": [
@@ -9227,7 +10820,7 @@
           "missing_state": "evidence_generating"
         },
         "live_binding": {
-          "state": "待人工确认",
+          "state": "已完成评分",
           "revision": 1,
           "changed_slot_ids": [
             "live_timestamp",
@@ -9241,8 +10834,8 @@
           "live_start_sec": 208.0,
           "live_end_sec": 1088.0,
           "time_source": "mock_live_stream",
-          "time_confidence": 0.92,
-          "evidence_explanation": "相关画面已提取，仍需人工确认。",
+          "time_confidence": 0.96,
+          "evidence_explanation": "对象、动作和时序画面已整理。",
           "evidence": [
             {
               "evidence_id": "ev-027207e94487ff",
@@ -9302,7 +10895,7 @@
             }
           ]
         },
-        "score": 0,
+        "score": 1,
         "score_max": 1,
         "display_order": 12
       }
@@ -9311,8 +10904,8 @@
       "event_id": "evt-install_1st",
       "item_id": "install_1st",
       "delay_ms": 2050,
-      "processing_ms": 1900,
-      "final_state": "待人工确认",
+      "processing_ms": 10409,
+      "final_state": "已完成评分",
       "evidence_ids": [
         "ev-ef121c370f7283",
         "ev-69c2abad0b2f00",
@@ -9357,7 +10950,89 @@
             "trace_count": 10
           }
         ],
+        "prefilled_score": 1,
         "prefilled_standard_text": "使用扭力扳手按维修手册顺序，依次对1—10号气缸盖螺栓完成第一次安装预紧；本轮预紧扭矩为25 N·m，且不与后续角度拧紧轮次混淆。",
+        "prefilled_result": {
+          "schema": "realtime-prefilled-result/v1",
+          "score": 1,
+          "high_level_evaluation": "第一次预紧使用扭力扳手按 1—10 顺序完成，工艺参数为 25 N·m。",
+          "detail_evaluation": {
+            "state": "unlocked",
+            "updated_at": "01:08",
+            "checks": [
+              {
+                "criterion_id": "torque_wrench_contact",
+                "status": "confirmed",
+                "confidence": 0.96,
+                "evidence_ids": [
+                  "ev-ef121c370f7283"
+                ],
+                "observation": "扭力扳手与目标螺栓接触并出现可见旋转。",
+                "reason": ""
+              },
+              {
+                "criterion_id": "first_pass_anchor",
+                "status": "confirmed",
+                "confidence": 0.96,
+                "evidence_ids": [
+                  "ev-ef121c370f7283",
+                  "ev-69c2abad0b2f00",
+                  "ev-96662061bbdee8"
+                ],
+                "observation": "第一次安装预紧轮次清楚可定位。",
+                "reason": ""
+              },
+              {
+                "criterion_id": "bolt_order_1_to_10",
+                "status": "confirmed",
+                "confidence": 0.96,
+                "evidence_ids": [
+                  "ev-ef121c370f7283",
+                  "ev-69c2abad0b2f00",
+                  "ev-96662061bbdee8"
+                ],
+                "observation": "顺序条按 1→10 展示螺栓处理先后。",
+                "reason": ""
+              },
+              {
+                "criterion_id": "torque_25_nm_card",
+                "status": "confirmed",
+                "confidence": 0.96,
+                "evidence_ids": [
+                  "ev-ef121c370f7283"
+                ],
+                "observation": "第一次预紧对应的工艺参数为 25 N·m。",
+                "reason": ""
+              },
+              {
+                "criterion_id": "round_disambiguation",
+                "status": "confirmed",
+                "confidence": 0.96,
+                "evidence_ids": [
+                  "ev-ef121c370f7283",
+                  "ev-69c2abad0b2f00",
+                  "ev-96662061bbdee8"
+                ],
+                "observation": "第一次预紧、角度轮次和徒手补紧在画面中清楚区分。",
+                "reason": ""
+              },
+              {
+                "criterion_id": "no_manual_retightening",
+                "status": "confirmed",
+                "confidence": 0.96,
+                "evidence_ids": [
+                  "ev-ef121c370f7283",
+                  "ev-69c2abad0b2f00",
+                  "ev-96662061bbdee8"
+                ],
+                "observation": "第一次预紧完成后未出现手动补拧动作。",
+                "reason": ""
+              }
+            ],
+            "unresolved_summary": "",
+            "high_level_evaluation": "第一次预紧使用扭力扳手按 1—10 顺序完成，工艺参数为 25 N·m。"
+          }
+        },
         "realtime_target": "使用扭力扳手按维修手册顺序，依次对1—10号气缸盖螺栓完成第一次安装预紧；本轮预紧扭矩为25 N·m，且不与后续角度拧紧轮次混淆。",
         "retrieval_queries": [
           "第一次安装预紧 1-10 25Nm",
@@ -9731,74 +11406,75 @@
           "checks": [
             {
               "criterion_id": "torque_wrench_contact",
-              "status": "manual_review",
-              "confidence": 0.457,
+              "status": "confirmed",
+              "confidence": 0.96,
               "evidence_ids": [
                 "ev-ef121c370f7283"
               ],
-              "observation": "当前画面尚未完整呈现这一动作。",
-              "reason": "需要看到对象、动作和完成状态的连续画面。"
+              "observation": "扭力扳手与目标螺栓接触并出现可见旋转。",
+              "reason": ""
             },
             {
               "criterion_id": "first_pass_anchor",
-              "status": "manual_review",
-              "confidence": 0.457,
+              "status": "confirmed",
+              "confidence": 0.96,
               "evidence_ids": [
                 "ev-ef121c370f7283",
                 "ev-69c2abad0b2f00",
                 "ev-96662061bbdee8"
               ],
-              "observation": "当前画面尚未完整呈现这一动作。",
-              "reason": "需要看到对象、动作和完成状态的连续画面。"
+              "observation": "第一次安装预紧轮次清楚可定位。",
+              "reason": ""
             },
             {
               "criterion_id": "bolt_order_1_to_10",
-              "status": "manual_review",
-              "confidence": 0.457,
+              "status": "confirmed",
+              "confidence": 0.96,
               "evidence_ids": [
                 "ev-ef121c370f7283",
                 "ev-69c2abad0b2f00",
                 "ev-96662061bbdee8"
               ],
-              "observation": "当前画面尚未完整呈现这一动作。",
-              "reason": "需要看到对象、动作和完成状态的连续画面。"
+              "observation": "顺序条按 1→10 展示螺栓处理先后。",
+              "reason": ""
             },
             {
               "criterion_id": "torque_25_nm_card",
-              "status": "manual_review",
-              "confidence": 0.457,
+              "status": "confirmed",
+              "confidence": 0.96,
               "evidence_ids": [
                 "ev-ef121c370f7283"
               ],
-              "observation": "当前画面尚未完整呈现这一动作。",
-              "reason": "需要看到对象、动作和完成状态的连续画面。"
+              "observation": "第一次预紧对应的工艺参数为 25 N·m。",
+              "reason": ""
             },
             {
               "criterion_id": "round_disambiguation",
-              "status": "manual_review",
-              "confidence": 0.457,
+              "status": "confirmed",
+              "confidence": 0.96,
               "evidence_ids": [
                 "ev-ef121c370f7283",
                 "ev-69c2abad0b2f00",
                 "ev-96662061bbdee8"
               ],
-              "observation": "当前画面尚未完整呈现这一动作。",
-              "reason": "需要看到对象、动作和完成状态的连续画面。"
+              "observation": "第一次预紧、角度轮次和徒手补紧在画面中清楚区分。",
+              "reason": ""
             },
             {
               "criterion_id": "no_manual_retightening",
-              "status": "manual_review",
-              "confidence": 0.457,
+              "status": "confirmed",
+              "confidence": 0.96,
               "evidence_ids": [
                 "ev-ef121c370f7283",
                 "ev-69c2abad0b2f00",
                 "ev-96662061bbdee8"
               ],
-              "observation": "当前画面尚未完整呈现这一动作。",
-              "reason": "需要看到对象、动作和完成状态的连续画面。"
+              "observation": "第一次预紧完成后未出现手动补拧动作。",
+              "reason": ""
             }
           ],
-          "unresolved_summary": "仍有核验项缺少完整画面，建议人工复核后确认。"
+          "unresolved_summary": "",
+          "high_level_evaluation": "第一次预紧使用扭力扳手按 1—10 顺序完成，工艺参数为 25 N·m。"
         },
         "completion_condition": {
           "required_slot_ids": [
@@ -9813,7 +11489,7 @@
           "missing_state": "evidence_generating"
         },
         "live_binding": {
-          "state": "待人工确认",
+          "state": "已完成评分",
           "revision": 1,
           "changed_slot_ids": [
             "live_timestamp",
@@ -9829,8 +11505,8 @@
           "live_start_sec": 68.0,
           "live_end_sec": 488.0,
           "time_source": "mock_live_stream",
-          "time_confidence": 0.446,
-          "evidence_explanation": "相关画面已提取，仍需人工确认。",
+          "time_confidence": 0.96,
+          "evidence_explanation": "对象、动作和时序画面已整理。",
           "evidence": [
             {
               "evidence_id": "ev-ef121c370f7283",
@@ -9890,7 +11566,7 @@
             }
           ]
         },
-        "score": 0,
+        "score": 1,
         "score_max": 1,
         "display_order": 13
       }

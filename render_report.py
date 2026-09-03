@@ -609,6 +609,7 @@ FORBIDDEN_HTML_MARKERS = (
     "已完成展示",
     "高风险",
     "prefilled_score",
+    "prefilled_result",
     "runNext",
     "runOne",
     "平均",
