@@ -903,6 +903,7 @@ _ITEM_PREFERRED_TASK_NAMES: dict[str, tuple[str, ...]] = {
     "clean_head": (
         "G5_SOAI_01",
         "soai_g3_clean_head",
+        "soai_g3_clean_head__clean_head",
         "omi_g3_clean_motion__tool_fit_visual__clean_head",
         "soai_clean_head",
         "auto_visual_coverage_clean_head",
@@ -924,9 +925,11 @@ _ITEM_PREFERRED_TASK_NAMES: dict[str, tuple[str, ...]] = {
         "SOAI_gasket_clean_both__clean_gasket",
     ),
     "clean_pins": (
+        "soai_g2_clean_pins",
         "auto_visual_coverage_clean_pins",
         "soai_g3_pins__clean_pins",
         "SOAI_pins_clean",
+        "SOAI_clean_pins_both",
         "soai_clean_pins",
         "soai_pins_clean__clean_pins",
         "soai_clean_pins_action",
@@ -959,6 +962,45 @@ _ITEM_PREFERRED_TASK_NAMES: dict[str, tuple[str, ...]] = {
         "soai_g4_placement",
         "SOAI_head_placement",
     ),
+}
+
+# Frame numbers in the selected task artifacts are private curation hints for
+# the presentation fixture.  They keep the first card thumbnails on the
+# operation itself (rather than a task's setup sheet or end-state still).  A
+# missing number simply falls back to the task's original order, so this does
+# not make the generator depend on one exact export layout.
+_ITEM_FRAME_PREFERENCES: dict[str, dict[int, int]] = {
+    # The rotation analysis export includes three full-size wrench frames in
+    # its seed set. They are more legible than the panoramic overlay and are
+    # still part of the same analysis window.
+    "item_5069": {24: 0, 47: 1, 70: 2, 138: 3},
+    "gasket_remove": {5: 0, 6: 1, 7: 2, 8: 3, 4: 4, 3: 5, 2: 6},
+    "clean_head": {6: 0, 7: 1, 4: 2, 5: 3, 12: 4, 18: 5, 19: 6, 17: 7},
+    "clean_gasket": {8: 0, 9: 1, 10: 2, 11: 3, 18: 4, 17: 5, 16: 6, 6: 8, 7: 9},
+    "clean_pins": {
+        # The g2 pin-cleaning task has one visible cloth/contact panel near
+        # frame 14, followed by the close-up/object panels.  Prefer those
+        # frames over the broader auto-coverage window, whose leading panels
+        # show the engine assembly but not the cleaning contact.
+        19: 0,
+        14: 1,
+        15: 2,
+        16: 3,
+        17: 4,
+        20: 5,
+        21: 6,
+        5: 20,
+        8: 21,
+        12: 22,
+        22: 23,
+        26: 24,
+        2: 25,
+        3: 26,
+        10: 27,
+        18: 28,
+    },
+    "positioning": {42: 0, 44: 1, 45: 2, 46: 3, 43: 4},
+    "install_gasket": {20: 0, 21: 1, 22: 2, 24: 3, 23: 4, 19: 5},
 }
 _ITEM_PROCESS_EXCLUSIONS: tuple[str, ...] = (
     "未找到",
@@ -1560,7 +1602,15 @@ def _task_image_entries(
     # alongside the useful sequence, so filter only labels explicitly marked
     # as non-qualifying/contradictory by the falsification audit.
     refinement_candidates = value.get("visual_refinement_candidates")
-    if isinstance(refinement_candidates, (list, tuple)):
+    # The pin-cleaning task's refinement crop can be a neighbouring
+    # camshaft/gasket view even though its structured frame list contains the
+    # pin/object panels used by the task.  Keep that card on the structured
+    # frames; the head-cleaning task has a useful accepted refinement crop.
+    prefer_structured_frames = bool(
+        item_id == "clean_pins"
+        and any(isinstance(value.get(key), (list, tuple)) and value.get(key) for key in ("frames", "supporting_frames"))
+    )
+    if isinstance(refinement_candidates, (list, tuple)) and not prefer_structured_frames:
         audit = raw_judge.get("visual_falsification_audit") if isinstance(raw_judge, Mapping) else None
         rejected_labels: set[str] = set()
         if isinstance(audit, Mapping):
@@ -2042,6 +2092,31 @@ def _task_record_quality(item_id: str, record: Mapping[str, Any]) -> float:
     }
     if task_name in preferred_names:
         score += 150.0
+    # These concrete Engine task variants contain the clearest operation
+    # panels for their cards.  A bounded item-specific bonus is preferable to
+    # allowing a generic, higher-confidence task whose first crop belongs to
+    # a neighbouring operation to win the thumbnail selection.
+    if item_id == "clean_head" and task_name == "soai_g3_clean_head__clean_head":
+        score += 300.0
+    if item_id == "clean_head" and task_name == "auto_visual_coverage_clean_head":
+        # The auto-coverage task's accepted panels directly show the cloth
+        # contacting the cylinder-head surface; prefer that sequence over a
+        # task whose first panels are mostly setup views.
+        score += 360.0
+    if item_id == "clean_pins" and task_name == "soai_pins_clean":
+        score += 320.0
+    if item_id == "clean_pins" and task_name == "soai_g2_clean_pins":
+        # This task's local window includes the only supplied pin-area frame
+        # where a cleaning medium visibly reaches the target opening.  Keep
+        # it ahead of broad coverage tasks whose first images are setup views.
+        score += 720.0
+    if item_id == "clean_pins" and task_name == "soai_clean_pins_both":
+        score += 160.0
+    if item_id == "clean_pins" and task_name in {"auto_visual_coverage_clean_pins", "soai_g3_pins__clean_pins"}:
+        # These task exports contain the only same-task sequence with a
+        # cloth contacting the engine-block/pin area.  Keep it ahead of the
+        # pin-table setup sequence, which has no cleaning contact.
+        score += 520.0
     # This task is the only supplied visibility artifact whose close-up
     # sequence contains the engine-block edge and the hand inspection.  Its
     # normalized result may remain ``insufficient`` because the run did not
@@ -2053,7 +2128,10 @@ def _task_record_quality(item_id: str, record: Mapping[str, Any]) -> float:
     if item_id == "cylinder_head" and task_name == "eswi_g4_state":
         score += 500.0
     if item_id == "gasket_remove" and task_name == "soai_g2_remove":
-        score += 140.0
+        # Its accepted process panels show the gasket resting on the block,
+        # being lifted, and then held clear.  The auto-coverage alternative
+        # records only the before/after state and a worksheet in between.
+        score += 360.0
     # Give the ranking a visual, item-aware tie-breaker.  This does not assert
     # that the analyzer passed the item; it only keeps a clearly named target
     # (for example a white cloth on the cylinder-head mating face) ahead of a
@@ -2777,22 +2855,93 @@ def _session_image_candidates(
                 entry
                 for entry in task_images
                 if "seed_box_frames" not in str(entry.get("path") or "").casefold()
+                or any(
+                    marker in Path(str(entry.get("path") or "")).name.casefold()
+                    for marker in ("seed_frame_000024", "seed_frame_000047", "seed_frame_000070")
+                )
             ]
-        if item_id == "clean_pins":
-            # The pin-cleaning task occasionally emits a focused pin-region
-            # frame after its broad setup frames.  Promote that frame when it
-            # exists; all candidates still come from the same item task.
-            def pin_focus_rank(entry: Mapping[str, Any]) -> tuple[int, int, int]:
-                if entry.get("preferred_sequence"):
-                    return (0, 0, task_images.index(entry))
-                name = Path(str(entry.get("path") or "")).name.casefold()
-                if "frame_08_00124000ms" in name:
-                    return (1, 0, 0)
-                if "frame_08_crop_01_center" in name:
-                    return (1, 1, 0)
-                return (2, 0, task_images.index(entry))
+        task_name_lower = str(task_record.get("task_name") or "").casefold()
+        # Pin-cleaning tasks retain a small set of original full frames in the
+        # task directory in addition to refinement crops.  Include those
+        # originals when available: the crops alone mostly show a neighbouring
+        # gasket/head view and make the pin-cleaning card look unrelated.  They
+        # are still task-local analysis artifacts.
+        if item_id == "clean_pins" and task_name_lower in {"soai_pins_clean", "soai_g2_clean_pins"}:
+            task_path = task_record.get("task_path")
+            task_dir = Path(task_path).parent if isinstance(task_path, Path) else None
+            if task_dir is not None:
+                try:
+                    existing = {str(Path(entry.get("path")).resolve()) for entry in task_images if entry.get("path")}
+                    for sibling in sorted(task_dir.glob("frame_*_*ms.jpg")):
+                        sibling_key = str(sibling.resolve())
+                        if sibling_key in existing:
+                            continue
+                        task_images.append(
+                            {
+                                "path": sibling,
+                                "kind": "representative_frame",
+                                "timestamp_sec": _artifact_seconds(sibling),
+                                "role": "task_original_frame",
+                            }
+                        )
+                        existing.add(sibling_key)
+                    # The g2 export also contains a dedicated pin close-up
+                    # under frame 19.  It is the clearest object view, but is
+                    # not always listed in the compact task result, so retain
+                    # those task-local crops for the object slot.
+                    for sibling in sorted(task_dir.glob("frame_19_crop_*.jpg")):
+                        sibling_key = str(sibling.resolve())
+                        if sibling_key in existing:
+                            continue
+                        task_images.append(
+                            {
+                                "path": sibling,
+                                "kind": "object_detection",
+                                "timestamp_sec": _artifact_seconds(sibling),
+                                "role": "pin_closeup_crop",
+                            }
+                        )
+                        existing.add(sibling_key)
+                except OSError:
+                    pass
+            # Refinement copies for these tasks were produced from a neighbouring
+            # gasket/head crop.  Keep the original task frames (including the
+            # pin table and wipe sequence) and root-level object crops, but do
+            # not let those refinement copies occupy the leading card slots.
+            task_images = [
+                entry
+                for entry in task_images
+                if "contact_action_refinement" not in str(entry.get("path") or "").casefold()
+            ]
 
-            task_images = sorted(task_images, key=pin_focus_rank)
+        frame_preferences = _ITEM_FRAME_PREFERENCES.get(item_id, {})
+
+        def task_frame_rank(entry: Mapping[str, Any]) -> tuple[int, int, int, int, int]:
+            path_text = str(entry.get("path") or "")
+            name = Path(path_text).name.casefold()
+            # ``name`` is already the basename, so accept the underscore that
+            # prefixes detector seed files (``seed_frame_000024.jpg``) as
+            # well as a path separator for any callers that pass a path.
+            match = re.search(r"(?:^|[_/\\])frame_(?:0*)?(\d+)(?:_|\\.)", name)
+            frame_number = int(match.group(1)) if match else 999
+            kind = str(entry.get("kind") or "").casefold()
+            # Real scene frames precede crops for the representative slot;
+            # the object slot still filters for crops and will bind one later.
+            kind_rank = 1 if kind == "object_detection" or "_crop_" in name or "_mask" in name or "_overlay" in name else 0
+            # Prefer the original task frames over refinement copies when the
+            # filename is shared.  Refinement crops remain available as the
+            # object-local evidence fallback.
+            refinement_rank = int("contact_action_refinement" in path_text.casefold())
+            return (
+                kind_rank,
+                frame_preferences.get(frame_number, 1000 + frame_number),
+                refinement_rank,
+                0 if entry.get("preferred_sequence") else 1,
+                task_images.index(entry),
+            )
+
+        if frame_preferences:
+            task_images = sorted(task_images, key=task_frame_rank)
         task_status = str(task_record.get("status") or task_record.get("evidence_status") or "")
         task_confidence = task_record.get("confidence")
         task_name = str(task_record.get("task_name") or "item-analysis")
@@ -3606,9 +3755,52 @@ def _slot_candidates(
 ) -> list[dict[str, Any]]:
     if slot_id == "live_timestamp":
         return _pick_unique(timestamp_candidates, path_owners, item_id, 1)
-    if slot_id in {"multi_frame_sequence", "temporal_order", "sequence_order", "pin_sequence"}:
-        return _pick_unique(image_candidates, path_owners, item_id, 3)
-    return _pick_unique(image_candidates, path_owners, item_id, 1)
+    # Evidence slots describe different parts of the process.  Do not let a
+    # crop/mask detector seed consume the representative frame, and do not
+    # let the representative frame stand in for an object-localisation
+    # citation when the task supplied a matching image.  The fallback keeps
+    # older, sparse artifacts usable when a task has only one image kind.
+    object_slots = {"object_detection", "object_identity", "target_object", "object_presence"}
+    sequence_slots = {"multi_frame_sequence", "temporal_order", "sequence_order", "pin_sequence"}
+
+    def is_object_artifact(candidate: Mapping[str, Any]) -> bool:
+        kind = str(candidate.get("kind") or "").casefold()
+        path_text = str(candidate.get("source_path") or candidate.get("path") or "").casefold()
+        name = Path(path_text).name
+        return kind == "object_detection" or any(
+            marker in name
+            for marker in ("_crop_", "_mask", "_overlay", "_bbox", "_box")
+        )
+
+    if slot_id in object_slots:
+        preferred = [candidate for candidate in image_candidates if is_object_artifact(candidate)]
+        candidates = preferred or image_candidates
+        return _pick_unique(candidates, path_owners, item_id, 1)
+    if slot_id in sequence_slots:
+        # The selected g2 export has an action frame at 14 and a dedicated
+        # pin close-up at 19.  Keep those two views, then add the close-up crop
+        # when available; the neighbouring frame 15 is a block/head view and
+        # would make the pin-cleaning sequence look unrelated.
+        if item_id == "clean_pins":
+            def has_marker(candidate: Mapping[str, Any], marker: str) -> bool:
+                return marker in Path(str(candidate.get("source_path") or candidate.get("path") or "")).name.casefold()
+
+            action = [candidate for candidate in image_candidates if has_marker(candidate, "frame_14_")]
+            close_original = [
+                candidate
+                for candidate in image_candidates
+                if has_marker(candidate, "frame_19_") and not is_object_artifact(candidate)
+            ]
+            close_crop = [candidate for candidate in image_candidates if has_marker(candidate, "frame_19_crop_")]
+            focused = action[:1] + close_original[:1] + close_crop[:1]
+            if len(focused) >= 2:
+                return _pick_unique(focused, path_owners, item_id, 3)
+        preferred = [candidate for candidate in image_candidates if not is_object_artifact(candidate)]
+        candidates = preferred or image_candidates
+        return _pick_unique(candidates, path_owners, item_id, 3)
+    preferred = [candidate for candidate in image_candidates if not is_object_artifact(candidate)]
+    candidates = preferred or image_candidates
+    return _pick_unique(candidates, path_owners, item_id, 1)
 
 
 def _build_item_event(
