@@ -21,6 +21,15 @@
 | `展示标准报告_8-20_mock.json` | artifacts 生成的 mock 事件数据 |
 | `展示标准报告_8-20_mock.html` | mock 回放页面 |
 
+## 视觉设计
+
+`render_report.py` 内联的页面样式依据仓库上级的设计 token 文件
+`../duanyan-design-token.html` 重构：纸张色背景（`paper`）、墨色文字（`ink`）、细规则线
+（`rule`）、蓝色主色（`vermilion`）、金色提示（`gold`），并以衬线标题、等宽状态标签和
+Inter 正文建立层级。时间线使用点状脊柱，卡片、证据和分析链使用 4–8px 圆角与轻阴影，状态
+颜色沿用 success / warning / error 浅色语义。HTML 不依赖外部前端包，字体不可用时自动回退到
+系统字体。
+
 ## 环境与工作目录
 
 以下命令均假定当前工作目录就是本目录：

@@ -66,6 +66,22 @@ class ReportContractTest(unittest.TestCase):
         self.assertNotIn("下一项", html)
         self.assertNotIn("已完成展示", html)
 
+    def test_public_html_uses_duanyan_design_tokens(self) -> None:
+        html = render_html(template_payload())
+        for token in (
+            "--paper:#fdfcf8",
+            "--paper-warm:#f7f4ec",
+            "--ink:#1a2332",
+            "--rule:#e8e4d9",
+            "--vermilion:#1661ab",
+            "--gold:#a8864b",
+            'font-family:"Cormorant Garamond"',
+            'font-family:"JetBrains Mono"',
+        ):
+            self.assertIn(token, html)
+        self.assertNotIn("--bg:#08111f", html)
+        self.assertNotIn("linear-gradient(145deg,#4ce3ff", html)
+
     def test_evaluation_text_is_disclosed_only_after_completion(self) -> None:
         payload = template_payload()
         item = next(item for item in payload["items"] if item["item_number"] == 20)
