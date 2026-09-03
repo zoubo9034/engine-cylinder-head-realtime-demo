@@ -13,7 +13,11 @@ from pathlib import Path
 from detail_rules import DETAIL_CHECK_STATUSES, DETAIL_EVALUATION_STATES, DETAIL_RULES, DETAIL_RULES_BY_ITEM
 from report_schema import DIFFICULTY_LABELS, ITEM_DEFINITIONS, template_payload, validate_report
 from render_report import FORBIDDEN_HTML_MARKERS, _clean_text, public_projection, render_html
-from build_mock_report import MOCK_ANALYSIS_DURATION_MS
+from build_mock_report import (
+    MOCK_ANALYSIS_DURATION_MS,
+    _item_process_frame_records,
+    _session_image_candidates,
+)
 from serve_demo import (
     ANALYSIS_DURATION_MAX_MS,
     ANALYSIS_DURATION_MIN_MS,
@@ -398,6 +402,122 @@ class ReportContractTest(unittest.TestCase):
             all(check["status"] == "confirmed" for check in event["item_patch"]["detail_evaluation"]["checks"])
             for event in payload["events"]
         ))
+
+    def test_mock_fixture_frames_stay_in_the_selected_item_process(self) -> None:
+        """Checked-in mock evidence must come from one item's process output."""
+        path = Path(__file__).with_name("展示标准报告_8-20_mock.json")
+        if not path.exists():
+            self.skipTest("mock fixture has not been generated")
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        audit = payload.get("_mock_audit", {}).get("selected_items", {})
+        self.assertEqual(set(audit), {item["item_id"] for item in ITEM_DEFINITIONS})
+        for event in payload.get("events", []):
+            item_id = str(event["item_id"])
+            selected = audit[item_id]
+            sample_id = str(selected["sample_id"])
+            self.assertTrue(sample_id)
+            self.assertEqual(event["processing_ms"], MOCK_ANALYSIS_DURATION_MS)
+            for evidence in event["item_patch"]["live_binding"]["evidence"]:
+                source_path = str(evidence.get("source_path") or "")
+                if source_path.startswith("timestamp:"):
+                    continue
+                # The private audit fields are intentionally retained in the
+                # JSON fixture, so this check can verify that no neighbouring
+                # video's frame was spliced into the selected item.
+                self.assertIn(sample_id, source_path)
+                self.assertTrue(
+                    evidence.get("analysis_task")
+                    or evidence.get("analysis_status")
+                    or "keyframes" in source_path.casefold()
+                    or any(token in source_path.casefold() for token in ("mask", "bbox", "overlay", "crop"))
+                )
+
+    def test_adapter_segment_cache_keeps_all_item_tags(self) -> None:
+        """A first item lookup must not erase later item's process frames."""
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            session_dir = root / "video-a"
+            intermediate = session_dir / "intermediate"
+            frames = session_dir / "keyframes" / "a1"
+            intermediate.mkdir(parents=True)
+            frames.mkdir(parents=True)
+            for seconds in (1, 2, 9):
+                (frames / f"keyframe_{seconds:03d}s.jpg").write_bytes(b"frame")
+            (intermediate / "adapter_adapter_result.json").write_text(
+                json.dumps(
+                    {
+                        "status": "success",
+                        "keyframe_map": {
+                            "1": "keyframes/a1/keyframe_001s.jpg",
+                            "2": "keyframes/a1/keyframe_002s.jpg",
+                            "9": "keyframes/a1/keyframe_009s.jpg",
+                        },
+                        "merged_segments": [
+                            {"start": 1, "end": 2, "tags": ["item_5069"]},
+                            {"start": 9, "end": 9, "tags": ["clean_pins"]},
+                        ],
+                    },
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+            session = {"session_dir": session_dir, "sample_id": "video-a", "rows_by_item": {}}
+            first = _item_process_frame_records("item_5069", session, [])
+            second = _item_process_frame_records("clean_pins", session, [])
+            self.assertEqual([entry["timestamp_sec"] for entry in first], [1.0, 2.0])
+            self.assertEqual([entry["timestamp_sec"] for entry in second], [9.0])
+            self.assertIn("clean_pins", session["item_process_frame_records"])
+
+    def test_item_candidates_prefer_tagged_process_frames_over_row_neighbor(self) -> None:
+        """Tagged segment frames win over an unrelated compact row frame."""
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            session_dir = root / "video-b"
+            intermediate = session_dir / "intermediate"
+            frames = session_dir / "keyframes" / "a1"
+            intermediate.mkdir(parents=True)
+            frames.mkdir(parents=True)
+            for seconds in (10, 11, 12, 50):
+                (frames / f"keyframe_{seconds:03d}s.jpg").write_bytes(b"frame")
+            (intermediate / "adapter_adapter_result.json").write_text(
+                json.dumps(
+                    {
+                        "status": "success",
+                        "keyframe_map": {
+                            str(seconds): f"keyframes/a1/keyframe_{seconds:03d}s.jpg"
+                            for seconds in (10, 11, 12, 50)
+                        },
+                        "merged_segments": [
+                            {"start": 10, "end": 12, "tags": ["clean_gasket"]},
+                        ],
+                    },
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+            session = {
+                "session_dir": session_dir,
+                "sample_id": "video-b",
+                "rows_by_item": {
+                    "clean_gasket": [
+                        (
+                            "video-b",
+                            {
+                                "item": "clean_gasket",
+                                "timestamp_sec": 50,
+                                "status": "pass",
+                                "keyframe_path": "keyframes/a1/keyframe_050s.jpg",
+                            },
+                            session_dir,
+                        )
+                    ]
+                },
+            }
+            candidates = _session_image_candidates("clean_gasket", session)
+            process_times = [candidate.get("timestamp_sec") for candidate in candidates]
+            self.assertTrue(process_times)
+            self.assertTrue(set(process_times).issubset({10.0, 11.0, 12.0}))
+            self.assertTrue(all(candidate.get("analysis_task") for candidate in candidates))
 
     def test_reset_restores_empty_template(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

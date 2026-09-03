@@ -642,14 +642,41 @@ def _resolve_image_path(
         return path.resolve()
 
     # Reports copied between workers often retain an old absolute prefix or a
-    # stage-run prefix (``15/keyframes/...``).  Match only a suffix within the
-    # selected session, never a sibling video directory.
-    candidates = list(image_index or ())
-    if not candidates:
-        candidates = _session_image_index(session_dir)
+    # stage-run prefix (``15/keyframes/...``).  Recover the path directly from
+    # the selected session whenever possible.  This avoids scanning thousands
+    # of rich crops for every field in a task result and, importantly, keeps
+    # recovery inside this one video directory.
     wanted = _path_parts(value)
     if not wanted:
         return None
+    session_dir = Path(session_dir)
+    session_name = session_dir.name
+    # Absolute artifact paths normally contain the selected session directory
+    # verbatim.  Preserve everything after that component.
+    for index, part in enumerate(wanted):
+        if part == session_name and index + 1 < len(wanted):
+            candidate = session_dir.joinpath(*wanted[index + 1 :])
+            if _path_is_image(candidate):
+                return candidate.resolve()
+    # A few exports omit the session component but retain a stable root such
+    # as ``artifacts/`` or ``keyframes/``.  Try the longest such suffix before
+    # falling back to the bounded index.
+    root_markers = {"artifacts", "keyframes", "visualizations", "intermediate"}
+    marker_positions = [index for index, part in enumerate(wanted) if part.casefold() in root_markers]
+    for index in reversed(marker_positions):
+        candidate = session_dir.joinpath(*wanted[index:])
+        if _path_is_image(candidate):
+            return candidate.resolve()
+
+    # Match only a suffix within the selected session, never a sibling video
+    # directory.  ``image_index`` is normally a cached list; do not copy it on
+    # every lookup because rich task results can contain hundreds of refs.
+    if image_index is None:
+        candidates = _session_image_index(session_dir)
+    elif isinstance(image_index, list):
+        candidates = image_index
+    else:
+        candidates = list(image_index)
     ranked: list[tuple[int, int, str, Path]] = []
     for candidate in candidates:
         candidate_parts = _path_parts(str(candidate))
@@ -695,21 +722,56 @@ def _supporting_image_paths(
     """Return exact image artifacts attached to one evidence row."""
     paths: list[Path] = []
     seen: set[Path] = set()
+    # Some rich task results contain large nested diagnostics (sampling plans,
+    # image-quality records and model observations).  Walking every value in
+    # those objects made mock generation both slow and prone to accidentally
+    # treating prose as a file reference.  Keep this collector deliberately
+    # shallow and path-key aware; task-result parsing below supplies the few
+    # structured fields that need deeper handling.
+    visited = 0
+    max_nodes = 2_000
+    max_paths = 96
+    path_key_tokens = (
+        "path",
+        "image",
+        "frame",
+        "mask",
+        "bbox",
+        "box",
+        "overlay",
+        "crop",
+        "artifact",
+        "visual",
+    )
 
-    def visit(value: Any) -> None:
+    def visit(value: Any, *, key_hint: str = "", depth: int = 0) -> None:
+        nonlocal visited
+        if visited >= max_nodes or len(paths) >= max_paths or depth > 7:
+            return
+        visited += 1
         if isinstance(value, str):
+            # A path-like key is required for strings nested in a mapping.
+            # Top-level supporting-artifact lists are passed with an empty
+            # hint and are allowed because their values are already scoped.
+            if key_hint and not any(token in key_hint for token in path_key_tokens):
+                return
             path = _resolve_image_path(value, session_dir, image_index)
             if path is not None and path not in seen:
                 seen.add(path)
                 paths.append(path)
             return
         if isinstance(value, Mapping):
-            for nested in value.values():
-                visit(nested)
+            for key, nested in value.items():
+                key_text = str(key).casefold()
+                # Image-quality metadata and free-form observations cannot
+                # contain useful artifact pointers for this collector.
+                if key_text in {"image_quality", "raw_observations", "description", "reason", "issues", "observations"}:
+                    continue
+                visit(nested, key_hint=key_text, depth=depth + 1)
             return
         if isinstance(value, (list, tuple, set)):
             for nested in value:
-                visit(nested)
+                visit(nested, key_hint=key_hint, depth=depth + 1)
 
     # Supporting artifacts are preferred over a generic scorer keyframe.  The
     # latter remains a valid process frame when no mask/box/crop was emitted.
@@ -722,7 +784,7 @@ def _supporting_image_paths(
         "keyframe",
     )
     for key in preferred_keys:
-        visit(evidence.get(key))
+        visit(evidence.get(key), key_hint=str(key).casefold())
 
     # Enriched Engine rows use several names for detector output.  Inspect
     # only image/artifact-like fields so prose, URLs and descriptions cannot
@@ -741,7 +803,7 @@ def _supporting_image_paths(
     for key, value in evidence.items():
         key_text = str(key).casefold()
         if key in preferred_keys or any(token in key_text for token in image_key_tokens):
-            visit(value)
+            visit(value, key_hint=key_text)
     return paths
 
 
@@ -761,6 +823,664 @@ def _session_index_for(session: Mapping[str, Any]) -> list[Path]:
     return index
 
 
+TASK_RESULT_SCAN_LIMIT = 500
+TASK_RESULT_IMAGE_LIMIT = 72
+TASK_RESULT_FRAME_LIMIT = 12
+TASK_RESULT_CROP_LIMIT = 16
+PROCESS_SEGMENT_SCAN_LIMIT = 180
+PROCESS_SEGMENT_FRAME_LIMIT = 36
+PROCESS_SEGMENT_TOLERANCE_SECONDS = 0.25
+
+# These hints are used only to rank private source artifacts.  They never
+# leave the generator and are intentionally phrased as observable actions or
+# objects, so a coarse report row can still be matched to the right process
+# frame when its status field is missing.
+_ITEM_PROCESS_HINTS: dict[str, tuple[str, ...]] = {
+    "item_5069": ("第二次", "预松", "180", "180°", "pointer", "wrench", "扳手"),
+    "cylinder_head": ("气缸盖", "垫块", "支架", "放置", "下降", "place", "pad"),
+    "gasket_remove": ("取下", "移除", "脱离", "气缸垫", "gasket", "remove", "lift"),
+    "gasket_inspect": ("检查", "孔位", "边缘", "表面", "正面", "反面", "inspect", "gasket"),
+    "positioning": ("定位销", "两枚", "pin", "position", "检查"),
+    "clean_head": ("清洁", "擦拭", "气缸盖", "结合面", "无纺布", "布料", "wipe", "clean"),
+    "clean_block": ("清洁", "擦拭", "气缸体", "气缸孔", "结合面", "无纺布", "布料", "wipe", "clean"),
+    "clean_gasket": ("清洁", "擦拭", "气缸垫", "正面", "反面", "翻面", "布", "wipe", "clean"),
+    "clean_pins": ("清洁", "擦拭", "定位销", "两枚", "pin", "wipe", "clean"),
+    "report_gasket": ("报告", "更换", "气缸垫", "待用", "节点", "安装前", "gasket"),
+    "install_gasket": ("安装", "气缸垫", "垫片", "孔位", "定位销", "落座", "对准", "gasket", "install"),
+    "cylinder_head_bolt": ("螺栓", "气缸盖", "新", "待用", "报告", "安装", "bolt"),
+    "install_1st": ("第一次", "预紧", "扭力", "扭矩", "1", "10", "25", "螺栓", "wrench", "tighten"),
+}
+_ITEM_PROCESS_EXCLUSIONS: tuple[str, ...] = (
+    "未找到",
+    "未看到",
+    "未见",
+    "没有",
+    "无法",
+    "缺乏",
+    "不涉及",
+    "无直接",
+    "不清楚",
+    "not found",
+    "no direct",
+    "no evidence",
+    "not explicitly",
+    "not clear",
+    "doesn't",
+    "don't",
+    "absence",
+    "unrelated",
+    "未显示",
+    "未出现",
+    "未看到",
+    "未明确",
+    "无法确认",
+    "不明确",
+    "可能是",
+    "可能为",
+    "cannot",
+    "unable",
+    "unrelated",
+    "negative",
+)
+_TASK_POSITIVE_STATUSES = {"success", "pass", "passed", "confirmed", "complete", "completed", "supported"}
+_TASK_NEGATIVE_STATUSES = {"failed", "fail", "unsupported", "not_confirmed", "not supported", "negative", "unrelated"}
+
+
+def _string_values(value: Any) -> list[str]:
+    """Flatten a small claim/identifier field without traversing diagnostics."""
+    if isinstance(value, str):
+        return [value]
+    if isinstance(value, (list, tuple, set)):
+        return [str(entry) for entry in value if isinstance(entry, (str, int, float))]
+    return []
+
+
+def _task_claim_values(value: Mapping[str, Any]) -> list[str]:
+    claims: list[str] = []
+    for key in ("claim_ids", "item_id", "item", "items", "item_ids", "criterion_ids"):
+        claims.extend(_string_values(value.get(key)))
+    return claims
+
+
+def _owned_task_items(value: Mapping[str, Any], task_path: Path | None = None) -> tuple[set[str], bool]:
+    """Return exact scored-item ownership for a task artifact.
+
+    A criterion such as ``a1.clean_block.pass`` is accepted because the item
+    token is an exact dot-separated component.  Loose substring matching is
+    deliberately avoided: ``clean_head`` must never claim a ``clean_head_bolt``
+    artifact, and artifacts for another item cannot supply this item's frame.
+    """
+    active = {str(definition["item_id"]) for definition in ITEM_DEFINITIONS}
+    owned: set[str] = set()
+    exact = False
+    values = _task_claim_values(value)
+    for raw in values:
+        text = str(raw).strip()
+        pieces = {piece for piece in re.split(r"[^A-Za-z0-9_]+", text) if piece}
+        for item_id in active:
+            if text == item_id or item_id in pieces:
+                owned.add(item_id)
+                exact = True
+    # Some adapter snapshots keep the finding's item only in the filename or
+    # in a sibling task directory.  Use that fallback only when the path part
+    # is itself an exact item token; never infer ownership from a description.
+    if not owned and task_path is not None:
+        for part in task_path.parts:
+            if part in active:
+                owned.add(part)
+                exact = True
+    return owned, exact
+
+
+def _normalised_status(value: Any) -> str:
+    return str(value or "").strip().casefold().replace("-", "_")
+
+
+def _task_positive(value: Mapping[str, Any]) -> bool:
+    status = _normalised_status(value.get("status"))
+    evidence_status = _normalised_status(value.get("evidence_status"))
+    if status in _TASK_NEGATIVE_STATUSES or evidence_status in _TASK_NEGATIVE_STATUSES:
+        return False
+    if status in _TASK_POSITIVE_STATUSES or evidence_status in _TASK_POSITIVE_STATUSES:
+        return evidence_status not in {"insufficient", "unsupported", "not_confirmed", "failed"}
+    return False
+
+
+def _task_visual_candidate(value: Mapping[str, Any]) -> bool:
+    """Whether an image-bearing task is a useful visual fallback.
+
+    Rich runs may mark a task ``insufficient`` because a separate requirement
+    was unresolved even though its sampled frames clearly show the object and
+    motion needed by this visual-only demo.  Such a record is never treated as
+    a report score; it is merely ranked below a supported task.
+    """
+    status = _normalised_status(value.get("status"))
+    evidence_status = _normalised_status(value.get("evidence_status"))
+    if status in _TASK_NEGATIVE_STATUSES or evidence_status in _TASK_NEGATIVE_STATUSES:
+        return False
+    if status in {"insufficient", "pending", "analyzing", ""} or evidence_status in {"insufficient", "pending", "analyzing", ""}:
+        visual_fields = (
+            "object_visible",
+            "action_observed",
+            "contact_observed",
+            "motion_supported",
+            "rotation_supported",
+            "projected_angle_supported",
+            "verified_checks",
+            "visible_targets",
+        )
+        return any(bool(value.get(field)) for field in visual_fields)
+    return False
+
+
+def _task_confidence(value: Mapping[str, Any]) -> float:
+    for key in ("confidence", "motion_observed_confidence", "localization_confidence", "rerank_score"):
+        candidate = value.get(key)
+        if isinstance(candidate, (int, float)) and not isinstance(candidate, bool):
+            return max(0.0, min(1.0, float(candidate)))
+    return 0.0
+
+
+def _task_timestamp(value: Any) -> float | None:
+    if isinstance(value, Mapping):
+        for key in ("time_sec", "timestamp_sec", "seconds", "timestamp", "time"):
+            candidate = _timestamp_seconds({key: value.get(key)}) if key in value else None
+            if candidate is not None:
+                return candidate
+        for key in ("source_time_sec", "source_timestamp_sec"):
+            candidate = value.get(key)
+            if isinstance(candidate, (int, float)) and not isinstance(candidate, bool):
+                return float(candidate)
+    elif isinstance(value, (int, float)) and not isinstance(value, bool):
+        return float(value)
+    return None
+
+
+def _task_image_entries(
+    value: Mapping[str, Any],
+    task_path: Path,
+    session_dir: Path,
+    image_index: Iterable[Path],
+) -> list[dict[str, Any]]:
+    """Extract process images and their source timestamps from one task."""
+    entries: list[dict[str, Any]] = []
+    seen: set[Path] = set()
+    frame_count = 0
+    crop_count = 0
+
+    def add(raw: Any, *, kind: str, timestamp: float | None = None, role: str = "") -> None:
+        nonlocal frame_count, crop_count
+        if len(entries) >= TASK_RESULT_IMAGE_LIMIT or not isinstance(raw, str):
+            return
+        path = _resolve_image_path(raw, session_dir, image_index)
+        if path is None or path in seen:
+            return
+        is_crop = kind == "object_detection" or "crop" in kind
+        if is_crop and crop_count >= TASK_RESULT_CROP_LIMIT:
+            return
+        if not is_crop and frame_count >= TASK_RESULT_FRAME_LIMIT:
+            return
+        seen.add(path)
+        if is_crop:
+            crop_count += 1
+        else:
+            frame_count += 1
+        if timestamp is None:
+            timestamp = _artifact_seconds(path)
+        entries.append({
+            "path": path,
+            "kind": kind,
+            "timestamp_sec": timestamp,
+            "role": str(role or ""),
+        })
+
+    def add_structured(raw: Any, *, default_kind: str, time_keys: tuple[str, ...] = ()) -> None:
+        if isinstance(raw, Mapping):
+            timestamp = _task_timestamp(raw)
+            role = raw.get("sample_role") or raw.get("sample_source") or raw.get("role") or raw.get("region_type") or ""
+            for key in ("frame_path", "source_frame_path", "image_path", "crop_path", "mask_path", "bbox_path", "overlay_path", "path"):
+                candidate = raw.get(key)
+                if isinstance(candidate, str):
+                    kind = default_kind
+                    key_text = key.casefold()
+                    if "crop" in key_text or "mask" in key_text or "bbox" in key_text or "box" in key_text or "overlay" in key_text:
+                        kind = "object_detection"
+                    elif "strip" in candidate.casefold() or "sequence" in candidate.casefold():
+                        kind = "multi_frame_sequence"
+                    add(candidate, kind=kind, timestamp=timestamp, role=str(role))
+            return
+        if isinstance(raw, str):
+            add(raw, kind=default_kind, timestamp=None)
+
+    # The structured lists retain the analysis sampler's ordering and timing.
+    frames = value.get("supporting_frames")
+    if isinstance(frames, (list, tuple)):
+        for frame in frames:
+            add_structured(frame, default_kind="representative_frame")
+    crops = value.get("supporting_crops")
+    if isinstance(crops, (list, tuple)):
+        for crop in crops:
+            add_structured(crop, default_kind="object_detection")
+
+    # Artifact lists may contain frame strips, masks, bbox overlays and the
+    # original sampled frames.  Traverse only path-bearing keys and stop as
+    # soon as the bounded image budget is reached.
+    def visit(raw: Any, key_hint: str = "", depth: int = 0) -> None:
+        if len(entries) >= TASK_RESULT_IMAGE_LIMIT or depth > 6:
+            return
+        if isinstance(raw, str):
+            if Path(raw).suffix.casefold() not in VISUAL_IMAGE_SUFFIXES:
+                return
+            hint = key_hint.casefold()
+            kind = "object_detection" if any(token in hint for token in ("crop", "mask", "bbox", "box", "overlay", "segmentation")) else "artifact_frame"
+            if "strip" in raw.casefold() or "sequence" in raw.casefold():
+                kind = "multi_frame_sequence"
+            add(raw, kind=kind)
+            return
+        if isinstance(raw, Mapping):
+            for key, nested in raw.items():
+                key_text = str(key).casefold()
+                if key_text in {"task_dir", "sampling_plan", "image_quality", "raw_observations", "description", "reason", "observations", "issues"}:
+                    continue
+                if any(token in key_text for token in ("path", "image", "frame", "mask", "bbox", "box", "overlay", "crop", "artifact", "visual")):
+                    visit(nested, key_text, depth + 1)
+            return
+        if isinstance(raw, (list, tuple)):
+            for nested in raw:
+                visit(nested, key_hint, depth + 1)
+
+    visit(value.get("supporting_artifacts"), "supporting_artifacts")
+    visit(value.get("artifact_paths"), "artifact_paths")
+    # A task result can keep the image pointer under one of these aliases.
+    for key in ("images", "frames", "crops", "masks", "bboxes", "overlays", "visualizations"):
+        if key in value:
+            visit(value.get(key), key)
+
+    # Some object-motion records only point to a frame strip in the result's
+    # sibling directory.  Add direct siblings as a final, task-local fallback
+    # (never the session-wide keyframe directory).
+    if not entries:
+        try:
+            siblings = sorted(task_path.parent.glob("*"))
+        except OSError:
+            siblings = []
+        for path in siblings:
+            if _path_is_image(path):
+                add(str(path), kind="multi_frame_sequence" if "strip" in path.name.casefold() else "artifact_frame")
+                if len(entries) >= 8:
+                    break
+    return entries
+
+
+def _adapter_result_paths(session_dir: Path) -> list[Path]:
+    """Return a bounded list of adapter outputs for one source video.
+
+    Both the flat archive and nested Engine runs keep the adapter JSON beside
+    the report.  Keeping discovery in one helper ensures that the item-task
+    parser and the process-frame parser inspect exactly the same files and do
+    not accidentally walk a sibling video directory.
+    """
+    roots = (session_dir / "intermediate", session_dir / "artifacts" / "evidence_enrichment")
+    patterns = (
+        "*_adapter_result.json",
+        "*adapter-result.json",
+        "**/*_adapter_result.json",
+        "**/adapter-result.json",
+    )
+    paths: list[Path] = []
+    seen: set[Path] = set()
+    for root in roots:
+        if len(paths) >= PROCESS_SEGMENT_SCAN_LIMIT:
+            break
+        try:
+            if not root.is_dir():
+                continue
+            for pattern in patterns:
+                for path in sorted(root.glob(pattern)):
+                    if path in seen or not path.is_file():
+                        continue
+                    seen.add(path)
+                    paths.append(path)
+                    if len(paths) >= PROCESS_SEGMENT_SCAN_LIMIT:
+                        break
+                if len(paths) >= PROCESS_SEGMENT_SCAN_LIMIT:
+                    break
+        except OSError:
+            continue
+    return paths
+
+
+def _numeric_seconds(value: Any) -> float | None:
+    """Parse a segment/keyframe timestamp without treating prose as time."""
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        return float(value)
+    if not isinstance(value, str):
+        return None
+    text = value.strip().rstrip("s")
+    if not text:
+        return None
+    if ":" in text:
+        try:
+            minutes, seconds = text.split(":", 1)
+            return float(minutes) * 60.0 + float(seconds)
+        except (TypeError, ValueError):
+            return None
+    try:
+        return float(text)
+    except ValueError:
+        return None
+
+
+def _item_process_frame_records(
+    item_id: str,
+    session: Mapping[str, Any],
+    image_index: Iterable[Path],
+) -> list[dict[str, Any]]:
+    """Recover keyframes emitted inside this item's adapter analysis window.
+
+    Adapter outputs contain a ``merged_segments`` entry for each item and a
+    ``keyframe_map`` containing the frames sampled while that stage was being
+    analysed.  The compact finding usually keeps only one representative
+    frame; using the segment/map pair restores the actual local sequence while
+    retaining exact item ownership.  No score or public conclusion is derived
+    from these records.
+    """
+    cached = session.get("item_process_frame_records")
+    if isinstance(cached, Mapping) and item_id in cached:
+        value = cached.get(item_id)
+        return [entry for entry in value if isinstance(entry, Mapping)] if isinstance(value, list) else []
+
+    session_dir = Path(str(session.get("session_dir") or ""))
+    by_item: dict[str, list[dict[str, Any]]] = {
+        str(definition["item_id"]): [] for definition in ITEM_DEFINITIONS
+    }
+    # A physical frame can be mentioned by two overlapping adapter segments;
+    # keep the highest-quality segment metadata for that frame.
+    best_by_path: dict[tuple[str, Path], dict[str, Any]] = {}
+    for adapter_path in _adapter_result_paths(session_dir):
+        try:
+            decoded = json.loads(adapter_path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeError, json.JSONDecodeError):
+            continue
+        if not isinstance(decoded, Mapping):
+            continue
+        keyframe_map = decoded.get("keyframe_map")
+        if not isinstance(keyframe_map, Mapping):
+            continue
+        # Normalize the map once.  A few exports use a one-field object rather
+        # than a plain path string as the value.
+        mapped_frames: list[tuple[float, str]] = []
+        for raw_time, raw_path in keyframe_map.items():
+            timestamp = _numeric_seconds(raw_time)
+            if isinstance(raw_path, Mapping):
+                raw_path = (
+                    raw_path.get("frame_path")
+                    or raw_path.get("keyframe_path")
+                    or raw_path.get("path")
+                )
+            if timestamp is None or not isinstance(raw_path, str):
+                continue
+            mapped_frames.append((timestamp, raw_path))
+        if not mapped_frames:
+            continue
+        for segment in decoded.get("merged_segments", []) or []:
+            if not isinstance(segment, Mapping):
+                continue
+            tags = segment.get("tags")
+            if isinstance(tags, str):
+                tags = [tags]
+            if not isinstance(tags, (list, tuple, set)):
+                continue
+            # Parse every exact item tag in one pass.  The session cache is
+            # shared by the 13 item lookups; filtering on the first requested
+            # item would otherwise cache an incomplete map and make later
+            # cards fall back to a generic neighbouring keyframe.
+            owned_items = {str(tag) for tag in tags} & set(by_item)
+            if not owned_items:
+                continue
+            start = _numeric_seconds(segment.get("start"))
+            end = _numeric_seconds(segment.get("end"))
+            if start is None or end is None:
+                continue
+            if end < start:
+                start, end = end, start
+            avg_score = segment.get("avg_score")
+            try:
+                segment_quality = max(0.0, min(1.0, float(avg_score)))
+            except (TypeError, ValueError):
+                segment_quality = 0.0
+            for owned_item in owned_items:
+                for timestamp, raw_path in mapped_frames:
+                    if timestamp < start - PROCESS_SEGMENT_TOLERANCE_SECONDS or timestamp > end + PROCESS_SEGMENT_TOLERANCE_SECONDS:
+                        continue
+                    path = _resolve_image_path(raw_path, session_dir, image_index)
+                    if path is None:
+                        continue
+                    record = {
+                        "path": path,
+                        "timestamp_sec": timestamp,
+                        "kind": _candidate_kind(path, "representative_frame"),
+                        "segment_start": start,
+                        "segment_end": end,
+                        "segment_quality": segment_quality,
+                        "analysis_task": adapter_path.stem.removesuffix("_adapter_result"),
+                        "analysis_status": str(decoded.get("status") or "process_frames"),
+                    }
+                    key = (owned_item, path)
+                    previous = best_by_path.get(key)
+                    if previous is None or (
+                        float(record["segment_quality"]),
+                        -abs(timestamp - (start + end) / 2.0),
+                    ) > (
+                        float(previous.get("segment_quality") or 0.0),
+                        -abs(float(previous.get("timestamp_sec") or 0.0) - (float(previous.get("segment_start") or 0.0) + float(previous.get("segment_end") or 0.0)) / 2.0),
+                    ):
+                        best_by_path[key] = record
+
+    for (owned_item, _path), record in best_by_path.items():
+        by_item.setdefault(owned_item, []).append(record)
+    for records in by_item.values():
+        # Select one coherent, highest-quality segment first.  This prevents a
+        # broad stage map from joining two distant operations that happen to
+        # carry the same item tag.
+        groups: dict[tuple[str, float, float], list[dict[str, Any]]] = {}
+        for record in records:
+            group_key = (
+                str(record.get("analysis_task") or ""),
+                float(record.get("segment_start") or 0.0),
+                float(record.get("segment_end") or 0.0),
+            )
+            groups.setdefault(group_key, []).append(record)
+        if groups:
+            ranked_groups = sorted(
+                groups.values(),
+                key=lambda group: (
+                    -max(float(entry.get("segment_quality") or 0.0) for entry in group),
+                    -len(group),
+                    min(float(entry.get("timestamp_sec") or 0.0) for entry in group),
+                ),
+            )
+            # One primary segment is enough to provide the requested process
+            # keyframes; a second group is admitted only when the primary has
+            # fewer than three frames (common in short object checks).
+            chosen = ranked_groups[0][:PROCESS_SEGMENT_FRAME_LIMIT]
+            if len(chosen) < 3 and len(ranked_groups) > 1:
+                chosen.extend(ranked_groups[1][: PROCESS_SEGMENT_FRAME_LIMIT - len(chosen)])
+            records[:] = sorted(
+                chosen,
+                key=lambda entry: (
+                    float(entry.get("timestamp_sec") or 0.0),
+                    str(entry.get("path") or ""),
+                ),
+            )
+        else:
+            records[:] = []
+    try:
+        session["item_process_frame_records"] = by_item  # type: ignore[index]
+    except (TypeError, AttributeError):
+        pass
+    value = by_item.get(item_id, [])
+    return value
+
+
+def _task_record_quality(item_id: str, record: Mapping[str, Any]) -> float:
+    text = " ".join(str(record.get(key) or "") for key in ("task_name", "task_type", "reason", "verified_checks", "visual_targets"))
+    lower = text.casefold()
+    hints = _ITEM_PROCESS_HINTS.get(item_id, ())
+    hint_hits = sum(1 for hint in hints if str(hint).casefold() in lower)
+    return (
+        (100.0 if record.get("positive") else 0.0)
+        + (20.0 if record.get("evidence_status") in {"supported", "confirmed", "pass", "passed"} else 0.0)
+        + min(12.0, hint_hits * 2.0)
+        + _task_confidence(record) * 8.0
+        + min(8.0, float(record.get("frame_count") or 0) * 0.5)
+        - (30.0 if record.get("explicit_negative") else 0.0)
+    )
+
+
+def _item_task_records(
+    item_id: str,
+    session: Mapping[str, Any],
+    image_index: Iterable[Path],
+) -> list[dict[str, Any]]:
+    """Load bounded, item-owned analysis task records for one source video."""
+    cached = session.get("item_task_records")
+    if isinstance(cached, Mapping) and item_id in cached:
+        value = cached.get(item_id)
+        return [record for record in value if isinstance(record, Mapping)] if isinstance(value, list) else []
+
+    session_dir = Path(str(session.get("session_dir") or ""))
+    roots = (session_dir / "artifacts" / "evidence_enrichment", session_dir / "intermediate")
+    json_paths: list[Path] = []
+    seen_paths: set[Path] = set()
+    patterns = (
+        "**/task_result.json",
+        "**/task_results.json",
+        "**/adapter_planner_context.json",
+        "**/enriched_adapter_result.json",
+        "**/effective_adapter_result.json",
+        "**/*_adapter_result.json",
+    )
+    for root in roots:
+        try:
+            if not root.is_dir():
+                continue
+            for pattern in patterns:
+                for path in sorted(root.glob(pattern)):
+                    if path in seen_paths or not path.is_file():
+                        continue
+                    seen_paths.add(path)
+                    json_paths.append(path)
+                    if len(json_paths) >= TASK_RESULT_SCAN_LIMIT:
+                        break
+                if len(json_paths) >= TASK_RESULT_SCAN_LIMIT:
+                    break
+        except OSError:
+            continue
+        if len(json_paths) >= TASK_RESULT_SCAN_LIMIT:
+            break
+
+    by_item: dict[str, list[dict[str, Any]]] = {
+        str(definition["item_id"]): [] for definition in ITEM_DEFINITIONS
+    }
+    seen_records: set[tuple[str, str, str, str]] = set()
+    for json_path in json_paths:
+        try:
+            decoded = json.loads(json_path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeError, json.JSONDecodeError):
+            continue
+        values: list[Mapping[str, Any]] = []
+        if isinstance(decoded, Mapping):
+            if isinstance(decoded.get("findings"), (list, tuple)):
+                values.extend(entry for entry in decoded["findings"] if isinstance(entry, Mapping))
+            # A task_results.json file is commonly a list under ``results``.
+            for key in ("results", "task_results", "tasks"):
+                if isinstance(decoded.get(key), (list, tuple)):
+                    values.extend(entry for entry in decoded[key] if isinstance(entry, Mapping))
+            # If there are no child records, the mapping itself is a task.
+            if not values and any(key in decoded for key in ("claim_ids", "criterion_ids", "supporting_frames", "supporting_artifacts", "status")):
+                values.append(decoded)
+        elif isinstance(decoded, (list, tuple)):
+            values.extend(entry for entry in decoded if isinstance(entry, Mapping))
+
+        for value in values:
+            owned, claims_exact = _owned_task_items(value, json_path)
+            if not owned or not claims_exact:
+                continue
+            # Parse each task once, then cache records for every exact item
+            # claim.  The previous implementation filtered on the requested
+            # item while populating ``by_item``; the first lookup consequently
+            # cached empty lists for all other items and made later item
+            # selection fall back to unrelated legacy keyframes.
+            owned = owned & set(by_item)
+            if not owned:
+                continue
+            entries = _task_image_entries(value, json_path, session_dir, image_index)
+            if not entries:
+                continue
+            status = _normalised_status(value.get("status"))
+            evidence_status = _normalised_status(value.get("evidence_status"))
+            text = " ".join(str(value.get(key) or "") for key in ("reason", "description", "issues", "failure_modes"))
+            lower_text = text.casefold()
+            explicit_negative = (
+                status in _TASK_NEGATIVE_STATUSES
+                or evidence_status in _TASK_NEGATIVE_STATUSES
+                or any(marker.casefold() in lower_text for marker in _ITEM_PROCESS_EXCLUSIONS)
+            )
+            positive = _task_positive(value)
+            visual_candidate = _task_visual_candidate(value)
+            if not positive and not visual_candidate and not _evidence_is_positive(value):
+                # A row with an explicit positive signal is still useful even
+                # when it predates the normalized task-result status fields.
+                signal = _normalised_status(value.get("signal") or value.get("finding_signal"))
+                if signal not in {"positive", "pass", "passed", "confirmed", "success", "complete"}:
+                    continue
+                positive = True
+            task_name = str(value.get("task_name") or value.get("task_type") or value.get("task_id") or json_path.parent.name)
+            for owned_item in sorted(owned):
+                identity = (
+                    owned_item,
+                    task_name,
+                    str(json_path),
+                    "|".join(str(entry["path"]) for entry in entries[:4]),
+                )
+                if identity in seen_records:
+                    continue
+                seen_records.add(identity)
+                record: dict[str, Any] = {
+                    "item_id": owned_item,
+                    "task_name": task_name,
+                    "task_path": json_path,
+                    "status": status,
+                    "evidence_status": evidence_status,
+                    "positive": bool(positive),
+                    "visual_candidate": bool(visual_candidate),
+                    "explicit_negative": bool(explicit_negative),
+                    "confidence": _task_confidence(value),
+                    "time_range": deepcopy(value.get("time_range") or value.get("analysis_time_range") or {}),
+                    "images": entries,
+                    "frame_count": sum(1 for entry in entries if entry.get("kind") == "representative_frame"),
+                    "claims_exact": claims_exact,
+                }
+                record["quality"] = _task_record_quality(owned_item, record)
+                by_item[owned_item].append(record)
+
+    for records in by_item.values():
+        records.sort(
+            key=lambda record: (
+                -float(record.get("quality") or 0.0),
+                -float(record.get("confidence") or 0.0),
+                str(record.get("task_path") or ""),
+            )
+        )
+    try:
+        session["item_task_records"] = by_item  # type: ignore[index]
+    except (TypeError, AttributeError):
+        pass
+    value = by_item.get(item_id, [])
+    return value
+
+
 def _item_analysis_artifacts(
     item_id: str,
     session: Mapping[str, Any],
@@ -778,84 +1498,28 @@ def _item_analysis_artifacts(
     if isinstance(cached, Mapping) and item_id in cached:
         value = cached.get(item_id)
         return [path for path in value if isinstance(path, Path)] if isinstance(value, list) else []
-    session_dir = Path(str(session.get("session_dir") or ""))
-    index = list(image_index)
-    by_item: dict[str, list[Path]] = {
-        str(definition["item_id"]): [] for definition in ITEM_DEFINITIONS
-    }
-    seen: dict[str, set[Path]] = {key: set() for key in by_item}
-    json_paths: list[Path] = []
-    # Keep the scan bounded and focused on analysis outputs.  ``intermediate``
-    # is included for older runs whose task result was promoted there.
-    for root in (session_dir / "artifacts" / "evidence_enrichment", session_dir / "intermediate"):
-        if not root.is_dir():
-            continue
-        try:
-            for path in sorted(root.glob("**/task_result.json")):
-                json_paths.append(path)
-                if len(json_paths) >= 300:
-                    break
-            if len(json_paths) < 300:
-                for path in sorted(root.glob("**/*result*.json")):
-                    if path not in json_paths:
-                        json_paths.append(path)
-                        if len(json_paths) >= 300:
-                            break
-        except OSError:
-            continue
-        if len(json_paths) >= 300:
+    records = _item_task_records(item_id, session, image_index)
+    paths: list[Path] = []
+    seen: set[Path] = set()
+    # Keep the strongest task first.  This compatibility helper is used by a
+    # few callers that only need paths; the main candidate builder preserves
+    # per-image metadata through ``_item_task_records``.
+    for record in records:
+        for entry in record.get("images", []) or []:
+            path = entry.get("path") if isinstance(entry, Mapping) else None
+            if not isinstance(path, Path) or path in seen:
+                continue
+            seen.add(path)
+            paths.append(path)
+            if len(paths) >= TASK_RESULT_IMAGE_LIMIT:
+                break
+        if len(paths) >= TASK_RESULT_IMAGE_LIMIT:
             break
-
-    active_ids = set(by_item)
-    for json_path in json_paths:
-        try:
-            value = json.loads(json_path.read_text(encoding="utf-8"))
-        except (OSError, UnicodeError, json.JSONDecodeError):
-            continue
-        if not isinstance(value, Mapping):
-            continue
-        claims: set[str] = set()
-        for key in ("claim_ids", "items", "item_ids", "criterion_ids"):
-            raw = value.get(key)
-            if isinstance(raw, str):
-                claims.add(raw)
-            elif isinstance(raw, (list, tuple, set)):
-                claims.update(str(entry) for entry in raw)
-        claims.add(str(value.get("item_id") or ""))
-        claims_text = " ".join(claims).casefold()
-        owned = [candidate for candidate in active_ids if candidate.casefold() in claims_text]
-        if not owned:
-            continue
-        # Only inspect fields that can carry file references.  This avoids
-        # treating a prose description containing ``.jpg`` as an artifact.
-        paths = _supporting_image_paths(value, session_dir, index)
-        if not paths:
-            # Some task results list labels but place the sampled frames next
-            # to the result file.  They are still part of this claimed task,
-            # so use a small deterministic local set.
-            try:
-                paths = [
-                    path
-                    for path in sorted(json_path.parent.glob("*"))
-                    if _path_is_image(path)
-                ][:24]
-            except OSError:
-                paths = []
-        for owner in owned:
-            for path in paths:
-                resolved = path.resolve() if path.exists() else path
-                if resolved in seen[owner]:
-                    continue
-                seen[owner].add(resolved)
-                by_item[owner].append(resolved)
-
-    # Keep the cache attached to the session so 13 item probes do not repeat a
-    # recursive JSON scan.
     try:
-        session["item_analysis_artifacts"] = by_item  # type: ignore[index]
+        session["item_analysis_artifacts"] = {item_id: paths}  # type: ignore[index]
     except (TypeError, AttributeError):
         pass
-    return by_item.get(item_id, [])
+    return paths
 
 
 def _item_anchor_seconds(
@@ -1072,7 +1736,14 @@ def _session_image_candidates(
     # the row status unset, so retain every item row when no positive label is
     # available.
     positive_rows = [row for row in rows if _row_is_positive(row)]
-    ordered_rows = sorted(positive_rows or rows, key=lambda row: _timestamp_sort_key(row[1]))
+    # Rank by the item's own process language first, then retain at most a
+    # short continuation around that anchor.  Chronological sorting of every
+    # row was the source of the old mixed-operation thumbnails: the earliest
+    # positive row often belonged to setup while the actual action appeared
+    # later in the same analyzer stream.
+    ordered_rows = _ordered_process_rows(item_id, rows)
+    if not ordered_rows:
+        ordered_rows = sorted(positive_rows or rows, key=lambda row: _timestamp_sort_key(row[1]))
     image_index = _session_index_for(session)
     other_anchors = _item_anchor_seconds(session, exclude_item=item_id)
     candidates: list[dict[str, Any]] = []
@@ -1116,11 +1787,122 @@ def _session_image_candidates(
             )
         )
 
+    # Rich 10-video runs expose the frames sampled by the actual item task in
+    # ``task_result.json``.  Keep one strongest, item-owned task together as a
+    # coherent source: its full process frames come first, followed by any
+    # crop/mask/bbox artifacts.  This prevents a generic keyframe from a
+    # neighbouring operation from replacing the analysis output that actually
+    # evaluated this item.
+    task_records = _item_task_records(item_id, session, image_index)
+    task_record: Mapping[str, Any] | None = None
+    if task_records:
+        usable = [
+            record
+            for record in task_records
+            if isinstance(record, Mapping)
+            and isinstance(record.get("images"), list)
+            and record.get("images")
+            and not record.get("explicit_negative")
+        ]
+        # Records are already ranked by task quality.  A supported/positive
+        # result is preferred; an image-bearing visual result is a safe
+        # fallback when the richer score fields are absent.
+        task_record = next((record for record in usable if record.get("positive")), None)
+        if task_record is None:
+            task_record = next((record for record in usable if record.get("visual_candidate")), None)
+        if task_record is None:
+            task_record = usable[0] if usable else None
+    task_candidate_count = 0
+    task_paths: set[str] = set()
+    if task_record is not None:
+        task_images = [entry for entry in task_record.get("images", []) if isinstance(entry, Mapping) and isinstance(entry.get("path"), Path)]
+        # Full frames preserve the sampled sequence; detection artifacts are
+        # still useful for object slots but should not become the first three
+        # sequence thumbnails when both kinds are available.
+        task_images.sort(
+            key=lambda entry: (
+                1 if str(entry.get("kind") or "").casefold() == "object_detection" else 0,
+                1 if entry.get("timestamp_sec") is None else 0,
+                float(entry.get("timestamp_sec") or _artifact_seconds(entry["path"]) or 0.0),
+                str(entry.get("path")),
+            )
+        )
+        task_status = str(task_record.get("status") or task_record.get("evidence_status") or "")
+        task_confidence = task_record.get("confidence")
+        task_name = str(task_record.get("task_name") or "item-analysis")
+        for entry in task_images:
+            path = entry["path"]
+            seconds = entry.get("timestamp_sec")
+            if not isinstance(seconds, (int, float)) or isinstance(seconds, bool):
+                seconds = _artifact_seconds(path)
+            task_evidence: dict[str, Any] = {
+                "timestamp_sec": seconds,
+                "timestamp": _format_timestamp(seconds),
+                "confidence": task_confidence if isinstance(task_confidence, (int, float)) else 0.96,
+                "signal": "positive" if task_record.get("positive") else "unclear",
+                "source_type": "item_analysis_task",
+            }
+            before = len(candidates)
+            add(path, task_evidence, default_kind=str(entry.get("kind") or "artifact_frame"))
+            if len(candidates) > before:
+                task_candidate_count += 1
+                task_paths.add(str(path.resolve()))
+                for candidate in candidates[before:]:
+                    # Private fields are retained only until render_report's
+                    # public projection and make the generation audit explicit.
+                    candidate["analysis_task"] = task_name
+                    candidate["analysis_status"] = task_status
+
+    # A positive task with at least three process images is self-contained.
+    # Do not append legacy rows or sibling frames in that case; doing so would
+    # make the drawer visually jump between separate analysis operations.
+    task_sequence_complete = bool(task_record is not None and task_candidate_count >= 3)
+
+    # Flat exports (and rich runs whose task result was not materialised) keep
+    # the actual sampler output in ``keyframe_map``.  A matching
+    # ``merged_segments`` range is stronger than a neighbouring keyframe: it
+    # proves that the image was part of this item's analysis window.  Restore
+    # that compact sequence before consulting legacy summary rows.
+    process_candidate_count = 0
+    process_sequence_selected = False
+    if not task_sequence_complete:
+        process_records = _item_process_frame_records(item_id, session, image_index)
+        for record in process_records:
+            path = record.get("path") if isinstance(record, Mapping) else None
+            if not isinstance(path, Path):
+                continue
+            segment_quality = record.get("segment_quality")
+            if isinstance(segment_quality, (int, float)) and not isinstance(segment_quality, bool) and float(segment_quality) > 0:
+                confidence = max(0.72, min(0.98, float(segment_quality)))
+            else:
+                # Older adapter exports omit ``avg_score`` while marking the
+                # process result successful.  In that case the presence of a
+                # tagged segment is stronger than the generic low-confidence
+                # default; keep the visual evidence consistent with the
+                # all-correct mock conclusion without inventing a model score.
+                status = str(record.get("analysis_status") or "").casefold()
+                confidence = 0.96 if status in {"success", "succeeded", "complete", "completed", "pass", "passed"} else 0.72
+            process_evidence: dict[str, Any] = {
+                "timestamp_sec": record.get("timestamp_sec"),
+                "timestamp": _format_timestamp(record.get("timestamp_sec")),
+                "confidence": confidence,
+                "signal": "positive" if confidence >= 0.78 else "unclear",
+                "source_type": "item_analysis_process",
+            }
+            before = len(candidates)
+            add(path, process_evidence, default_kind=str(record.get("kind") or "representative_frame"))
+            if len(candidates) > before:
+                process_candidate_count += 1
+                for candidate in candidates[before:]:
+                    candidate["analysis_task"] = str(record.get("analysis_task") or "item-analysis-process")
+                    candidate["analysis_status"] = str(record.get("analysis_status") or "process_frames")
+        process_sequence_selected = process_candidate_count > 0
+
     # First bind exact row artifacts and timestamp-matched detector overlays.
     # These are the outputs of this item's analysis task, rather than a frame
     # borrowed from another item in the shared stage directory.
     direct_sources: list[tuple[Path, Mapping[str, Any], Path, str, float | None]] = []
-    for _sample_id, evidence, row_session_dir in ordered_rows:
+    for _sample_id, evidence, row_session_dir in ([] if task_sequence_complete or process_sequence_selected else ordered_rows):
         current_dir = row_session_dir if isinstance(row_session_dir, Path) else session_dir
         anchor = _timestamp_seconds(evidence)
         keyframe_text = str(evidence.get("keyframe_path") or evidence.get("keyframe") or "")
@@ -1161,7 +1943,7 @@ def _session_image_candidates(
     # Rich runs may have a task result with additional masks/crops that were
     # not copied into the compact summary row.  Claim-bound artifacts are safe
     # to use because the task result names this item explicitly.
-    if len(candidates) < limit:
+    if len(candidates) < limit and not task_sequence_complete and not process_sequence_selected:
         artifact_paths = _item_analysis_artifacts(item_id, session, image_index)
         fallback_evidence = ordered_rows[0][1] if ordered_rows else {}
         for path in artifact_paths:
@@ -1185,6 +1967,15 @@ def _session_image_candidates(
     for path, evidence, _current_dir, default_kind, anchor in direct_sources:
         if len(candidates) >= limit:
             break
+        # Do not infer an item's process sequence from neighbouring files in
+        # a shared ``keyframes/a1`` or ``keyframes/a2`` directory.  Those
+        # directories contain frames for several scoring items at adjacent
+        # timestamps.  Siblings are admitted only when the artifact itself is
+        # explicitly named as a frame strip/sequence output; ordinary legacy
+        # rows remain bound to their exact item-analysis frame.
+        path_text = str(path).casefold()
+        if "frame_strip" not in path_text and "sequence" not in path_text:
+            continue
         for sibling in _sibling_process_images(
             path,
             limit=6,
@@ -1200,7 +1991,12 @@ def _session_image_candidates(
                 item_id,
                 anchor,
                 other_anchors,
-                allow_tie=False,
+                # The selected row is already the item's highest-ranked
+                # finding.  Equal-time frames in its analyzer directory are
+                # retained as the adjacent action sequence; strict tie
+                # rejection otherwise leaves only one thumbnail for many
+                # legacy exports where every item shares a timestamp anchor.
+                allow_tie=True,
             ):
                 continue
             sibling_evidence: Mapping[str, Any] = evidence
@@ -1373,6 +2169,174 @@ def _row_is_direct_positive(row: tuple[str, dict[str, Any], Path]) -> bool:
         or evidence.get("keyframe_path")
         or evidence.get("keyframe")
     )
+
+
+def _row_process_quality(item_id: str, row: tuple[str, dict[str, Any], Path]) -> float:
+    """Rank one legacy finding by how directly it describes this item.
+
+    Flat exports often contain a single representative frame for every
+    analyzer query, while the final score is stored separately.  Selecting by
+    timestamp alone therefore puts setup or neighbouring operations in the
+    drawer.  This private rank combines the finding signal with item-specific
+    observable terms and strongly discounts explicit absence statements.
+    """
+    evidence = row[1]
+    signal = _normalised_status(evidence.get("signal") or evidence.get("finding_signal"))
+    status = _normalised_status(evidence.get("status") or evidence.get("judgment"))
+    source_type = _normalised_status(evidence.get("source_type"))
+    text = " ".join(
+        str(evidence.get(key) or "")
+        for key in ("description", "observation", "observations", "reason", "issues", "finding")
+    ).casefold()
+    hints = _ITEM_PROCESS_HINTS.get(item_id, ())
+    hint_hits = sum(1 for hint in hints if str(hint).casefold() in text)
+    negative_hits = sum(1 for marker in _ITEM_PROCESS_EXCLUSIONS if marker.casefold() in text)
+    signal_score = {
+        "positive": 30.0,
+        "pass": 30.0,
+        "passed": 30.0,
+        "confirmed": 30.0,
+        "success": 30.0,
+        "complete": 30.0,
+        "unclear": 0.0,
+        "": 0.0,
+        "negative": -28.0,
+        "unrelated": -28.0,
+        "not_found": -24.0,
+    }.get(signal, 0.0)
+    status_score = 8.0 if status in {"positive", "pass", "passed", "confirmed", "success", "complete"} else -8.0 if status in _TASK_NEGATIVE_STATUSES else 0.0
+    confidence = evidence.get("confidence")
+    confidence_score = float(confidence) * 5.0 if isinstance(confidence, (int, float)) and not isinstance(confidence, bool) else 0.0
+    direct_score = 3.0 if _row_is_direct_positive(row) else 0.0
+    memory_score = 1.5 if source_type == "memory" else 0.0
+    return signal_score + status_score + min(30.0, hint_hits * 5.0) - min(36.0, negative_hits * 12.0) + confidence_score + direct_score + memory_score
+
+
+def _ordered_process_rows(
+    item_id: str,
+    rows: list[tuple[str, dict[str, Any], Path]],
+) -> list[tuple[str, dict[str, Any], Path]]:
+    """Choose one coherent legacy finding, retaining a close continuation."""
+    if not rows:
+        return []
+    ranked = sorted(
+        rows,
+        key=lambda row: (
+            -_row_process_quality(item_id, row),
+            _timestamp_sort_key(row[1]),
+            str(row[1].get("keyframe_path") or row[1].get("keyframe") or ""),
+        ),
+    )
+    anchor = ranked[0]
+    anchor_seconds = _timestamp_seconds(anchor[1])
+    chosen = [anchor]
+    # A duplicate adapter row at the same timestamp can carry an overlay or a
+    # second view.  Keep it, but never merge a distant finding from another
+    # operation into this item's process chain.
+    for row in ranked[1:]:
+        seconds = _timestamp_seconds(row[1])
+        if seconds is None or anchor_seconds is None:
+            continue
+        if abs(seconds - anchor_seconds) <= PROCESS_FRAME_NEIGHBOURHOOD_SECONDS and _row_process_quality(item_id, row) >= _row_process_quality(item_id, anchor) - 18.0:
+            chosen.append(row)
+        if len(chosen) >= 3:
+            break
+    return chosen
+
+
+def _session_item_correctness_tier(item_id: str, session: Mapping[str, Any]) -> tuple[int, str]:
+    """Return the strongest item-level correctness signal for one source.
+
+    Rich runs may have a successful item task even when their compact summary
+    was conservative (or did not include the item score).  Flat exports carry
+    the human item labels in the optional manifest instead.  Both are valid
+    ways to identify a correct source video; the final report score remains a
+    fallback for legacy summaries that have neither signal.
+    """
+    try:
+        image_index = _session_index_for(session)
+    except (OSError, TypeError, ValueError):
+        image_index = []
+    records = _item_task_records(item_id, session, image_index)
+    if any(
+        record.get("positive")
+        and not record.get("explicit_negative")
+        and str(record.get("status") or record.get("evidence_status") or "").casefold()
+        not in {"insufficient", "unsupported", "failed", "fail", "negative"}
+        for record in records
+        if isinstance(record, Mapping)
+    ):
+        return 3, "item_analysis_task"
+    if item_id in (session.get("manifest_correct_items") or set()):
+        return 2, "manifest_item_label"
+    if _outcome_is_correct((session.get("outcomes") or {}).get(item_id)):
+        return 1, "report_full_score"
+    # A direct positive finding is useful for old reports whose item outcome
+    # was omitted, but is intentionally lower priority than an explicit score.
+    rows = (session.get("rows_by_item") or {}).get(item_id, [])
+    if any(_row_is_direct_positive(row) for row in rows if isinstance(row, tuple) and len(row) == 3):
+        return 0, "direct_item_finding"
+    return -1, "none"
+
+
+def _session_item_visual_quality(item_id: str, session: Mapping[str, Any]) -> float:
+    """Score the usefulness of an item's private process artifacts.
+
+    Correctness is a gate, not a reason to display a random setup frame.  The
+    ranking therefore favors an item task with a supported result, then a
+    finding whose text and signal describe this item's observable action.  It
+    is only used to form a small random pool; it never changes the report
+    score or any public evaluation.
+    """
+    try:
+        image_index = _session_index_for(session)
+    except (OSError, TypeError, ValueError):
+        image_index = []
+    records = _item_task_records(item_id, session, image_index)
+    task_scores: list[float] = []
+    for record in records:
+        if not isinstance(record, Mapping):
+            continue
+        base = float(record.get("quality") or 0.0)
+        if record.get("positive") and not record.get("explicit_negative"):
+            base += 120.0
+        elif record.get("visual_candidate") and not record.get("explicit_negative"):
+            base += 55.0
+        task_scores.append(base)
+    # Adapter segment/map records are the strongest indication that the
+    # selected image belongs to the item's actual analysis window.  They are
+    # kept separate from correctness: a low segment score must not turn a
+    # human-correct video into an incorrect one, but a coherent multi-frame
+    # sequence should win the visual-quality audit when several correct
+    # sources are available.
+    process_records = _item_process_frame_records(item_id, session, image_index)
+    process_scores: list[float] = []
+    for record in process_records:
+        segment_quality = record.get("segment_quality")
+        quality = (
+            max(0.0, min(1.0, float(segment_quality)))
+            if isinstance(segment_quality, (int, float)) and not isinstance(segment_quality, bool)
+            else 0.0
+        )
+        process_scores.append(85.0 + quality * 100.0)
+    if process_scores:
+        # Count is capped so a long sampler output cannot overwhelm the
+        # provenance distinction; this value is only an audit/ranking hint.
+        process_scores.append(min(24.0, len(process_records) * 2.0) + max(process_scores))
+
+    rows = [
+        row
+        for row in (session.get("rows_by_item") or {}).get(item_id, [])
+        if isinstance(row, tuple) and len(row) == 3
+    ]
+    row_scores = [_row_process_quality(item_id, row) for row in rows]
+    correctness_bonus = 0.0
+    if item_id in (session.get("manifest_correct_items") or set()):
+        correctness_bonus += 4.0
+    if _outcome_is_correct((session.get("outcomes") or {}).get(item_id)):
+        correctness_bonus += 2.0
+    artifact_scores = task_scores + process_scores
+    return max(artifact_scores or [-100.0]) + correctness_bonus if artifact_scores else max(row_scores or [-100.0]) + correctness_bonus
 
 
 def _timestamp_sort_key(evidence: Mapping[str, Any]) -> tuple[int, float, str]:
@@ -1868,72 +2832,97 @@ def build_mock(
     random_source: Any = random.Random(seed) if seed is not None else random.SystemRandom()
     for item in payload["items"]:
         item_id = str(item["item_id"])
-        report_correct_sessions = [
-            session
-            for session in sessions
-            if _outcome_is_correct((session.get("outcomes") or {}).get(item_id))
-            and _session_image_candidates(item_id, session)
-        ]
-        manifest_candidates = [
-            session
-            for session in sessions
-            if item_id in (session.get("manifest_correct_items") or set())
-            and _session_image_candidates(item_id, session)
-        ]
-        # A positive full-score annotation is a useful guard against the
-        # legacy flat reports' over-eager item score normalization.  Prefer its
-        # intersection with a complete report outcome; if that intersection is
-        # empty, the annotated visual candidate is still the best available
-        # source for this mock-only, all-correct replay.  With no positive
-        # annotation for an item, retain the report outcome gate.
-        if manifest_candidates:
-            intersected = [session for session in manifest_candidates if session in report_correct_sessions]
-            correct_sessions = intersected or manifest_candidates
-            correctness_source = "manifest_full_score" if intersected else "manifest_visual_full_score"
-        else:
-            correct_sessions = report_correct_sessions
-            correctness_source = "report_full_score"
-        if not correct_sessions:
+        # Build the candidate list once.  A rich 10-video run can expose a
+        # successful item-level task even when its compact report score is
+        # conservative; a flat 29-video export instead carries human item
+        # labels in the manifest.  Correctness is a gate only: after choosing
+        # the strongest available tier, source videos are shuffled uniformly.
+        eligible: list[tuple[int, str, float, Mapping[str, Any], list[dict[str, Any]]]] = []
+        for candidate_session in sessions:
+            image_candidates = _session_image_candidates(item_id, candidate_session)
+            if not image_candidates:
+                continue
+            tier, tier_source = _session_item_correctness_tier(item_id, candidate_session)
+            if tier >= 0:
+                quality = _session_item_visual_quality(item_id, candidate_session)
+                eligible.append((tier, tier_source, quality, candidate_session, image_candidates))
+        if not eligible:
             available = [
                 str(session.get("sample_id") or "")
                 for session in sessions
                 if _outcome_is_correct((session.get("outcomes") or {}).get(item_id))
+                or item_id in (session.get("manifest_correct_items") or set())
             ]
             detail = "；".join(available[:5]) if available else "没有完整得分样本"
             raise ValueError(f"{item_id}: 找不到带分析过程图像的正确视频（{detail}）")
 
-        # Shuffle the correct sessions once per item.  The first session that
-        # can satisfy all required slots without cross-item frame reuse wins;
-        # this preserves random item-level selection while remaining robust to
-        # a source video whose single frame is already owned by another item.
-        try:
-            ordered = list(correct_sessions)
-            random_source.shuffle(ordered)
-        except AttributeError:  # pragma: no cover - defensive custom RNG path
-            ordered = list(correct_sessions)
+        # Try correctness tiers from strongest to weakest.  Within one tier,
+        # prefer entries with explicit task/segment provenance whenever such
+        # entries exist, then shuffle uniformly.  This preserves random
+        # item-level sampling while retaining compatibility with older exports
+        # that only kept a row-level keyframe.
+        by_tier: dict[int, list[tuple[int, str, float, Mapping[str, Any], list[dict[str, Any]]]]] = {}
+        for entry in eligible:
+            by_tier.setdefault(entry[0], []).append(entry)
         last_error: Exception | None = None
         built: tuple[dict[str, Any], dict[str, Any], dict[str, str], Mapping[str, Any]] | None = None
-        for session in ordered:
-            trial_item = deepcopy(item)
-            trial_owners = dict(path_owners)
+        for tier in sorted(by_tier, reverse=True):
+            tier_entries = by_tier[tier]
+            process_entries = [
+                entry
+                for entry in tier_entries
+                if any(
+                    isinstance(candidate, Mapping) and candidate.get("analysis_task")
+                    for candidate in entry[4]
+                )
+            ]
+            draw_entries = process_entries or tier_entries
             try:
-                empty_item, event = _build_item_event(trial_item, session, trial_owners)
-            except ValueError as exc:
-                last_error = exc
-                continue
-            built = (empty_item, event, trial_owners, session)
-            break
+                ordered = list(draw_entries)
+                random_source.shuffle(ordered)
+            except AttributeError:  # pragma: no cover - defensive custom RNG path
+                ordered = list(draw_entries)
+            for _tier, _tier_source, _quality, session, _candidates in ordered:
+                trial_item = deepcopy(item)
+                trial_owners = dict(path_owners)
+                try:
+                    empty_item, event = _build_item_event(trial_item, session, trial_owners)
+                except ValueError as exc:
+                    last_error = exc
+                    continue
+                built = (empty_item, event, trial_owners, session)
+                break
+            if built is not None:
+                break
         if built is None:
             raise ValueError(f"{item_id}: 正确视频的过程证据无法绑定：{last_error}") from last_error
         _empty_item, event, path_owners, session = built
         events.append(event)
         outcome = (session.get("outcomes") or {}).get(item_id, {})
+        selected_tier, selected_tier_source = _session_item_correctness_tier(item_id, session)
+        selected_quality = _session_item_visual_quality(item_id, session)
+        task_records = _item_task_records(item_id, session, _session_index_for(session))
+        selected_task = next(
+            (
+                record
+                for record in task_records
+                if isinstance(record, Mapping)
+                and record.get("positive")
+                and isinstance(record.get("images"), list)
+                and record.get("images")
+            ),
+            None,
+        )
         selected_audit[item_id] = {
             "sample_id": str(session.get("sample_id") or ""),
             "summary_path": str(session.get("summary_path") or ""),
             "score": outcome.get("score") if isinstance(outcome, Mapping) else None,
             "max_score": outcome.get("max_score") if isinstance(outcome, Mapping) else None,
-            "correctness_source": correctness_source,
+            "correctness_source": selected_tier_source,
+            "correctness_tier": selected_tier,
+            "selected_quality": round(selected_quality, 3),
+            "analysis_task": str(selected_task.get("task_name") or "") if selected_task else None,
+            "analysis_task_status": str(selected_task.get("status") or selected_task.get("evidence_status") or "") if selected_task else None,
             "visual_row_preferred": any(
                 _row_is_direct_positive(row)
                 for row in (session.get("rows_by_item") or {}).get(item_id, [])

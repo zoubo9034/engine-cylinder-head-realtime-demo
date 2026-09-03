@@ -78,7 +78,7 @@ def _read_json(path: Path) -> dict[str, Any]:
 
 
 def _data_uri(path_text: str) -> str:
-    if not path_text or path_text.startswith("timestamp://"):
+    if not path_text or path_text.startswith("timestamp:"):
         return ""
     path = Path(path_text).expanduser()
     if not path.is_file() or path.suffix.lower() not in IMAGE_SUFFIXES:
