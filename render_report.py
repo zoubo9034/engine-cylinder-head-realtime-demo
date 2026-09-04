@@ -18,6 +18,9 @@ from typing import Any, Mapping
 
 from report_schema import (
     TERMINAL_LIVE_STATES,
+    VIDEO_SLOT_SCHEMA,
+    WORKFLOW_DISPLAY_CONFIG,
+    WORKFLOW_DISPLAY_SCHEMA,
     load_tool_profile,
     template_payload,
     validated_copy,
@@ -425,6 +428,54 @@ def _public_item(item: Mapping[str, Any]) -> dict[str, Any]:
     return public_item
 
 
+def _public_presentation(presentation: Mapping[str, Any]) -> dict[str, Any]:
+    """Expose only the presentation knobs needed by the browser shell."""
+    video_slot = presentation.get("video_slot", {})
+    if not isinstance(video_slot, Mapping):
+        video_slot = {}
+    workflow = presentation.get("workflow_display", {})
+    if not isinstance(workflow, Mapping):
+        workflow = {}
+    configured_stages = workflow.get("stages", [])
+    stages = []
+    if isinstance(configured_stages, list):
+        for index, stage in enumerate(configured_stages):
+            if not isinstance(stage, Mapping):
+                continue
+            stages.append({
+                "stage_id": str(stage.get("stage_id") or f"stage-{index}"),
+                "label": _clean_text(stage.get("label"), "分析阶段", 40),
+                "order": int(stage.get("order", index)),
+                "weight": float(stage.get("weight", 1 / max(1, len(configured_stages)))),
+            })
+    if not stages:
+        stages = [dict(stage) for stage in WORKFLOW_DISPLAY_CONFIG["stages"]]
+    cycle_value = workflow.get("cycle_ms")
+    if cycle_value is None:
+        cycle_value = WORKFLOW_DISPLAY_CONFIG["cycle_ms"]
+    jitter_value = workflow.get("jitter_ratio")
+    if jitter_value is None:
+        jitter_value = WORKFLOW_DISPLAY_CONFIG["jitter_ratio"]
+    return {
+        "audience_mode": "live_only",
+        "initial_state": str(presentation.get("initial_state") or "正在接入视频流"),
+        "poll_interval_ms": int(presentation.get("poll_interval_ms") or 650),
+        "video_slot": {
+            "schema": VIDEO_SLOT_SCHEMA,
+            "state": "reserved",
+            "label": _clean_text(video_slot.get("label"), "实时视频", 40),
+            "aspect_ratio": "16:9",
+        },
+        "workflow_display": {
+            "schema": WORKFLOW_DISPLAY_SCHEMA,
+            "cycle_ms": max(1000, int(cycle_value)),
+            "jitter_ratio": max(0.0, min(0.25, float(jitter_value))),
+            "stages": stages,
+        },
+        "footer": _clean_text(presentation.get("footer"), "本页面展示当前视频流的实时分析过程。"),
+    }
+
+
 def public_projection(payload: Mapping[str, Any]) -> dict[str, Any]:
     """Strip non-display fields and inline only selected visual evidence."""
     validated_copy(payload)
@@ -458,12 +509,7 @@ def public_projection(payload: Mapping[str, Any]) -> dict[str, Any]:
             manual_review += int(state == "待人工确认")
     return {
         "title": str(payload.get("title") or "实时智能实训分析"),
-        "presentation": {
-            "audience_mode": "live_only",
-            "initial_state": str(presentation.get("initial_state") or "正在接入视频流"),
-            "poll_interval_ms": int(presentation.get("poll_interval_ms") or 650),
-            "footer": _clean_text(presentation.get("footer"), "本页面展示当前视频流的实时分析过程。"),
-        },
+        "presentation": _public_presentation(presentation),
         "scope": {"active_item_count": len(items), "max_score": len(items)},
         "score_summary": {
             "current_score": current_score,
@@ -497,6 +543,23 @@ HTML_TEMPLATE = r'''<!doctype html>
 @keyframes drawer-in{from{transform:translateX(20px);opacity:.4}to{transform:none;opacity:1}}@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.001ms!important}}
 @media(max-width:1050px){.workspace{grid-template-columns:1fr}.timeline{position:static;max-height:none}.timeline-list{display:grid;grid-template-columns:repeat(3,1fr)}.timeline-list:before{display:none}.hero{align-items:flex-start;flex-direction:column}.hero-side{text-align:left}.cards{grid-template-columns:1fr}}@media(max-width:800px){.metrics{grid-template-columns:repeat(3,1fr)}}@media(max-width:650px){.shell{padding:14px}.topbar{align-items:flex-start;flex-direction:column}.metrics{grid-template-columns:repeat(2,1fr)}.timeline-list{grid-template-columns:repeat(2,1fr)}.hero h2{font-size:27px}.evidence-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.detail-drawer{width:100%}.drawer-head,.drawer-body{padding-left:16px;padding-right:16px}.drawer-grid{grid-template-columns:1fr 1fr}.lightbox{padding:10px}.lightbox-panel{height:92vh;width:100%}}
 </style>
+<style>
+.video-slot{position:relative;aspect-ratio:16/9;width:100%;margin-bottom:14px;overflow:hidden;border:1px solid var(--rule);border-radius:8px;background:linear-gradient(135deg,#1a2332 0%,#253449 52%,#172331 100%);box-shadow:var(--shadow)}
+.video-slot video{width:100%;height:100%;display:block;object-fit:contain;background:#172331}
+.video-slot::after{content:"";position:absolute;inset:0;background:linear-gradient(120deg,rgba(255,255,255,.04),transparent 48%,rgba(255,255,255,.03));pointer-events:none}
+.video-placeholder{position:absolute;inset:0;display:grid;place-items:center;text-align:center;color:#edf3f7;z-index:1;pointer-events:none}
+.video-placeholder-inner{display:grid;gap:8px;justify-items:center}
+.video-placeholder-mark{width:48px;height:48px;border:1px solid rgba(237,243,247,.55);border-radius:50%;display:grid;place-items:center;font-family:"JetBrains Mono","SFMono-Regular",monospace;font-size:13px;letter-spacing:.08em;color:#dbeaf7}
+.video-placeholder-title{font-family:"Noto Serif SC",serif;font-size:18px;letter-spacing:.08em}.video-placeholder-note{font-family:"JetBrains Mono","SFMono-Regular",monospace;font-size:10px;color:rgba(237,243,247,.7)}
+.workflow-strip{display:flex;align-items:center;gap:14px;margin-bottom:14px;padding:12px 14px;border:1px solid var(--rule);border-radius:6px;background:var(--paper-cool);box-shadow:0 4px 14px rgba(26,35,50,.05)}
+.workflow-heading{display:flex;align-items:center;gap:7px;flex:0 0 auto;color:var(--ink-mute);font-family:"JetBrains Mono","SFMono-Regular",monospace;font-size:10px;letter-spacing:.04em}.workflow-heading i{width:7px;height:7px;border-radius:50%;background:var(--ink-faint)}.workflow-heading.active i{background:var(--vermilion);box-shadow:0 0 0 5px var(--vermilion-bg)}
+.workflow-track{display:flex;align-items:stretch;gap:0;min-width:0;overflow-x:auto;scroll-behavior:smooth;flex:1;padding:2px 0}.workflow-stage{position:relative;display:flex;align-items:center;gap:7px;min-width:116px;padding:5px 13px 5px 8px;color:var(--ink-faint);font-family:"JetBrains Mono","SFMono-Regular",monospace;font-size:9px;white-space:nowrap}.workflow-stage:not(:last-child)::after{content:"";height:1px;width:15px;background:var(--rule);margin-left:4px}.workflow-stage .workflow-light{width:10px;height:10px;border:1px solid var(--rule);border-radius:50%;background:var(--paper);flex:0 0 auto;transition:background .2s,border-color .2s,box-shadow .2s,transform .2s}.workflow-stage.active{color:var(--vermilion)}.workflow-stage.active .workflow-light{border-color:var(--vermilion);background:var(--vermilion);box-shadow:0 0 0 5px var(--vermilion-bg),0 0 16px rgba(22,97,171,.32);transform:scale(1.08)}.workflow-stage.done{color:var(--ink-soft)}.workflow-stage.done .workflow-light{border-color:var(--success);background:var(--success)}.workflow-stage.pending .workflow-light{background:var(--paper-warm)}.workflow-stage.active::after,.workflow-stage.done::after{background:#c5d5e6}.workflow-state{flex:0 0 auto;min-width:78px;text-align:right;color:var(--ink-mute);font-family:"JetBrains Mono","SFMono-Regular",monospace;font-size:9px}
+.cards-empty{grid-column:1/-1;border:1px dashed var(--rule);border-radius:7px;background:var(--paper-cool);padding:30px 18px;text-align:center;color:var(--ink-faint);font-family:"JetBrains Mono","SFMono-Regular",monospace;font-size:10px}
+.item-card.completion-focus{border-color:var(--vermilion);box-shadow:0 0 0 3px var(--vermilion-bg),var(--shadow)}
+.item-card.reveal{animation:card-reveal .28s ease-out}@keyframes card-reveal{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@media(max-width:800px){.workflow-strip{align-items:flex-start;flex-direction:column;gap:7px}.workflow-track{width:100%}.workflow-state{align-self:flex-end;min-width:0}.video-placeholder-title{font-size:15px}}
+@media(prefers-reduced-motion:reduce){.workflow-track{scroll-behavior:auto}.item-card.reveal{animation:none}.workflow-stage .workflow-light{transition:none}}
+</style>
 </head>
 <body>
 <div class="shell">
@@ -517,10 +580,61 @@ const terminalStates = new Set(["证据已绑定","已完成评分","待人工�
 const checkLabels = {pending:"待核验",confirmed:"已确认",not_confirmed:"未确认",manual_review:"待人工确认",demo_disabled:"暂不可用"};
 const detailStateLabels = {locked:"等待核验",analyzing:"分析中",unlocked:"已提供逐条结果",unavailable:"详细结果待提供"};
 let state = DATA.items.map((item,index)=>({...item,status:displayState(item.binding&&item.binding.state||"待开始"),index,binding:{...(item.binding||{}),evidence:[...((item.binding&&item.binding.evidence)||[])]}}));
-let current = 0, evaluationActive = false, processing = false, pollTimer = null, filter = "all", pending = [], pendingKeys = new Set(), drawerIndex = null;
+let current = 0, evaluationActive = false, processing = false, pollTimer = null, filter = "all", pending = [], pendingKeys = new Set(), drawerIndex = null, newCardIndexes = new Set();
 let hoverTimer = null, hoverButton = null;
 const $ = id => document.getElementById(id);
 const esc = value => String(value ?? "").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[ch]));
+const WORKFLOW_FALLBACK = {schema:"realtime-workflow-display/v1",cycle_ms:3000,jitter_ratio:.15,stages:[
+  {stage_id:"ingest",label:"接入画面",order:0,weight:.10},
+  {stage_id:"planning",label:"任务规划",order:1,weight:.15},
+  {stage_id:"orchestration",label:"工具编排",order:2,weight:.18},
+  {stage_id:"visual_analysis",label:"视觉分析",order:3,weight:.30},
+  {stage_id:"evidence",label:"证据整理",order:4,weight:.17},
+  {stage_id:"decision",label:"结果判定",order:5,weight:.10}
+]};
+const workflowConfig = {...WORKFLOW_FALLBACK,...(DATA.presentation&&DATA.presentation.workflow_display||{})};
+const workflowStages = Array.isArray(workflowConfig.stages)&&workflowConfig.stages.length===6?workflowConfig.stages:WORKFLOW_FALLBACK.stages;
+let workflowTimer = null, workflowToken = 0, workflowItemIndex = null, workflowStageIndex = -1, workflowRng = Math.random;
+function workflowReducedMotion(){return window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches}
+function ensureRealtimeSurfaces(){
+  const main=document.querySelector(".main"), hero=main&&main.querySelector(".hero");
+  if(!main||!hero)return;
+  if(!$("video-slot")){
+    const slot=document.createElement("section");slot.id="video-slot";slot.className="video-slot";slot.setAttribute("aria-label","实时视频窗口");
+    slot.innerHTML='<video id="live-video" data-video-slot="realtime" playsinline muted aria-label="实时视频画面"></video><div class="video-placeholder"><div class="video-placeholder-inner"><div class="video-placeholder-mark">LIVE</div><div class="video-placeholder-title">实时视频</div><div class="video-placeholder-note">等待视频源接入</div></div></div>';
+    main.insertBefore(slot,hero);
+  }
+  if(!$("workflow-strip")){
+    const strip=document.createElement("section");strip.id="workflow-strip";strip.className="workflow-strip";strip.setAttribute("aria-label","后端模型工作状态");
+    strip.innerHTML='<div class="workflow-heading"><i></i><span>模型工作状态</span></div><div class="workflow-track" id="workflow-track" role="list">'+workflowStages.map(stage=>`<div class="workflow-stage pending" data-workflow-stage="${esc(stage.stage_id)}" role="listitem"><i class="workflow-light"></i><span>${esc(stage.label)}</span></div>`).join("")+'</div><span class="workflow-state" id="workflow-state" role="status" aria-live="polite">等待分析</span>';
+    main.insertBefore(strip,hero);
+  }
+}
+function workflowSetVisual(index,state){
+  const strip=$("workflow-strip"),track=$("workflow-track"),heading=strip&&strip.querySelector(".workflow-heading"),stateLabel=$("workflow-state");
+  if(!strip||!track)return;
+  const stages=[...track.querySelectorAll(".workflow-stage")];stages.forEach((node,i)=>{node.classList.toggle("active",state==="running"&&i===index);node.classList.toggle("done",state==="running"&&i<index);node.classList.toggle("pending",!(state==="running"&&i<=index));});
+  if(heading)heading.classList.toggle("active",state==="running");
+  if(stateLabel)stateLabel.textContent=state==="running"?(workflowStages[index]&&workflowStages[index].label||"分析中"):state==="review"?"等待确认":state==="done"?"本轮完成":"等待分析";
+  if(state==="running"&&stages[index])stages[index].scrollIntoView({behavior:workflowReducedMotion()?"auto":"smooth",block:"nearest",inline:"center"});
+}
+function workflowRandom(){const value=Number(workflowRng());return Number.isFinite(value)?Math.max(0,Math.min(1,value)):Math.random()}
+function workflowSchedule(totalMs){
+  const total=Math.max(1000,Number(totalMs)||Number(workflowConfig.cycle_ms)||3000),jitter=Math.max(0,Math.min(.25,Number(workflowConfig.jitter_ratio)||.15));
+  const raw=workflowStages.map(stage=>Math.max(.001,Number(stage.weight)||1/workflowStages.length)*(1+(workflowRandom()*2-1)*jitter));
+  const sum=raw.reduce((a,b)=>a+b,0),minimum=120,durations=raw.map(value=>Math.max(minimum,Math.round(total*value/sum)));
+  let delta=Math.round(total)-durations.reduce((a,b)=>a+b,0);
+  if(delta>=0){durations[durations.length-1]+=delta}else{for(const index of durations.map((_,i)=>i).sort((a,b)=>durations[b]-durations[a])){const room=Math.max(0,durations[index]-minimum),take=Math.min(room,-delta);durations[index]-=take;delta+=take;if(delta>=0)break}}
+  return durations;
+}
+function workflowStop(resultState="idle"){
+  workflowToken+=1;if(workflowTimer){clearTimeout(workflowTimer);workflowTimer=null}workflowItemIndex=null;workflowStageIndex=-1;workflowSetVisual(-1,resultState==="review"?"review":resultState==="done"?"done":"idle");
+}
+function workflowStart(itemIndex,totalMs){
+  workflowStop();workflowItemIndex=itemIndex;const token=workflowToken,schedule=workflowSchedule(totalMs),reduced=workflowReducedMotion();let index=0;
+  const advance=()=>{if(token!==workflowToken||workflowItemIndex!==itemIndex)return;workflowStageIndex=index;workflowSetVisual(index,"running");const wait=schedule[index];index+=1;if(index<schedule.length)workflowTimer=setTimeout(advance,reduced?Math.min(wait,80):wait);else workflowTimer=setTimeout(()=>{if(token===workflowToken&&workflowItemIndex===itemIndex){workflowStart(itemIndex,totalMs)}},reduced?80:0)};
+  advance();
+}
 function cls(status){return statuses[status]||"pending"}
 function displayState(status){return status==="证据已绑定"?"已完成评分":status}
 function isTerminal(item){return terminalStates.has(item.status)}
@@ -542,19 +656,20 @@ function evidenceMarkup(item,itemIndex){
   return `<div class="evidence-box"><div class="slot-row">${slots}</div>${tiles?`<div class="evidence-grid">${tiles}</div>`:`<div class="empty-note">当前项目仍在等待可用证据图</div>`}${seq.length?`<div class="sequence">${["开始","动作中","完成"].map((p,i)=>`<span class="${seq[i]?"on":""}">${p}</span>`).join("")}</div>`:""}<div class="explain">${esc(explanation)}</div></div>`;
 }
 function analysisMarkup(item){if(!isTerminal(item))return "";const profile=item.analysis_profile||{};const tools=(item.analysis_tools||[]).map(tool=>`<span class="tool-chip">${esc(tool.label||tool.tool_id)}</span>`).join("");const features=(profile.complexity_features||[]).map(feature=>esc(feature)).join(" · ");const metrics=[profile.distinct_tool_count!=null?`${profile.distinct_tool_count} 个工具`:"",profile.actual_analysis_task_count!=null?`实际分析任务 ${profile.actual_analysis_task_count} 个`:""].filter(Boolean).join(" · ");return `<div class="analysis-box"><div class="analysis-title">分析链 · ${esc(item.difficulty_label||labels[item.difficulty]||"")}</div><div class="tool-list">${tools||`<span class="tool-chip">工具链整理中</span>`}</div><div class="profile-line">${esc(metrics)}${features?`<br>证据链：${features}`:""}</div></div>`}
-function cardMarkup(item,i){const terminal=isTerminal(item);const evaluation=isCompleted(item)&&item.realtime_target?`<div class="target"><span class="target-label">评分结论</span>${esc(item.realtime_target)}</div>`:"";const difficulty=terminal?`<span class="difficulty ${esc(item.difficulty||"")}">${esc(item.difficulty_label||labels[item.difficulty]||"")}</span>`:"";const score=terminal?`<span class="score-badge ${scoreFor(item)===0?"zero":""}">${scoreFor(item)} / 1 分</span>`:"";return `<article class="item-card ${i===current?"current":""} ${item.status==="待人工确认"?"review":""}" data-difficulty="${terminal?esc(item.difficulty||""):""}"><div class="card-head"><div class="item-id"><span class="item-no">${item.item_number}</span><div><div class="item-title">${esc(item.display_name)}</div>${difficulty}</div></div><div class="card-actions">${score}<span class="status-badge ${cls(item.status)}">${esc(item.status)}</span></div></div>${evaluation}<div class="binding-line"><span>现场时间</span><strong>${esc(item.binding&&item.binding.live_timestamp||"等待")}</strong><span>·</span><span>置信度</span><strong>${item.binding&&item.binding.time_confidence!=null?Math.round(Number(item.binding.time_confidence)*100)+"%":"—"}</strong></div>${evidenceMarkup(item,i)}${analysisMarkup(item)}<div class="card-footer"><span class="difficulty-hint">详细核验 · ${item.detail&&item.detail.criterion_count||0} 项</span><button class="detail-trigger" type="button" data-detail-index="${i}" aria-controls="detail-drawer" aria-expanded="false">展开详细表单</button></div></article>`}
-function renderCards(){const visible=state.map((item,i)=>({item,i})).filter(x=>filter==="all"||(isTerminal(x.item)&&x.item.difficulty===filter));$("cards").innerHTML=visible.map(x=>cardMarkup(x.item,x.i)).join("")}
-function render(){const item=state[current]||state[0];const complete=doneCount(),bound=state.reduce((n,x)=>n+(x.binding&&x.binding.evidence||[]).length,0),score=state.reduce((n,x)=>n+(scoreFor(x)||0),0),hasDifficulty=state.some(isTerminal);$("title").textContent=DATA.title;$("footer").textContent=DATA.presentation.footer;$("done").textContent=`${complete}/${state.length}`;$("score").textContent=`${score}/${state.length}`;$("bound").textContent=String(bound);$("heroProgress").textContent=`${complete} / ${state.length}`;$("progressBar").style.width=`${state.length?Math.round(complete/state.length*100):0}%`;$("difficultyFilters").hidden=!hasDifficulty;$("difficultyHint").hidden=hasDifficulty;$("phase").textContent=item.status==="待开始"?DATA.presentation.initial_state:item.status;$("quality").textContent=item.status==="待人工确认"?"需要人工确认":item.status==="证据生成中"?"证据生成中":complete?"证据链已整理":"等待有效画面";$("heroKicker").textContent=`实时识别中 · 项目 ${item.item_number}`;$("heroTitle").textContent=item.display_name;$("heroText").textContent=isCompleted(item)?(item.binding&&item.binding.evidence_explanation||item.realtime_target||"相关画面已整理。"):(item.binding&&item.binding.evidence_explanation&&item.binding.evidence_explanation!=="等待当前视频流中的有效证据。"?item.binding.evidence_explanation:"系统正在从视频流中定位操作对象，证据生成后会自动整理到对应项目。");renderTimeline();renderCards();bindEvidenceInteractions();if(drawerIndex!==null)renderDrawer(drawerIndex)}
+function cardMarkup(item,i,extraClass=""){const terminal=isTerminal(item);const evaluation=isCompleted(item)&&item.realtime_target?`<div class="target"><span class="target-label">评分结论</span>${esc(item.realtime_target)}</div>`:"";const difficulty=terminal?`<span class="difficulty ${esc(item.difficulty||"")}">${esc(item.difficulty_label||labels[item.difficulty]||"")}</span>`:"";const score=terminal?`<span class="score-badge ${scoreFor(item)===0?"zero":""}">${scoreFor(item)} / 1 分</span>`:"";return `<article class="item-card ${i===current?"current":""} ${item.status==="待人工确认"?"review":""} ${extraClass}" data-item-index="${i}" data-difficulty="${terminal?esc(item.difficulty||""):""}"><div class="card-head"><div class="item-id"><span class="item-no">${item.item_number}</span><div><div class="item-title">${esc(item.display_name)}</div>${difficulty}</div></div><div class="card-actions">${score}<span class="status-badge ${cls(item.status)}">${esc(item.status)}</span></div></div>${evaluation}<div class="binding-line"><span>现场时间</span><strong>${esc(item.binding&&item.binding.live_timestamp||"等待")}</strong><span>·</span><span>置信度</span><strong>${item.binding&&item.binding.time_confidence!=null?Math.round(Number(item.binding.time_confidence)*100)+"%":"—"}</strong></div>${evidenceMarkup(item,i)}${analysisMarkup(item)}<div class="card-footer"><span class="difficulty-hint">详细核验 · ${item.detail&&item.detail.criterion_count||0} 项</span><button class="detail-trigger" type="button" data-detail-index="${i}" aria-controls="detail-drawer" aria-expanded="false">展开详细表单</button></div></article>`}
+function renderCards(){const visible=state.map((item,i)=>({item,i})).filter(x=>x.item.status!=="待开始"&&(filter==="all"||(isTerminal(x.item)&&x.item.difficulty===filter)));$("cards").innerHTML=visible.length?visible.map(x=>cardMarkup(x.item,x.i,newCardIndexes.has(x.i)?"reveal":"")).join(""):"<div class=\"cards-empty\">等待识别到第一个操作项目</div>";if(newCardIndexes.size)requestAnimationFrame(()=>newCardIndexes.clear())}
+function focusLatestCompleted(index){requestAnimationFrame(()=>{const card=document.querySelector(`.item-card[data-item-index="${index}"]`);if(!card)return;card.scrollIntoView({behavior:workflowReducedMotion()?"auto":"smooth",block:"center",inline:"nearest"});card.classList.add("completion-focus");setTimeout(()=>card.classList.remove("completion-focus"),700)})}
+function render(){ensureRealtimeSurfaces();const item=state[current]||state[0];const complete=doneCount(),bound=state.reduce((n,x)=>n+(x.binding&&x.binding.evidence||[]).length,0),score=state.reduce((n,x)=>n+(scoreFor(x)||0),0),hasDifficulty=state.some(isTerminal);$("title").textContent=DATA.title;$("footer").textContent=DATA.presentation.footer;$("done").textContent=`${complete}/${state.length}`;$("score").textContent=`${score}/${state.length}`;$("bound").textContent=String(bound);$("heroProgress").textContent=`${complete} / ${state.length}`;$("progressBar").style.width=`${state.length?Math.round(complete/state.length*100):0}%`;$("difficultyFilters").hidden=!hasDifficulty;$("difficultyHint").hidden=hasDifficulty;$("phase").textContent=item.status==="待开始"?DATA.presentation.initial_state:item.status;$("quality").textContent=item.status==="待人工确认"?"需要人工确认":item.status==="证据生成中"?"证据生成中":complete?"证据链已整理":"等待有效画面";$("heroKicker").textContent=`实时识别中 · 项目 ${item.item_number}`;$("heroTitle").textContent=item.display_name;$("heroText").textContent=isCompleted(item)?(item.binding&&item.binding.evidence_explanation||item.realtime_target||"相关画面已整理。"):(item.binding&&item.binding.evidence_explanation&&item.binding.evidence_explanation!=="等待当前视频流中的有效证据。"?item.binding.evidence_explanation:"系统正在从视频流中定位操作对象，证据生成后会自动整理到对应项目。");renderTimeline();renderCards();bindEvidenceInteractions();if(drawerIndex!==null)renderDrawer(drawerIndex)}
 function toast(message){$("toast").textContent=message;$("toast").classList.add("show");setTimeout(()=>$("toast").classList.remove("show"),1600)}
 function delay(ms){return new Promise(resolve=>setTimeout(resolve,ms))}
 function signature(item){const b=item.binding||{},d=item.detail||{};return JSON.stringify({binding:{revision:b.revision,state:b.state,live_timestamp:b.live_timestamp,live_start_sec:b.live_start_sec,live_end_sec:b.live_end_sec,time_confidence:b.time_confidence,evidence:(b.evidence||[]).map(e=>[e.evidence_id,e.timestamp,e.timestamp_sec,e.phase,e.round,e.order_index,e.confidence,e.caption,e.src])},detail:d})}
 function mergeView(view){if(!view||!Array.isArray(view.items))return;view.items.forEach(incoming=>{const index=state.findIndex(item=>item.item_id===incoming.item_id);if(index<0)return;const currentItem=state[index];if(pendingKeys.has(incoming.item_id)||signature(incoming)===signature(currentItem))return;pending.push({index,incoming,finalState:displayState((incoming.binding||{}).state||"待开始"),processingMs:Number(view.processing_ms||0)});pendingKeys.add(incoming.item_id)});drainQueue()}
-async function present(update){const old=state[update.index];if(!old)return;current=update.index;state[update.index]={...old,status:"已定位"};render();toast(`已定位：${old.display_name}`);await delay(430);if(!evaluationActive){pendingKeys.delete(update.incoming.item_id);return}state[update.index]={...state[update.index],status:"证据生成中",detail:{...(update.incoming.detail||state[update.index].detail||{}),state:"analyzing"}};render();await delay(update.processingMs||950);if(!evaluationActive){pendingKeys.delete(update.incoming.item_id);return}state[update.index]={...update.incoming,status:update.finalState,index:update.index,binding:{...(update.incoming.binding||{}),evidence:[...((update.incoming.binding||{}).evidence||[])]}};render();toast(`${old.display_name}：${update.finalState}`)}
+async function present(update){const old=state[update.index];if(!old)return;current=update.index;const wasPending=old.status==="待开始";state[update.index]={...old,status:"已定位"};if(wasPending)newCardIndexes.add(update.index);render();toast(`已定位：${old.display_name}`);await delay(430);if(!evaluationActive){pendingKeys.delete(update.incoming.item_id);return}state[update.index]={...state[update.index],status:"证据生成中",detail:{...(update.incoming.detail||state[update.index].detail||{}),state:"analyzing"}};workflowStart(update.index,update.processingMs||workflowConfig.cycle_ms);render();await delay(update.processingMs||950);if(!evaluationActive){workflowStop();pendingKeys.delete(update.incoming.item_id);return}const nextState=displayState(update.finalState||"已完成评分");state[update.index]={...update.incoming,status:nextState,index:update.index,binding:{...(update.incoming.binding||{}),evidence:[...((update.incoming.binding||{}).evidence||[])]}};if(nextState==="证据生成中")workflowStart(update.index,workflowConfig.cycle_ms);else workflowStop(nextState==="待人工确认"?"review":isCompleted(state[update.index])?"done":"idle");const newlyCompleted=isCompleted(state[update.index])&&!isCompleted(old);render();if(newlyCompleted)focusLatestCompleted(update.index);toast(`${old.display_name}：${nextState}`)}
 async function drainQueue(){if(processing||!evaluationActive)return;processing=true;while(pending.length&&evaluationActive){const update=pending.shift();await present(update);pendingKeys.delete(update.incoming.item_id)}processing=false}
 async function pollReport(){if(!evaluationActive||location.protocol==="file:")return;try{const response=await fetch(`/api/report?ts=${Date.now()}`,{cache:"no-store"});if(response.ok)mergeView(await response.json())}catch(error){$("connection").textContent="等待分析服务";$("quality").textContent="连接重试中"}}
 async function runMockEvents(){for(const event of DATA.events||[]){if(!evaluationActive)break;await delay(Number(event.delay_ms||900));if(!evaluationActive)break;if(event.item_patch)mergeView({items:[event.item_patch],processing_ms:event.processing_ms});while(processing&&evaluationActive)await delay(120)}}
-async function startEvaluation(){if(evaluationActive){evaluationActive=false;if(pollTimer)clearInterval(pollTimer);$("start").textContent="▶ 启动评测";$("connection").textContent="评测已暂停";toast("实时评测已暂停");return}const fileMode=location.protocol==="file:";if(fileMode&&!(DATA.events||[]).length){toast("请通过本地演示服务启动评测");return}evaluationActive=true;$("start").textContent="Ⅱ 暂停评测";$("connection").textContent="实时分析中";toast("已启动实时评测");if(!fileMode){await pollReport();pollTimer=setInterval(pollReport,Number(DATA.presentation.poll_interval_ms||650))}if((DATA.events||[]).length)runMockEvents()}
-async function resetReport(){if(location.protocol==="file:"){toast("请通过本地演示服务执行重置");return}evaluationActive=false;if(pollTimer)clearInterval(pollTimer);pending=[];pendingKeys.clear();processing=false;try{const response=await fetch("/api/reset",{method:"POST"});if(!response.ok)throw new Error("reset failed");const view=await response.json();state=view.items.map((item,index)=>({...item,status:"待开始",index,binding:{...(item.binding||{}),evidence:[...((item.binding||{}).evidence||[])]},detail:{...(item.detail||{}),state:"locked",checks:[]}}));current=0;filter="all";document.querySelectorAll(".chip").forEach(x=>x.classList.toggle("active",x.dataset.filter==="all"));closeDetail();$("start").textContent="▶ 启动评测";$("connection").textContent="视频流已连接";render();toast("已恢复初始评测状态")}catch(error){toast("重置失败，请检查本地演示服务")}}
+async function startEvaluation(){if(evaluationActive){evaluationActive=false;if(pollTimer)clearInterval(pollTimer);workflowStop();$("start").textContent="▶ 启动评测";$("connection").textContent="评测已暂停";toast("实时评测已暂停");return}const fileMode=location.protocol==="file:";if(fileMode&&!(DATA.events||[]).length){toast("请通过本地演示服务启动评测");return}evaluationActive=true;$("start").textContent="Ⅱ 暂停评测";$("connection").textContent="实时分析中";toast("已启动实时评测");if(!fileMode){await pollReport();pollTimer=setInterval(pollReport,Number(DATA.presentation.poll_interval_ms||650))}if((DATA.events||[]).length)runMockEvents()}
+async function resetReport(){if(location.protocol==="file:"){toast("请通过本地演示服务执行重置");return}evaluationActive=false;if(pollTimer)clearInterval(pollTimer);workflowStop();pending=[];pendingKeys.clear();processing=false;newCardIndexes.clear();try{const response=await fetch("/api/reset",{method:"POST"});if(!response.ok)throw new Error("reset failed");const view=await response.json();state=view.items.map((item,index)=>({...item,status:"待开始",index,binding:{...(item.binding||{}),evidence:[...((item.binding||{}).evidence||[])]},detail:{...(item.detail||{}),state:"locked",checks:[]}}));current=0;filter="all";document.querySelectorAll(".chip").forEach(x=>x.classList.toggle("active",x.dataset.filter==="all"));closeDetail();$("start").textContent="▶ 启动评测";$("connection").textContent="视频流已连接";render();toast("已恢复初始评测状态")}catch(error){toast("重置失败，请检查本地演示服务")}}
 function confidenceText(value){return value==null?"—":`${Math.round(Number(value)*100)}%`}
 function formatSeconds(value){const number=Number(value);if(!Number.isFinite(number)||number<0)return "—";const total=Math.round(number);return `${String(Math.floor(total/60)).padStart(2,"0")}:${String(total%60).padStart(2,"0")}`}
 function timeRangeText(item){const binding=item.binding||{},range=binding.time_range||{};const start=range.start!=null?range.start:binding.live_start_sec,end=range.end!=null?range.end:binding.live_end_sec;if(start==null&&end==null)return binding.live_timestamp||"—";if(start==null)return formatSeconds(end);if(end==null)return formatSeconds(start);return `${formatSeconds(start)} — ${formatSeconds(end)}`}

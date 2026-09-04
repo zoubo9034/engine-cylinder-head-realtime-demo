@@ -222,6 +222,31 @@ DIFFICULTY_LABELS = {
 
 DEFAULT_PROFILE_PATH = Path(__file__).with_name("workflow_tool_profile_10video.json")
 
+VIDEO_SLOT_SCHEMA = "realtime-video-slot/v1"
+WORKFLOW_DISPLAY_SCHEMA = "realtime-workflow-display/v1"
+WORKFLOW_DISPLAY_STAGES = [
+    {"stage_id": "ingest", "label": "接入画面", "order": 0, "weight": 0.10},
+    {"stage_id": "planning", "label": "任务规划", "order": 1, "weight": 0.15},
+    {"stage_id": "orchestration", "label": "工具编排", "order": 2, "weight": 0.18},
+    {"stage_id": "visual_analysis", "label": "视觉分析", "order": 3, "weight": 0.30},
+    {"stage_id": "evidence", "label": "证据整理", "order": 4, "weight": 0.17},
+    {"stage_id": "decision", "label": "结果判定", "order": 5, "weight": 0.10},
+]
+WORKFLOW_DISPLAY_CONFIG = {
+    "schema": WORKFLOW_DISPLAY_SCHEMA,
+    "cycle_ms": 3000,
+    "jitter_ratio": 0.15,
+    "stages": deepcopy(WORKFLOW_DISPLAY_STAGES),
+}
+WORKFLOW_TRACE_NODE_GROUPS = {
+    "ingest": ("scenario_load",),
+    "planning": ("planner_agent", "prior_context_delivery", "planner_prior_consumption"),
+    "orchestration": ("tool_plan_validation", "capability_snapshot", "dag_compilation"),
+    "visual_analysis": ("tool_execution_summary", "tool_prior_consumption"),
+    "evidence": ("evidence_ledger",),
+    "decision": ("evidence_policy", "claim_completion", "answer_decision"),
+}
+
 
 def load_tool_profile(path: Path | None = None) -> dict[str, Any]:
     """Load the checked-in aggregate profile, if one is available."""
@@ -329,6 +354,13 @@ def template_payload(profile: Mapping[str, Any] | None = None) -> dict[str, Any]
             "show_raw_paths": False,
             "initial_state": "正在接入视频流",
             "poll_interval_ms": 650,
+            "video_slot": {
+                "schema": VIDEO_SLOT_SCHEMA,
+                "state": "reserved",
+                "label": "实时视频",
+                "aspect_ratio": "16:9",
+            },
+            "workflow_display": deepcopy(WORKFLOW_DISPLAY_CONFIG),
             "footer": "本页面展示当前视频流的实时分析过程。证据未完成时不输出结论，低置信度结果保留人工确认状态。",
         },
         "scope": {
@@ -578,6 +610,53 @@ def validate_report(payload: Mapping[str, Any], *, allow_mock: bool = True) -> l
         errors.append("presentation.score_reveal must be terminal_only")
     if payload.get("presentation", {}).get("show_source_provenance") is not False:
         errors.append("presentation.show_source_provenance must be false")
+    presentation = payload.get("presentation", {})
+    if not isinstance(presentation, Mapping):
+        errors.append("presentation must be an object")
+    else:
+        video_slot = presentation.get("video_slot", {})
+        if not isinstance(video_slot, Mapping):
+            errors.append("presentation.video_slot must be an object")
+        else:
+            if video_slot.get("schema") != VIDEO_SLOT_SCHEMA:
+                errors.append(f"presentation.video_slot.schema must be {VIDEO_SLOT_SCHEMA}")
+            if video_slot.get("state") != "reserved":
+                errors.append("presentation.video_slot.state must be reserved")
+            if video_slot.get("aspect_ratio") != "16:9":
+                errors.append("presentation.video_slot.aspect_ratio must be 16:9")
+        workflow = presentation.get("workflow_display", {})
+        if not isinstance(workflow, Mapping):
+            errors.append("presentation.workflow_display must be an object")
+        else:
+            if workflow.get("schema") != WORKFLOW_DISPLAY_SCHEMA:
+                errors.append(f"presentation.workflow_display.schema must be {WORKFLOW_DISPLAY_SCHEMA}")
+            cycle_ms = workflow.get("cycle_ms")
+            if isinstance(cycle_ms, bool) or not isinstance(cycle_ms, (int, float)) or cycle_ms < 1000:
+                errors.append("presentation.workflow_display.cycle_ms must be at least 1000")
+            jitter_ratio = workflow.get("jitter_ratio")
+            if isinstance(jitter_ratio, bool) or not isinstance(jitter_ratio, (int, float)) or not 0 <= float(jitter_ratio) <= 0.25:
+                errors.append("presentation.workflow_display.jitter_ratio must be between 0 and 0.25")
+            stages = workflow.get("stages")
+            if not isinstance(stages, list) or len(stages) != len(WORKFLOW_DISPLAY_STAGES):
+                errors.append(f"presentation.workflow_display.stages must contain exactly {len(WORKFLOW_DISPLAY_STAGES)} entries")
+            else:
+                stage_ids = [str(stage.get("stage_id") or "") for stage in stages if isinstance(stage, Mapping)]
+                if len(stage_ids) != len(stages) or stage_ids != [stage["stage_id"] for stage in WORKFLOW_DISPLAY_STAGES]:
+                    errors.append("presentation.workflow_display.stages must follow the registered order")
+                weights = []
+                for stage in stages:
+                    if not isinstance(stage, Mapping):
+                        errors.append("presentation.workflow_display stage must be an object")
+                        continue
+                    if not isinstance(stage.get("label"), str) or not stage["label"].strip():
+                        errors.append("presentation.workflow_display stage label is required")
+                    weight = stage.get("weight")
+                    if isinstance(weight, bool) or not isinstance(weight, (int, float)) or float(weight) <= 0:
+                        errors.append("presentation.workflow_display stage weight must be positive")
+                    else:
+                        weights.append(float(weight))
+                if weights and abs(sum(weights) - 1.0) > 1e-6:
+                    errors.append("presentation.workflow_display stage weights must sum to 1")
     items = payload.get("items")
     if not isinstance(items, list) or len(items) != len(ITEM_DEFINITIONS):
         errors.append(f"items must contain exactly {len(ITEM_DEFINITIONS)} entries")

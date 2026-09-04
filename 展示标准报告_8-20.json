@@ -17,6 +17,55 @@
     "show_raw_paths": false,
     "initial_state": "正在接入视频流",
     "poll_interval_ms": 650,
+    "video_slot": {
+      "schema": "realtime-video-slot/v1",
+      "state": "reserved",
+      "label": "实时视频",
+      "aspect_ratio": "16:9"
+    },
+    "workflow_display": {
+      "schema": "realtime-workflow-display/v1",
+      "cycle_ms": 3000,
+      "jitter_ratio": 0.15,
+      "stages": [
+        {
+          "stage_id": "ingest",
+          "label": "接入画面",
+          "order": 0,
+          "weight": 0.1
+        },
+        {
+          "stage_id": "planning",
+          "label": "任务规划",
+          "order": 1,
+          "weight": 0.15
+        },
+        {
+          "stage_id": "orchestration",
+          "label": "工具编排",
+          "order": 2,
+          "weight": 0.18
+        },
+        {
+          "stage_id": "visual_analysis",
+          "label": "视觉分析",
+          "order": 3,
+          "weight": 0.3
+        },
+        {
+          "stage_id": "evidence",
+          "label": "证据整理",
+          "order": 4,
+          "weight": 0.17
+        },
+        {
+          "stage_id": "decision",
+          "label": "结果判定",
+          "order": 5,
+          "weight": 0.1
+        }
+      ]
+    },
     "footer": "本页面展示当前视频流的实时分析过程。证据未完成时不输出结论，低置信度结果保留人工确认状态。"
   },
   "scope": {

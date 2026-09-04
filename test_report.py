@@ -11,7 +11,16 @@ from copy import deepcopy
 from pathlib import Path
 
 from detail_rules import DETAIL_CHECK_STATUSES, DETAIL_EVALUATION_STATES, DETAIL_RULES, DETAIL_RULES_BY_ITEM
-from report_schema import DIFFICULTY_LABELS, ITEM_DEFINITIONS, template_payload, validate_report
+from report_schema import (
+    DIFFICULTY_LABELS,
+    ITEM_DEFINITIONS,
+    VIDEO_SLOT_SCHEMA,
+    WORKFLOW_DISPLAY_SCHEMA,
+    WORKFLOW_DISPLAY_STAGES,
+    WORKFLOW_TRACE_NODE_GROUPS,
+    template_payload,
+    validate_report,
+)
 from render_report import FORBIDDEN_HTML_MARKERS, _clean_text, public_projection, render_html
 from build_mock_report import (
     MOCK_ANALYSIS_DURATION_MS,
@@ -71,6 +80,38 @@ class ReportContractTest(unittest.TestCase):
         self.assertNotIn("autoplay", payload["presentation"])
         self.assertEqual(validate_report(payload), [])
 
+    def test_template_has_reserved_video_slot_and_trace_workflow_lamps(self) -> None:
+        payload = template_payload()
+        video_slot = payload["presentation"]["video_slot"]
+        self.assertEqual(video_slot, {
+            "schema": VIDEO_SLOT_SCHEMA,
+            "state": "reserved",
+            "label": "实时视频",
+            "aspect_ratio": "16:9",
+        })
+        workflow = payload["presentation"]["workflow_display"]
+        self.assertEqual(workflow["schema"], WORKFLOW_DISPLAY_SCHEMA)
+        self.assertEqual(workflow["cycle_ms"], 3000)
+        self.assertEqual(len(workflow["stages"]), 6)
+        self.assertEqual(
+            [stage["stage_id"] for stage in workflow["stages"]],
+            [stage["stage_id"] for stage in WORKFLOW_DISPLAY_STAGES],
+        )
+        self.assertAlmostEqual(sum(stage["weight"] for stage in workflow["stages"]), 1.0)
+        trace_nodes = [node for nodes in WORKFLOW_TRACE_NODE_GROUPS.values() for node in nodes]
+        self.assertEqual(len(trace_nodes), len(set(trace_nodes)))
+        self.assertEqual(len(trace_nodes), 13)
+
+    def test_public_projection_keeps_only_safe_workflow_display_fields(self) -> None:
+        projection = public_projection(template_payload())
+        presentation = projection["presentation"]
+        self.assertEqual(presentation["video_slot"]["schema"], VIDEO_SLOT_SCHEMA)
+        self.assertNotIn("src", presentation["video_slot"])
+        workflow = presentation["workflow_display"]
+        self.assertEqual(workflow["schema"], WORKFLOW_DISPLAY_SCHEMA)
+        self.assertEqual(len(workflow["stages"]), 6)
+        self.assertTrue(all("trace_nodes" not in stage for stage in workflow["stages"]))
+
     def test_first_tightening_wording_is_a_clear_process_criterion(self) -> None:
         item = next(item for item in template_payload()["items"] if item["item_number"] == 20)
         self.assertIn("1—10号气缸盖螺栓", item["prefilled_standard_text"])
@@ -120,6 +161,14 @@ class ReportContractTest(unittest.TestCase):
         self.assertNotIn("25 N·m", html)
         self.assertNotIn("下一项", html)
         self.assertNotIn("已完成展示", html)
+        self.assertIn("data-video-slot=\"realtime\"", html)
+        self.assertIn("等待视频源接入", html)
+        self.assertIn("workflow-strip", html)
+        self.assertIn("模型工作状态", html)
+        self.assertIn("workflowStart", html)
+        self.assertIn("workflowStop", html)
+        self.assertIn("scrollIntoView", html)
+        self.assertIn("prefers-reduced-motion", html)
 
     def test_public_html_uses_duanyan_design_tokens(self) -> None:
         html = render_html(template_payload())
