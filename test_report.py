@@ -167,7 +167,17 @@ class ReportContractTest(unittest.TestCase):
         self.assertIn("模型工作状态", html)
         self.assertIn("workflowStart", html)
         self.assertIn("workflowStop", html)
-        self.assertIn("scrollIntoView", html)
+        self.assertIn("live-layout", html)
+        self.assertIn("video-column", html)
+        self.assertIn("results-column", html)
+        self.assertIn("grid-template-columns:1fr", html)
+        self.assertIn("overflow-y:auto", html)
+        self.assertIn("position:sticky", html)
+        self.assertIn("container.scrollTo", html)
+        self.assertIn("pauseAutoFocus", html)
+        self.assertIn("queuedFocusIndex", html)
+        self.assertIn("track.scrollTo", html)
+        self.assertNotIn("scrollIntoView", html)
         self.assertIn("prefers-reduced-motion", html)
 
     def test_public_html_uses_duanyan_design_tokens(self) -> None:
