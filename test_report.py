@@ -203,6 +203,21 @@ class ReportContractTest(unittest.TestCase):
         self.assertNotIn("--bg:#08111f", html)
         self.assertNotIn("linear-gradient(145deg,#4ce3ff", html)
 
+    def test_mock_replay_does_not_mix_polling_or_regress_item_state(self) -> None:
+        html = render_html(
+            json.loads(Path("展示标准报告_8-20_mock.json").read_text(encoding="utf-8"))
+        )
+        self.assertIn(
+            "const mockReplay = Array.isArray(DATA.events)&&DATA.events.length>0",
+            html,
+        )
+        self.assertIn("if(mockReplay){runMockEvents()}else if(!fileMode)", html)
+        self.assertIn("function stateRank(status)", html)
+        self.assertIn(
+            "stateRank(incomingState)<stateRank(currentItem.status)",
+            html,
+        )
+
     def test_evaluation_text_is_disclosed_only_after_completion(self) -> None:
         payload = template_payload()
         item = next(item for item in payload["items"] if item["item_number"] == 20)
