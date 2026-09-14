@@ -672,16 +672,8 @@ def make_handler(state: DemoState, root: Path, media_root: Path):
                 raise ValueError("请求 JSON 顶层必须是对象")
             return value
 
-        def _send_video(self, item_id: str, evidence_id: str, *, head_only: bool) -> None:
-            if not _ROUTE_ID_RE.fullmatch(item_id) or not _ROUTE_ID_RE.fullmatch(evidence_id):
-                self.send_error(404)
-                return
-            record = _find_local_video_record(state.read(), item_id, evidence_id)
-            if record is None:
-                self.send_error(404)
-                return
+        def _send_video_path(self, path: Path, *, head_only: bool) -> None:
             try:
-                path = _resolve_media_path(media_root, str(record.get("source_path") or ""))
                 size = path.stat().st_size
                 if size <= 0:
                     raise ValueError("媒体文件为空")
@@ -722,6 +714,21 @@ def make_handler(state: DemoState, root: Path, media_root: Path):
                     self.wfile.write(chunk)
                     remaining -= len(chunk)
 
+        def _send_video(self, item_id: str, evidence_id: str, *, head_only: bool) -> None:
+            if not _ROUTE_ID_RE.fullmatch(item_id) or not _ROUTE_ID_RE.fullmatch(evidence_id):
+                self.send_error(404)
+                return
+            record = _find_local_video_record(state.read(), item_id, evidence_id)
+            if record is None:
+                self.send_error(404)
+                return
+            try:
+                path = _resolve_media_path(media_root, str(record.get("source_path") or ""))
+            except (OSError, ValueError):
+                self.send_error(404)
+                return
+            self._send_video_path(path, head_only=head_only)
+
         def _media_route(self) -> tuple[str, str] | None:
             route = unquote(urlparse(self.path).path)
             prefix = "/api/evidence-media/"
@@ -731,6 +738,13 @@ def make_handler(state: DemoState, root: Path, media_root: Path):
             if len(parts) != 2:
                 return ("", "")
             return parts[0], parts[1]
+
+        def _mock_media_route(self) -> str | None:
+            route = unquote(urlparse(self.path).path)
+            prefix = "/mock-video-evidence/"
+            if not route.startswith(prefix):
+                return None
+            return route[len(prefix):]
 
         def _static_allowed(self) -> bool:
             route = unquote(urlparse(self.path).path)
@@ -748,6 +762,13 @@ def make_handler(state: DemoState, root: Path, media_root: Path):
                 elif self._media_route() is not None:
                     item_id, evidence_id = self._media_route() or ("", "")
                     self._send_video(item_id, evidence_id, head_only=False)
+                elif self._mock_media_route() is not None:
+                    try:
+                        path = _resolve_media_path(media_root, self._mock_media_route() or "")
+                    except (OSError, ValueError):
+                        self.send_error(404)
+                    else:
+                        self._send_video_path(path, head_only=False)
                 elif self._static_allowed():
                     super().do_GET()
                 else:
@@ -762,6 +783,13 @@ def make_handler(state: DemoState, root: Path, media_root: Path):
             if media_route is not None:
                 item_id, evidence_id = media_route
                 self._send_video(item_id, evidence_id, head_only=True)
+            elif self._mock_media_route() is not None:
+                try:
+                    path = _resolve_media_path(media_root, self._mock_media_route() or "")
+                except (OSError, ValueError):
+                    self.send_error(404)
+                else:
+                    self._send_video_path(path, head_only=True)
             elif self._static_allowed():
                 super().do_HEAD()
             else:

@@ -967,6 +967,11 @@ class ReportContractTest(unittest.TestCase):
                 self.assertEqual(response.status, 206)
                 self.assertEqual(response.getheader("Content-Range"), "bytes 10-19/64")
                 self.assertEqual(response.read(), media_bytes[10:20])
+                connection.request("GET", "/mock-video-evidence/08-item_5069.mp4", headers={"Range": "bytes=-8"})
+                response = connection.getresponse()
+                self.assertEqual(response.status, 206)
+                self.assertEqual(response.getheader("Content-Range"), "bytes 56-63/64")
+                self.assertEqual(response.read(), media_bytes[-8:])
                 connection.request("GET", "/report.json")
                 response = connection.getresponse()
                 self.assertEqual(response.status, 404)
@@ -1015,10 +1020,13 @@ class ReportContractTest(unittest.TestCase):
             "videoEvidenceMarkup",
             "pauseEvidencePlayers",
             "syncEvidencePlayers",
+            "videoServiceReady",
+            "pendingAutoplayIndex",
             "请通过本地演示服务启动视频证据回放",
         ):
             self.assertIn(marker, html)
-        self.assertNotIn("mock-video-evidence/08-item_5069.mp4", html)
+        self.assertIn("/mock-video-evidence/08-item_5069.mp4", html)
+        self.assertNotIn("source_path", html)
 
 
 if __name__ == "__main__":

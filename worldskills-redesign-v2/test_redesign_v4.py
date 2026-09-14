@@ -175,10 +175,12 @@ class RedesignV4Tests(unittest.TestCase):
             "videoEvidenceMarkup",
             "pauseEvidencePlayers",
             "syncEvidencePlayers",
+            "videoServiceReady",
+            "pendingAutoplayIndex",
             "lightbox-video",
         ):
             self.assertIn(marker, self.video_mock_html)
-        self.assertNotIn("mock-video-evidence/08-item_5069.mp4", self.video_mock_html)
+        self.assertIn("/mock-video-evidence/08-item_5069.mp4", self.video_mock_html)
 
 
 if __name__ == "__main__":

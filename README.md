@@ -186,7 +186,9 @@ python serve_demo.py \
 http://127.0.0.1:8765/展示标准报告_8-20_mock.html
 ```
 
-视频 Mock 必须通过服务访问，不能直接以 `file://` 打开：
+视频 Mock 必须通过服务访问，不能直接以 `file://` 打开。固定 Mock 页面使用
+`/mock-video-evidence/` 下的公开演示片段，不依赖服务当前加载的是图片还是视频报告；实时更新、重置和
+标准现场视频仍应加载对应的视频 JSON：
 
 ```bash
 python serve_demo.py \
@@ -272,8 +274,10 @@ mock HTML 也可以直接用浏览器打开并启动内嵌回放；标准 HTML �
 
 ### `GET/HEAD /api/evidence-media/{item_id}/{evidence_id}`
 
-按报告中已校验的项目和证据 ID 返回本地 MP4，支持浏览器拖动播放所需的单段 Range 请求。接口不接收
-文件路径参数，也不会公开真实来源路径；HTTPS 视频地址由浏览器直接读取，不经过本地服务代理。
+标准现场按报告中已校验的项目和证据 ID 返回本地 MP4，支持浏览器拖动播放所需的单段 Range 请求。
+固定视频 Mock 则由 `/mock-video-evidence/{filename}` 返回同样的 Range 响应。两个入口都限定在
+`--media-root` 内，不接受任意文件路径，也不会公开历史视频来源；HTTPS 视频地址由浏览器直接读取，
+不经过本地服务代理。
 
 ### `POST /api/reset`
 
