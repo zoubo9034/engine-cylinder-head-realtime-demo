@@ -93,6 +93,10 @@ class RedesignV4Tests(unittest.TestCase):
         self.assertIn('class="live-layout awaiting-start"', self.standard_html)
         self.assertIn('classList.remove("awaiting-start")', self.standard_html)
         self.assertIn("--live-row:", self.standard_html)
+        self.assertIn(
+            "--live-row: clamp(780px, calc(100dvh - 220px), 960px)",
+            self.standard_html,
+        )
         self.assertIn("grid-template-rows: var(--live-row)", self.standard_html)
         self.assertIn("align-items: stretch", self.standard_html)
         self.assertIn("function beginLiveSession(", self.standard_html)

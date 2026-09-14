@@ -254,7 +254,7 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
 }
 
 .live-layout {
-  --live-row: min(760px, max(520px, calc(100dvh - 520px)));
+  --live-row: clamp(780px, calc(100dvh - 220px), 960px);
   display: grid;
   grid-template-columns: minmax(220px, 280px) minmax(320px, 1fr) minmax(0, 1.15fr);
   grid-template-rows: var(--live-row);
