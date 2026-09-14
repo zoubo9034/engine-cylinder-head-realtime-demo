@@ -154,9 +154,9 @@ __STYLES__
   <div id="hover-media"></div>
   <div class="preview-meta"><span id="hover-phase">证据</span><span id="hover-confidence"></span></div>
 </div>
-<div class="lightbox" id="lightbox" hidden role="dialog" aria-modal="true" aria-label="证据大图">
+<div class="lightbox" id="lightbox" hidden role="dialog" aria-modal="true" aria-label="证据查看器">
   <div class="lightbox-panel">
-    <button class="lightbox-close" id="lightbox-close" type="button" aria-label="关闭大图">×</button>
+    <button class="lightbox-close" id="lightbox-close" type="button" aria-label="关闭证据查看器">×</button>
     <div id="lightbox-media" style="display:flex;flex:1;min-height:0"></div>
     <div class="lightbox-meta" id="lightbox-meta"></div>
   </div>

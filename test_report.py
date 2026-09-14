@@ -4,8 +4,10 @@
 from __future__ import annotations
 
 import json
+import http.client
 import re
 import tempfile
+import threading
 import unittest
 from copy import deepcopy
 from pathlib import Path
@@ -13,7 +15,12 @@ from pathlib import Path
 from detail_rules import DETAIL_CHECK_STATUSES, DETAIL_EVALUATION_STATES, DETAIL_RULES, DETAIL_RULES_BY_ITEM
 from report_schema import (
     DIFFICULTY_LABELS,
+    EVIDENCE_MEDIA_MODES,
     ITEM_DEFINITIONS,
+    VIDEO_EVIDENCE_FPS,
+    VIDEO_EVIDENCE_HEIGHT,
+    VIDEO_EVIDENCE_SCHEMA,
+    VIDEO_EVIDENCE_WIDTH,
     VIDEO_SLOT_SCHEMA,
     WORKFLOW_DISPLAY_SCHEMA,
     WORKFLOW_DISPLAY_STAGES,
@@ -25,17 +32,44 @@ from render_report import FORBIDDEN_HTML_MARKERS, _clean_text, public_projection
 from build_mock_report import (
     MOCK_ANALYSIS_DURATION_MS,
     _item_process_frame_records,
+    _mock_video_window,
     _session_image_candidates,
 )
 from serve_demo import (
     ANALYSIS_DURATION_MAX_MS,
     ANALYSIS_DURATION_MIN_MS,
     DemoState,
+    ReusableThreadingHTTPServer,
+    make_handler,
 )
 from workflow_tool_stats import _is_visual_tool
 
 
 class ReportContractTest(unittest.TestCase):
+    @staticmethod
+    def _video_record(item: dict, source_path: str = "08-item_5069.mp4") -> dict:
+        slot_ids = [
+            str(slot["slot_id"])
+            for slot in item["required_evidence_slots"] + item["enhanced_evidence_slots"]
+        ]
+        return {
+            "schema": VIDEO_EVIDENCE_SCHEMA,
+            "evidence_id": f"ev-video-{item['item_id']}",
+            "item_id": item["item_id"],
+            "slot_ids": slot_ids,
+            "source_path": source_path,
+            "source_url": None,
+            "mime_type": "video/mp4",
+            "start_sec": 10.0,
+            "end_sec": 13.0,
+            "duration_sec": 3.0,
+            "width": VIDEO_EVIDENCE_WIDTH,
+            "height": VIDEO_EVIDENCE_HEIGHT,
+            "fps": VIDEO_EVIDENCE_FPS,
+            "confidence": 0.96,
+            "caption": "项目视频证据",
+        }
+
     def test_thirteen_visual_detail_rules_are_unique_and_owned(self) -> None:
         self.assertEqual(len(DETAIL_RULES), 13)
         self.assertEqual(set(DETAIL_RULES_BY_ITEM), {item["item_id"] for item in ITEM_DEFINITIONS})
@@ -79,6 +113,78 @@ class ReportContractTest(unittest.TestCase):
         self.assertFalse(payload["presentation"]["show_source_provenance"])
         self.assertNotIn("autoplay", payload["presentation"])
         self.assertEqual(validate_report(payload), [])
+
+    def test_video_template_is_empty_but_keeps_all_correct_baseline(self) -> None:
+        payload = template_payload(evidence_media_mode="video")
+        self.assertEqual(payload["presentation"]["evidence_media_mode"], "video")
+        self.assertEqual(EVIDENCE_MEDIA_MODES, {"image", "video"})
+        for item in payload["items"]:
+            self.assertIsNone(item["live_binding"]["video_evidence"])
+            self.assertEqual(item["live_binding"]["evidence"], [])
+            self.assertIsNone(item["live_binding"]["live_timestamp"])
+            self.assertEqual(item["prefilled_result"]["score"], 1)
+            self.assertTrue(all(check["status"] == "confirmed" for check in item["prefilled_result"]["detail_evaluation"]["checks"]))
+        self.assertEqual(validate_report(payload), [])
+
+    def test_image_and_video_evidence_are_mutually_exclusive(self) -> None:
+        payload = template_payload(evidence_media_mode="video")
+        item = payload["items"][0]
+        item["live_binding"]["video_evidence"] = self._video_record(item)
+        item["live_binding"]["evidence"] = [{"evidence_id": "ev-image", "item_id": item["item_id"]}]
+        self.assertTrue(any("video mode forbids image evidence" in error for error in validate_report(payload)))
+
+        payload = template_payload()
+        payload["items"][0]["live_binding"]["video_evidence"] = self._video_record(payload["items"][0])
+        self.assertTrue(any("image mode forbids video_evidence" in error for error in validate_report(payload)))
+
+    def test_video_source_rejects_path_traversal_and_cross_item_reuse(self) -> None:
+        payload = template_payload(evidence_media_mode="video")
+        first, second = payload["items"][:2]
+        first_record = self._video_record(first, "../private.mp4")
+        first["live_binding"]["video_evidence"] = first_record
+        self.assertTrue(any("relative MP4 path inside media root" in error for error in validate_report(payload)))
+
+        first_record["source_path"] = "shared.mp4"
+        second_record = self._video_record(second, "shared.mp4")
+        second_record["evidence_id"] = first_record["evidence_id"]
+        first["live_binding"]["video_evidence"] = first_record
+        second["live_binding"]["video_evidence"] = second_record
+        errors = validate_report(payload)
+        self.assertTrue(any("reused across items" in error for error in errors))
+
+    def test_terminal_video_projection_hides_path_and_keeps_reference(self) -> None:
+        payload = template_payload(evidence_media_mode="video")
+        item = payload["items"][0]
+        record = self._video_record(item)
+        item["live_binding"].update({
+            "state": "已完成评分",
+            "live_timestamp": "00:10",
+            "live_start_sec": 10.0,
+            "live_end_sec": 13.0,
+            "video_evidence": record,
+        })
+        item["score"] = 1
+        first_check = item["prefilled_result"]["detail_evaluation"]["checks"][0]
+        item["detail_evaluation"] = deepcopy(item["prefilled_result"]["detail_evaluation"])
+        item["detail_evaluation"]["checks"][0]["evidence_ids"] = [record["evidence_id"]]
+        public = public_projection(payload)
+        public_video = public["items"][0]["binding"]["video_evidence"]
+        self.assertEqual(public["presentation"]["evidence_media_mode"], "video")
+        self.assertEqual(public_video["src"], f"/api/evidence-media/{item['item_id']}/{record['evidence_id']}")
+        self.assertNotIn("source_path", public_video)
+        self.assertEqual(public["items"][0]["detail"]["checks"][0]["evidence_ids"], [record["evidence_id"]])
+        self.assertTrue(first_check["criterion_id"])
+
+    def test_mock_video_window_ignores_unrelated_timestamp_row(self) -> None:
+        event = {
+            "item_id": "positioning",
+            "item_patch": {"live_binding": {"evidence": [
+                {"kind": "representative_frame", "timestamp_sec": 480.0},
+                {"kind": "representative_frame", "timestamp_sec": 489.0},
+                {"kind": "timestamp", "timestamp_sec": 120.0},
+            ]}},
+        }
+        self.assertEqual(_mock_video_window(event, 600.0), (479.5, 489.5))
 
     def test_template_has_reserved_video_slot_and_trace_workflow_lamps(self) -> None:
         payload = template_payload()
@@ -769,12 +875,150 @@ class ReportContractTest(unittest.TestCase):
             self.assertEqual(len(reset["events"]), 1)
             self.assertEqual(reset["items"][0]["live_binding"]["state"], "待开始")
 
+    def test_video_reset_keeps_mode_and_replay_schedule(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            report_path = root / "mock-video.json"
+            payload = template_payload(evidence_media_mode="video")
+            payload["demo_mode"] = "mock_live_stream"
+            payload["events"] = [{"event_id": "evt-test", "item_id": "item_5069"}]
+            report_path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+            reset = DemoState(root, report_path).reset()
+            self.assertEqual(reset["presentation"]["evidence_media_mode"], "video")
+            self.assertEqual(len(reset["events"]), 1)
+            self.assertTrue(all(item["live_binding"]["video_evidence"] is None for item in reset["items"]))
+
+    def test_video_update_uses_same_analysis_and_scoring_state_machine(self) -> None:
+        class FakeClock:
+            def __init__(self) -> None:
+                self.value = 50.0
+
+            def __call__(self) -> float:
+                return self.value
+
+        class FixedRandom:
+            def randint(self, lower: int, upper: int) -> int:
+                return 8_000
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            report_path = root / "video.json"
+            payload = template_payload(evidence_media_mode="video")
+            report_path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+            clock = FakeClock()
+            state = DemoState(root, report_path, clock=clock, rng=FixedRandom())
+            item = deepcopy(payload["items"][0])
+            item["live_binding"].update({
+                "state": "已定位",
+                "live_timestamp": "00:10",
+                "live_start_sec": 10.0,
+                "live_end_sec": 13.0,
+                "time_confidence": 0.96,
+                "video_evidence": self._video_record(item),
+            })
+            analysing = state.update({"item_id": item["item_id"], "item_patch": item})
+            self.assertEqual(analysing["items"][0]["live_binding"]["state"], "证据生成中")
+            self.assertIsNone(analysing["items"][0]["score"])
+            clock.value = 58.0
+            completed = state.read()["items"][0]
+            self.assertEqual(completed["live_binding"]["state"], "已完成评分")
+            self.assertEqual(completed["score"], 1)
+            evidence_id = completed["live_binding"]["video_evidence"]["evidence_id"]
+            self.assertTrue(all(
+                check["evidence_ids"] == [evidence_id]
+                for check in completed["detail_evaluation"]["checks"]
+            ))
+
+    def test_video_media_route_supports_head_and_range(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            media_root = root / "media"
+            media_root.mkdir()
+            media_bytes = bytes(range(64))
+            (media_root / "08-item_5069.mp4").write_bytes(media_bytes)
+            payload = template_payload(evidence_media_mode="video")
+            item = payload["items"][0]
+            record = self._video_record(item)
+            item["live_binding"].update({
+                "state": "已完成评分",
+                "live_timestamp": "00:10",
+                "live_start_sec": 10.0,
+                "live_end_sec": 13.0,
+                "video_evidence": record,
+            })
+            item["score"] = 1
+            report_path = root / "report.json"
+            report_path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+            state = DemoState(root, report_path)
+            server = ReusableThreadingHTTPServer(("127.0.0.1", 0), make_handler(state, root, media_root))
+            thread = threading.Thread(target=server.serve_forever, daemon=True)
+            thread.start()
+            try:
+                connection = http.client.HTTPConnection("127.0.0.1", server.server_port, timeout=3)
+                route = f"/api/evidence-media/{item['item_id']}/{record['evidence_id']}"
+                connection.request("HEAD", route)
+                response = connection.getresponse()
+                self.assertEqual(response.status, 200)
+                self.assertEqual(response.getheader("Accept-Ranges"), "bytes")
+                self.assertEqual(int(response.getheader("Content-Length") or 0), len(media_bytes))
+                response.read()
+                connection.request("GET", route, headers={"Range": "bytes=10-19"})
+                response = connection.getresponse()
+                self.assertEqual(response.status, 206)
+                self.assertEqual(response.getheader("Content-Range"), "bytes 10-19/64")
+                self.assertEqual(response.read(), media_bytes[10:20])
+                connection.request("GET", "/report.json")
+                response = connection.getresponse()
+                self.assertEqual(response.status, 404)
+                response.read()
+                connection.close()
+            finally:
+                server.shutdown()
+                server.server_close()
+                thread.join(timeout=3)
+
+    def test_checked_in_video_mock_is_540p_10fps_and_video_only(self) -> None:
+        path = Path(__file__).with_name("展示标准报告_8-20_mock_video.json")
+        if not path.exists():
+            self.skipTest("video mock fixture has not been generated")
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        self.assertEqual(validate_report(payload), [])
+        self.assertEqual(payload["presentation"]["evidence_media_mode"], "video")
+        self.assertEqual(len(payload["events"]), 13)
+        for event in payload["events"]:
+            self.assertEqual(event["processing_ms"], MOCK_ANALYSIS_DURATION_MS)
+            binding = event["item_patch"]["live_binding"]
+            video = binding["video_evidence"]
+            self.assertEqual(binding["evidence"], [])
+            self.assertEqual(video["width"], 960)
+            self.assertEqual(video["height"], 540)
+            self.assertEqual(video["fps"], 10)
+            self.assertTrue((Path(__file__).parent / "mock-video-evidence" / video["source_path"]).is_file())
+            self.assertTrue(all(
+                check["evidence_ids"] == [video["evidence_id"]]
+                for check in event["item_patch"]["detail_evaluation"]["checks"]
+            ))
+
     def test_html_contains_detail_drawer_and_image_viewer_interactions(self) -> None:
         html = render_html(json.loads(Path("展示标准报告_8-20_mock.json").read_text(encoding="utf-8")))
         for marker in ("detail-drawer", "drawer-backdrop", "hover-preview", "lightbox", "展开详细表单", "aria-controls", "aria-expanded", "object-fit:contain", "prefers-reduced-motion"):
             self.assertIn(marker, html)
         for marker in ("口述", "音频", "字幕", "演示模式", "可追溯", "同图", "仅凭", "倒推", "内部", "/mnt/shared-storage-user/", "source_path"):
             self.assertNotIn(marker, html)
+
+    def test_video_html_contains_player_and_single_playback_coordination(self) -> None:
+        payload = json.loads(Path("展示标准报告_8-20_mock_video.json").read_text(encoding="utf-8"))
+        html = render_html(payload)
+        for marker in (
+            'const evidenceMediaMode = DATA.presentation&&DATA.presentation.evidence_media_mode==="video"',
+            'data-evidence-video="true"',
+            "videoEvidenceMarkup",
+            "pauseEvidencePlayers",
+            "syncEvidencePlayers",
+            "请通过本地演示服务启动视频证据回放",
+        ):
+            self.assertIn(marker, html)
+        self.assertNotIn("mock-video-evidence/08-item_5069.mp4", html)
 
 
 if __name__ == "__main__":

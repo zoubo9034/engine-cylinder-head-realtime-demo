@@ -13,6 +13,7 @@ import argparse
 import json
 import os
 import random
+import re
 import tempfile
 import threading
 import time
@@ -20,7 +21,7 @@ from datetime import datetime
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any, Callable, Mapping
-from urllib.parse import urlparse
+from urllib.parse import unquote, urlparse
 
 from detail_rules import prefilled_result_for
 from render_report import public_projection
@@ -117,12 +118,22 @@ class DemoState:
 
     @staticmethod
     def _record_key(record: Mapping[str, Any]) -> str:
-        return str(record.get("evidence_id") or record.get("source_path") or "")
+        return str(
+            record.get("evidence_id")
+            or record.get("source_path")
+            or record.get("source_url")
+            or ""
+        )
 
     def _slot_evidence_map(self, item: Mapping[str, Any]) -> dict[str, list[Mapping[str, Any]]]:
         """Return slot-owned records, accepting both slot and binding forms."""
         binding = item.get("live_binding", {}) or {}
         binding_records = list(binding.get("evidence", []) or []) if isinstance(binding, Mapping) else []
+        video_record = binding.get("video_evidence") if isinstance(binding, Mapping) else None
+        video_slot_ids = {
+            str(value)
+            for value in (video_record.get("slot_ids", []) or [])
+        } if isinstance(video_record, Mapping) else set()
         by_slot: dict[str, list[Mapping[str, Any]]] = {}
         for slot in self._all_slots(item):
             slot_id = str(slot.get("slot_id") or "")
@@ -147,6 +158,8 @@ class DemoState:
                         declared_ids = set()
                     if slot_id in declared_ids:
                         records.append(record)
+            if not records and isinstance(video_record, Mapping) and slot_id in video_slot_ids:
+                records.append(video_record)
             by_slot[slot_id] = records
         return by_slot
 
@@ -183,7 +196,9 @@ class DemoState:
             if str(slot.get("status") or "") == "bound" and list(slot.get("evidence", []) or []):
                 return True
         binding = item.get("live_binding", {}) or {}
-        return isinstance(binding, Mapping) and bool(binding.get("evidence"))
+        return isinstance(binding, Mapping) and bool(
+            binding.get("evidence") or binding.get("video_evidence")
+        )
 
     def _duration_ms(self) -> int:
         rng = self._rng
@@ -332,6 +347,13 @@ class DemoState:
             str(slot.get("slot_id") or "")
             for slot in self._all_slots(item)
             if str(slot.get("status") or "") == "bound" and list(slot.get("evidence", []) or [])
+        ] or [
+            str(value)
+            for value in (
+                ((item.get("live_binding", {}) or {}).get("video_evidence", {}) or {}).get("slot_ids", [])
+                if isinstance(item.get("live_binding", {}), Mapping)
+                else []
+            )
         ]
 
     def update(self, body: Mapping[str, Any]) -> dict[str, Any]:
@@ -493,6 +515,9 @@ class DemoState:
         candidates: list[Any] = []
         if isinstance(binding, Mapping):
             candidates.extend(binding.get("evidence", []) or [])
+            video_record = binding.get("video_evidence")
+            if isinstance(video_record, Mapping):
+                candidates.append(video_record)
         candidates.extend(
             record
             for slot in DemoState._all_slots(item)
@@ -508,8 +533,11 @@ class DemoState:
             records.append({
                 "evidence_id": str(record.get("evidence_id") or ""),
                 "source_path": str(record.get("source_path") or ""),
+                "source_url": str(record.get("source_url") or ""),
                 "timestamp": str(record.get("timestamp") or ""),
                 "timestamp_sec": record.get("timestamp_sec"),
+                "start_sec": record.get("start_sec"),
+                "end_sec": record.get("end_sec"),
             })
         return records
 
@@ -517,7 +545,13 @@ class DemoState:
         with self.lock:
             previous = self._load_locked()
             self._analysis_jobs.clear()
-            payload = template_payload()
+            previous_presentation = previous.get("presentation", {}) or {}
+            evidence_media_mode = (
+                str(previous_presentation.get("evidence_media_mode") or "image")
+                if isinstance(previous_presentation, Mapping)
+                else "image"
+            )
+            payload = template_payload(evidence_media_mode=evidence_media_mode)
             # Keep only the replay schedule when the configured file is a mock
             # fixture.  The fresh template clears all bindings and details.
             if previous.get("demo_mode") == "mock_live_stream" or previous.get("events"):
@@ -537,7 +571,79 @@ def _live_projection(payload: Mapping[str, Any]) -> dict[str, Any]:
     return view
 
 
-def make_handler(state: DemoState, root: Path):
+_ROUTE_ID_RE = re.compile(r"^[A-Za-z0-9._-]+$")
+_STATIC_SUFFIXES = {".html", ".css", ".js", ".png", ".svg", ".woff", ".woff2"}
+
+
+def _find_local_video_record(
+    payload: Mapping[str, Any],
+    item_id: str,
+    evidence_id: str,
+) -> Mapping[str, Any] | None:
+    """Resolve an owned local clip from the current snapshot or replay events."""
+    candidates: list[Mapping[str, Any]] = []
+    candidates.extend(
+        item
+        for item in payload.get("items", []) or []
+        if isinstance(item, Mapping)
+    )
+    candidates.extend(
+        event["item_patch"]
+        for event in payload.get("events", []) or []
+        if isinstance(event, Mapping) and isinstance(event.get("item_patch"), Mapping)
+    )
+    for item in candidates:
+        if str(item.get("item_id") or "") != item_id:
+            continue
+        binding = item.get("live_binding", {}) or {}
+        record = binding.get("video_evidence") if isinstance(binding, Mapping) else None
+        if (
+            isinstance(record, Mapping)
+            and str(record.get("evidence_id") or "") == evidence_id
+            and str(record.get("item_id") or "") == item_id
+            and record.get("source_path")
+        ):
+            return record
+    return None
+
+
+def _resolve_media_path(media_root: Path, source_path: str) -> Path:
+    relative = Path(source_path)
+    if relative.is_absolute() or ".." in relative.parts or relative.suffix.lower() != ".mp4":
+        raise ValueError("无效媒体地址")
+    resolved = (media_root / relative).resolve(strict=True)
+    if media_root != resolved.parent and media_root not in resolved.parents:
+        raise ValueError("媒体地址超出允许目录")
+    if not resolved.is_file():
+        raise ValueError("媒体文件不存在")
+    return resolved
+
+
+def _parse_byte_range(header: str, size: int) -> tuple[int, int]:
+    if not header.startswith("bytes=") or "," in header:
+        raise ValueError("unsupported range")
+    value = header[6:].strip()
+    if "-" not in value:
+        raise ValueError("invalid range")
+    start_text, end_text = value.split("-", 1)
+    if not start_text:
+        suffix = int(end_text)
+        if suffix <= 0:
+            raise ValueError("invalid suffix range")
+        start = max(0, size - suffix)
+        end = size - 1
+    else:
+        start = int(start_text)
+        end = int(end_text) if end_text else size - 1
+        if start >= size:
+            raise ValueError("range starts beyond end")
+        end = min(end, size - 1)
+    if start < 0 or end < start:
+        raise ValueError("invalid range bounds")
+    return start, end
+
+
+def make_handler(state: DemoState, root: Path, media_root: Path):
     class Handler(SimpleHTTPRequestHandler):
         def __init__(self, *args: Any, **kwargs: Any) -> None:
             super().__init__(*args, directory=str(root), **kwargs)
@@ -566,6 +672,72 @@ def make_handler(state: DemoState, root: Path):
                 raise ValueError("请求 JSON 顶层必须是对象")
             return value
 
+        def _send_video(self, item_id: str, evidence_id: str, *, head_only: bool) -> None:
+            if not _ROUTE_ID_RE.fullmatch(item_id) or not _ROUTE_ID_RE.fullmatch(evidence_id):
+                self.send_error(404)
+                return
+            record = _find_local_video_record(state.read(), item_id, evidence_id)
+            if record is None:
+                self.send_error(404)
+                return
+            try:
+                path = _resolve_media_path(media_root, str(record.get("source_path") or ""))
+                size = path.stat().st_size
+                if size <= 0:
+                    raise ValueError("媒体文件为空")
+            except (OSError, ValueError):
+                self.send_error(404)
+                return
+            range_header = self.headers.get("Range")
+            start, end, status = 0, size - 1, 200
+            if range_header:
+                try:
+                    start, end = _parse_byte_range(range_header, size)
+                    status = 206
+                except (TypeError, ValueError):
+                    self.send_response(416)
+                    self.send_header("Content-Range", f"bytes */{size}")
+                    self.send_header("Accept-Ranges", "bytes")
+                    self.send_header("Content-Length", "0")
+                    self.end_headers()
+                    return
+            length = end - start + 1
+            self.send_response(status)
+            self.send_header("Content-Type", "video/mp4")
+            self.send_header("Accept-Ranges", "bytes")
+            self.send_header("Cache-Control", "no-store")
+            self.send_header("Content-Length", str(length))
+            if status == 206:
+                self.send_header("Content-Range", f"bytes {start}-{end}/{size}")
+            self.end_headers()
+            if head_only:
+                return
+            with path.open("rb") as handle:
+                handle.seek(start)
+                remaining = length
+                while remaining:
+                    chunk = handle.read(min(64 * 1024, remaining))
+                    if not chunk:
+                        break
+                    self.wfile.write(chunk)
+                    remaining -= len(chunk)
+
+        def _media_route(self) -> tuple[str, str] | None:
+            route = unquote(urlparse(self.path).path)
+            prefix = "/api/evidence-media/"
+            if not route.startswith(prefix):
+                return None
+            parts = route[len(prefix):].split("/")
+            if len(parts) != 2:
+                return ("", "")
+            return parts[0], parts[1]
+
+        def _static_allowed(self) -> bool:
+            route = unquote(urlparse(self.path).path)
+            if ".." in Path(route).parts or route.endswith("/"):
+                return False
+            return Path(route).suffix.lower() in _STATIC_SUFFIXES
+
         def do_GET(self) -> None:  # noqa: N802
             route = urlparse(self.path).path
             try:
@@ -573,10 +745,27 @@ def make_handler(state: DemoState, root: Path):
                     self._send_json(200, {"ok": True, "service": "engine-cylinder-head-realtime-demo"})
                 elif route == "/api/report":
                     self._send_json(200, _live_projection(state.read()))
-                else:
+                elif self._media_route() is not None:
+                    item_id, evidence_id = self._media_route() or ("", "")
+                    self._send_video(item_id, evidence_id, head_only=False)
+                elif self._static_allowed():
                     super().do_GET()
+                else:
+                    self.send_error(404)
+            except (BrokenPipeError, ConnectionResetError):
+                return
             except (OSError, ValueError, json.JSONDecodeError) as exc:
                 self._send_json(500, {"ok": False, "error": str(exc)})
+
+        def do_HEAD(self) -> None:  # noqa: N802
+            media_route = self._media_route()
+            if media_route is not None:
+                item_id, evidence_id = media_route
+                self._send_video(item_id, evidence_id, head_only=True)
+            elif self._static_allowed():
+                super().do_HEAD()
+            else:
+                self.send_error(404)
 
         def do_POST(self) -> None:  # noqa: N802
             route = urlparse(self.path).path
@@ -597,13 +786,21 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="启动发动机气缸盖实时报告本地演示服务")
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parent)
     parser.add_argument("--report", type=Path, default=Path("展示标准报告_8-20.json"))
+    parser.add_argument(
+        "--media-root",
+        type=Path,
+        default=Path("mock-video-evidence"),
+        help="本地视频证据目录，默认 <root>/mock-video-evidence",
+    )
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8765)
     args = parser.parse_args()
     root = args.root.resolve()
     report_path = args.report if args.report.is_absolute() else root / args.report
+    media_root = args.media_root if args.media_root.is_absolute() else root / args.media_root
+    media_root = media_root.resolve()
     state = DemoState(root, report_path)
-    server = ReusableThreadingHTTPServer((args.host, args.port), make_handler(state, root))
+    server = ReusableThreadingHTTPServer((args.host, args.port), make_handler(state, root, media_root))
     print(f"实时报告服务已启动：http://{args.host}:{args.port}/展示标准报告_8-20.html")
     print(f"报告数据文件：{state.report_path}")
     try:

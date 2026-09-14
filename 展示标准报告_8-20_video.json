@@ -15,7 +15,7 @@
     "score_reveal": "terminal_only",
     "show_source_provenance": false,
     "show_raw_paths": false,
-    "evidence_media_mode": "image",
+    "evidence_media_mode": "video",
     "initial_state": "正在接入视频流",
     "poll_interval_ms": 650,
     "video_slot": {

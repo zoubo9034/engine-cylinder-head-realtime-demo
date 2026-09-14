@@ -16,14 +16,27 @@ import hashlib
 import json
 import random
 import re
+import shutil
 import statistics
+import subprocess
+import tempfile
 from copy import deepcopy
 from pathlib import Path
 from typing import Any, Iterable, Mapping
 from urllib.parse import unquote, urlparse
 
 from detail_rules import criterion_map, prefilled_result_for
-from report_schema import ITEM_DEFINITIONS, load_tool_profile, template_payload, validated_copy
+from report_schema import (
+    EVIDENCE_MEDIA_MODES,
+    ITEM_DEFINITIONS,
+    VIDEO_EVIDENCE_FPS,
+    VIDEO_EVIDENCE_HEIGHT,
+    VIDEO_EVIDENCE_SCHEMA,
+    VIDEO_EVIDENCE_WIDTH,
+    load_tool_profile,
+    template_payload,
+    validated_copy,
+)
 from workflow_tool_stats import build_profile
 
 
@@ -46,6 +59,8 @@ SUPPORTED_SOURCE_COUNTS = (10, 29)
 PROCESS_FRAME_NEIGHBOURHOOD_SECONDS = 4.0
 VISUALIZATION_MATCH_TOLERANCE_SECONDS = 1.0
 MAX_SESSION_IMAGE_INDEX = 4_000
+VIDEO_MIN_DURATION_SECONDS = 3.0
+VIDEO_CONTEXT_SECONDS = 0.5
 
 
 def _read_json(path: Path) -> dict[str, Any]:
@@ -3729,6 +3744,7 @@ def _empty_binding() -> dict[str, Any]:
         "time_confidence": None,
         "evidence_explanation": "等待当前视频流中的有效证据。",
         "evidence": [],
+        "video_evidence": None,
     }
 
 
@@ -3941,6 +3957,7 @@ def _build_item_event(
         "time_confidence": round(confidence, 3),
         "evidence_explanation": "对象、动作和时序画面已整理。",
         "evidence": binding_evidence,
+        "video_evidence": None,
     }
     completed_item["detail_evaluation"] = {
         "state": "unlocked",
@@ -3985,6 +4002,224 @@ def _build_item_event(
         },
     }
     return item, event
+
+
+def _probe_video(path: Path) -> dict[str, Any]:
+    executable = shutil.which("ffprobe")
+    if not executable:
+        raise ValueError("生成视频证据需要 ffprobe")
+    completed = subprocess.run(
+        [
+            executable,
+            "-v", "error",
+            "-show_streams",
+            "-show_format",
+            "-of", "json",
+            str(path),
+        ],
+        check=True,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    value = json.loads(completed.stdout)
+    if not isinstance(value, dict):
+        raise ValueError(f"无法读取视频信息：{path.name}")
+    return value
+
+
+def _video_duration(probe: Mapping[str, Any]) -> float:
+    format_value = probe.get("format", {}) or {}
+    if isinstance(format_value, Mapping):
+        try:
+            duration = float(format_value.get("duration"))
+            if duration > 0:
+                return duration
+        except (TypeError, ValueError):
+            pass
+    for stream in probe.get("streams", []) or []:
+        if not isinstance(stream, Mapping) or stream.get("codec_type") != "video":
+            continue
+        try:
+            duration = float(stream.get("duration"))
+            if duration > 0:
+                return duration
+        except (TypeError, ValueError):
+            continue
+    raise ValueError("源视频缺少有效时长")
+
+
+def _mock_video_window(event: Mapping[str, Any], source_duration: float) -> tuple[float, float]:
+    """Build a compact continuous window around the selected item evidence."""
+    patch = event.get("item_patch", {}) or {}
+    binding = patch.get("live_binding", {}) or {} if isinstance(patch, Mapping) else {}
+    visual_times: list[float] = []
+    fallback_times: list[float] = []
+    if isinstance(binding, Mapping):
+        for record in binding.get("evidence", []) or []:
+            if not isinstance(record, Mapping):
+                continue
+            value = record.get("timestamp_sec")
+            if isinstance(value, (int, float)) and not isinstance(value, bool):
+                fallback_times.append(float(value))
+                if str(record.get("kind") or "") != "timestamp":
+                    visual_times.append(float(value))
+    times = visual_times or fallback_times
+    if not times and isinstance(binding, Mapping):
+        value = binding.get("live_start_sec")
+        if isinstance(value, (int, float)) and not isinstance(value, bool):
+            times.append(float(value))
+    if not times:
+        raise ValueError(f"{event.get('item_id')}: 无法从分析过程证据确定视频片段时间")
+    start = max(0.0, min(times) - VIDEO_CONTEXT_SECONDS)
+    end = min(source_duration, max(times) + VIDEO_CONTEXT_SECONDS)
+    if end - start < VIDEO_MIN_DURATION_SECONDS:
+        centre = (start + end) / 2.0
+        start = max(0.0, centre - VIDEO_MIN_DURATION_SECONDS / 2.0)
+        end = min(source_duration, start + VIDEO_MIN_DURATION_SECONDS)
+        start = max(0.0, end - VIDEO_MIN_DURATION_SECONDS)
+    if end <= start:
+        raise ValueError(f"{event.get('item_id')}: 视频片段时间范围无效")
+    return round(start, 3), round(end, 3)
+
+
+def _transcode_mock_video(source: Path, output: Path, start: float, end: float) -> None:
+    executable = shutil.which("ffmpeg")
+    if not executable:
+        raise ValueError("生成视频证据需要 ffmpeg")
+    output.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix="engine-video-evidence-") as directory:
+        temporary = Path(directory) / "clip.mp4"
+        command = [
+            executable,
+            "-nostdin",
+            "-hide_banner",
+            "-loglevel", "error",
+            "-ss", f"{start:.3f}",
+            "-i", str(source),
+            "-t", f"{end - start:.3f}",
+            "-vf",
+            (
+                f"fps={VIDEO_EVIDENCE_FPS},"
+                f"scale={VIDEO_EVIDENCE_WIDTH}:{VIDEO_EVIDENCE_HEIGHT}:force_original_aspect_ratio=decrease,"
+                f"pad={VIDEO_EVIDENCE_WIDTH}:{VIDEO_EVIDENCE_HEIGHT}:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1"
+            ),
+            "-an",
+            "-c:v", "libx264",
+            "-preset", "medium",
+            "-crf", "23",
+            "-pix_fmt", "yuv420p",
+            "-g", str(VIDEO_EVIDENCE_FPS * 2),
+            "-keyint_min", str(VIDEO_EVIDENCE_FPS * 2),
+            "-sc_threshold", "0",
+            "-movflags", "+faststart",
+            "-y",
+            str(temporary),
+        ]
+        try:
+            subprocess.run(command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        except subprocess.CalledProcessError as exc:
+            detail = exc.stderr.decode("utf-8", errors="replace")[-500:]
+            raise ValueError(f"视频证据转码失败：{source.name}: {detail}") from exc
+        shutil.copyfile(temporary, output)
+
+
+def _verify_mock_video(path: Path, expected_duration: float) -> None:
+    probe = _probe_video(path)
+    streams = [entry for entry in probe.get("streams", []) or [] if isinstance(entry, Mapping)]
+    video_streams = [entry for entry in streams if entry.get("codec_type") == "video"]
+    audio_streams = [entry for entry in streams if entry.get("codec_type") == "audio"]
+    if len(video_streams) != 1 or audio_streams:
+        raise ValueError(f"{path.name}: 视频证据必须包含一条视频流且不含音轨")
+    stream = video_streams[0]
+    if stream.get("codec_name") != "h264":
+        raise ValueError(f"{path.name}: 视频编码必须为 H.264")
+    if int(stream.get("width") or 0) != VIDEO_EVIDENCE_WIDTH or int(stream.get("height") or 0) != VIDEO_EVIDENCE_HEIGHT:
+        raise ValueError(f"{path.name}: 视频尺寸必须为 {VIDEO_EVIDENCE_WIDTH}x{VIDEO_EVIDENCE_HEIGHT}")
+    frame_rate = str(stream.get("avg_frame_rate") or stream.get("r_frame_rate") or "0/1")
+    numerator, denominator = frame_rate.split("/", 1)
+    fps = float(numerator) / float(denominator)
+    if abs(fps - VIDEO_EVIDENCE_FPS) > 0.01:
+        raise ValueError(f"{path.name}: 视频帧率必须为 {VIDEO_EVIDENCE_FPS}fps")
+    actual_duration = _video_duration(probe)
+    if abs(actual_duration - expected_duration) > 0.2:
+        raise ValueError(f"{path.name}: 视频时长与证据窗口不一致")
+
+
+def _convert_event_to_video(
+    item: Mapping[str, Any],
+    event: dict[str, Any],
+    session: Mapping[str, Any],
+    video_output_dir: Path,
+) -> None:
+    """Replace selected image evidence with one item-owned MP4 clip."""
+    summary = session.get("summary", {}) or {}
+    source_text = str(summary.get("video_path") or "") if isinstance(summary, Mapping) else ""
+    source = Path(source_text).expanduser()
+    if not source.is_file():
+        raise ValueError(f"{item.get('item_id')}: 正确样本的源视频不可用")
+    source_duration = _video_duration(_probe_video(source))
+    start, end = _mock_video_window(event, source_duration)
+    item_id = str(item.get("item_id") or "")
+    item_number = int(item.get("item_number") or 0)
+    output_name = f"{item_number:02d}-{item_id}.mp4"
+    output = video_output_dir / output_name
+    _transcode_mock_video(source, output, start, end)
+    _verify_mock_video(output, end - start)
+
+    patch = event.get("item_patch", {}) or {}
+    if not isinstance(patch, dict):
+        raise ValueError(f"{item_id}: mock 事件缺少完整项目补丁")
+    binding = patch.get("live_binding", {}) or {}
+    if not isinstance(binding, dict):
+        raise ValueError(f"{item_id}: mock 事件缺少实时绑定")
+    confidence = float(binding.get("time_confidence") or 0.96)
+    slot_ids = [
+        str(slot.get("slot_id") or "")
+        for slot in _all_slots(patch)
+        if str(slot.get("status") or "") == "bound" or slot.get("required") is True
+    ]
+    slot_ids = list(dict.fromkeys(value for value in slot_ids if value))
+    video_identity = f"{item_id}|{session.get('sample_id')}|{start}|{end}"
+    evidence_id = f"ev-video-{_digest(video_identity)}"
+    record = {
+        "schema": VIDEO_EVIDENCE_SCHEMA,
+        "evidence_id": evidence_id,
+        "item_id": item_id,
+        "slot_ids": slot_ids,
+        "source_path": output_name,
+        "source_url": None,
+        "mime_type": "video/mp4",
+        "start_sec": start,
+        "end_sec": end,
+        "duration_sec": round(end - start, 3),
+        "width": VIDEO_EVIDENCE_WIDTH,
+        "height": VIDEO_EVIDENCE_HEIGHT,
+        "fps": VIDEO_EVIDENCE_FPS,
+        "confidence": round(max(0.0, min(1.0, confidence)), 3),
+        "caption": f"项目 {item_number} 视频证据",
+    }
+    binding["live_start_sec"] = start
+    binding["live_end_sec"] = end
+    binding["live_timestamp"] = _format_timestamp(start)
+    binding["evidence"] = []
+    binding["video_evidence"] = record
+    binding["changed_slot_ids"] = slot_ids
+    for slot in _all_slots(patch):
+        slot_id = str(slot.get("slot_id") or "")
+        slot["status"] = "bound" if slot_id in slot_ids else "empty"
+        slot["evidence"] = []
+    slot_map = {slot_id: [record] for slot_id in slot_ids}
+    prefilled = prefilled_result_for(
+        item_id,
+        slot_map,
+        updated_at=_format_timestamp(start),
+        confidence=confidence,
+    )
+    patch["prefilled_result"] = prefilled
+    patch["detail_evaluation"] = deepcopy(prefilled["detail_evaluation"])
+    event["evidence_ids"] = [evidence_id]
+    event.setdefault("_mock_source", {})["video_window"] = {"start_sec": start, "end_sec": end}
 
 
 def _load_sessions(summary_paths: Iterable[Path]) -> list[dict[str, Any]]:
@@ -4110,6 +4345,8 @@ def build_mock(
     *,
     seed: int | None = None,
     source_manifest: Path | None = None,
+    evidence_media_mode: str | None = None,
+    video_output_dir: Path | None = None,
 ) -> dict[str, Any]:
     """Build a mock replay using one randomly selected correct video per item.
 
@@ -4119,6 +4356,17 @@ def build_mock(
     it selects one report per listed video before item-level sampling.
     """
     source_run = source_run.resolve()
+    template_presentation = template.get("presentation", {}) or {}
+    template_mode = (
+        str(template_presentation.get("evidence_media_mode") or "image")
+        if isinstance(template_presentation, Mapping)
+        else "image"
+    )
+    media_mode = evidence_media_mode or template_mode
+    if media_mode not in EVIDENCE_MEDIA_MODES:
+        raise ValueError(f"未知证据媒体模式：{media_mode}")
+    if media_mode == "video" and video_output_dir is None:
+        raise ValueError("视频证据模式必须提供 video_output_dir")
     discovered = _discover_summary_paths(source_run)
     summaries = _select_manifest_summaries(discovered, manifest=source_manifest)
     if len(summaries) not in SUPPORTED_SOURCE_COUNTS:
@@ -4133,6 +4381,7 @@ def build_mock(
     manifest_positive = _annotate_manifest_labels(sessions, source_manifest)
 
     payload = validated_copy(template)
+    payload["presentation"]["evidence_media_mode"] = media_mode
     _apply_tool_profile(payload, source_run, len(summaries))
     payload["demo_mode"] = "mock_live_stream"
     payload["presentation"]["initial_state"] = "正在接入视频流"
@@ -4220,6 +4469,9 @@ def build_mock(
                 except ValueError as exc:
                     last_error = exc
                     continue
+                if media_mode == "video":
+                    assert video_output_dir is not None
+                    _convert_event_to_video(trial_item, event, session, video_output_dir.resolve())
                 built = (empty_item, event, trial_owners, session)
                 break
             if built is not None:
@@ -4275,12 +4527,24 @@ def main() -> int:
     parser.add_argument("--seed", type=int, help="固定随机种子；省略时每次随机抽取")
     parser.add_argument("--template", required=True, type=Path)
     parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument(
+        "--evidence-media-mode",
+        choices=sorted(EVIDENCE_MEDIA_MODES),
+        help="覆盖模板中的证据媒体模式",
+    )
+    parser.add_argument(
+        "--video-output-dir",
+        type=Path,
+        help="视频模式输出 13 个 MP4 的目录",
+    )
     args = parser.parse_args()
     result = build_mock(
         _read_json(args.template),
         args.source_run,
         seed=args.seed,
         source_manifest=args.video_manifest,
+        evidence_media_mode=args.evidence_media_mode,
+        video_output_dir=args.video_output_dir,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

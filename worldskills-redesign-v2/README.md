@@ -10,14 +10,18 @@
 
 ## 交互
 
-与原版一致：左侧 8→20 流程、双列项目卡、证据槽位、详情抽屉、灯箱、启动/暂停/重置。
+与端砚 UI 共用同一报告契约：左侧 8→20 流程、单列项目卡、证据槽位、详情抽屉、查看器、启动/暂停/重置。
+`image` 模式显示关键帧，`video` 模式显示 960×540、10fps 视频片段；两种模式不会混用，且页面同时最多播放一个证据视频。
 
 ## 生成
 
 ```powershell
 python worldskills-redesign-v2/render_report_v4.py --input 展示标准报告_8-20.json --output worldskills-redesign-v2/展示标准报告_8-20_v4.html
 python worldskills-redesign-v2/render_report_v4.py --input 展示标准报告_8-20_mock.json --output worldskills-redesign-v2/展示标准报告_8-20_mock_v4.html
+python worldskills-redesign-v2/render_report_v4.py --input 展示标准报告_8-20_video.json --output worldskills-redesign-v2/展示标准报告_8-20_video_v4.html
+python worldskills-redesign-v2/render_report_v4.py --input 展示标准报告_8-20_mock_video.json --output worldskills-redesign-v2/展示标准报告_8-20_mock_video_v4.html
 python -m unittest -v worldskills-redesign-v2/test_redesign_v4.py
 ```
 
-打开：`worldskills-redesign-v2/展示标准报告_8-20_mock_v4.html`
+图片 Mock 可以直接打开；视频 Mock 需要通过根目录的 `serve_demo.py` 访问
+`worldskills-redesign-v2/展示标准报告_8-20_mock_video_v4.html`。

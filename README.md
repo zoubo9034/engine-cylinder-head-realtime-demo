@@ -2,7 +2,7 @@
 
 本目录是一个独立的实时展示原型，只读用已有 Engine artifacts 生成 mock 回放，
 不修改上级目录中的 core、engine 或 Video-MME 代码。标准现场假定操作按规范完成：
-评分结论和详细依据随模板预置，现场只回填证据图像、时间和实时分析状态。页面不会把
+评分结论和详细依据随模板预置，现场只回填证据图像或视频片段、时间和实时分析状态。页面不会把
 内部评分快照、来源路径或离线生成信息投影给观众。
 
 [查看更新日志](CHANGELOG.md)
@@ -23,6 +23,9 @@
 | `展示标准报告_8-20.html` | 现场报告页面 |
 | `展示标准报告_8-20_mock.json` | artifacts 生成的 mock 事件数据 |
 | `展示标准报告_8-20_mock.html` | mock 回放页面 |
+| `展示标准报告_8-20_video.json` | 视频证据模式的现场初始模板 |
+| `展示标准报告_8-20_mock_video.json` | 视频证据模式的 mock 事件数据 |
+| `mock-video-evidence/` | 与 13 个评分项对应的 960×540、10fps MP4 片段 |
 
 ## 视觉设计
 
@@ -37,7 +40,7 @@ Inter 正文建立层级。时间线使用点状脊柱，卡片、证据和分�
 
 每张评分卡都保留“展开详细表单”入口。入口始终可见：项目尚未进入终态时，右侧抽屉只显示对象识别、动作过程、时序关系、完成状态四组核验维度及数量；进入“已完成评分”或“待人工确认”后，抽屉才显示逐条依据、当前核验状态、置信度、关联证据、现场时间范围、风险边界和分析链。抽屉为只读查看器，不提供改分、通过/不通过或人工备注操作。
 
-证据缩略图和抽屉中的证据引用共用同一查看交互：鼠标或键盘聚焦约 120ms 后显示带阶段、时间和置信度的悬停预览，点击或触屏点击打开高清灯箱；灯箱支持关闭按钮、背景点击和 Esc。缺少图像时只显示占位状态，不生成图片。
+图片证据缩略图和抽屉中的证据引用共用同一查看交互：鼠标或键盘聚焦约 120ms 后显示带阶段、时间和置信度的悬停预览，点击或触屏点击打开高清灯箱；灯箱支持关闭按钮、背景点击和 Esc。视频证据模式改为 16:9 播放器，当前选中项或最新完成项自动静音循环播放，其他播放器自动暂停。两种证据模式不会在同一报告中混用，缺少媒体时只显示占位状态。
 
 主区采用左右两栏布局：左栏依次放置与单张评分卡等宽的 16:9 实时视频接入占位、模型工作状态跑灯、当前项目状态窗口以及筛选/控制工具栏；右栏只保留单列评分卡视口。视频窗口当前仅显示接入占位，不加载历史图片或模拟画面，后续可通过窗口内的 `video` 元素接入视频流。桌面端左栏整体吸顶，保证现场画面和控制区持续可见；窄屏改为仅视频窗口吸顶，避免控制区遮挡评分卡。13 个评分卡在项目从“待开始”进入“已定位”后才出现；右栏独立纵向滚动，项目完成评分时页面自动将最新完成卡片平滑滚动到该栏中央，页面主体无需跟随跳动。手动滚动、触摸或键盘查看时自动聚焦会短暂让位，约 2 秒后继续跟随最新完成项。
 
@@ -51,7 +54,8 @@ Inter 正文建立层级。时间线使用点状脊柱，卡片、证据和分�
 cd engine-cylinder-head-realtime-demo
 ```
 
-只使用 Python 标准库，不需要安装前端依赖。
+页面和服务端只使用 Python 标准库，不需要安装前端依赖。生成视频 Mock 还需要系统提供
+`ffmpeg` 与 `ffprobe`。
 
 ## 重新生成现场模板
 
@@ -62,6 +66,17 @@ python render_report.py template \
 python render_report.py render \
   --input 展示标准报告_8-20.json \
   --output 展示标准报告_8-20.html
+
+# 视频证据模式的标准现场模板与两套页面
+python render_report.py template \
+  --evidence-media-mode video \
+  --output 展示标准报告_8-20_video.json
+python render_report.py render \
+  --input 展示标准报告_8-20_video.json \
+  --output 展示标准报告_8-20_video.html
+python worldskills-redesign-v2/render_report_v4.py \
+  --input 展示标准报告_8-20_video.json \
+  --output worldskills-redesign-v2/展示标准报告_8-20_video_v4.html
 ```
 
 模板包含 13 个现场回填位置。每项同时保存隐藏的 `prefilled_result`（全对分数、评价和
@@ -119,12 +134,29 @@ python build_mock_report.py \
 python render_report.py render \
   --input 展示标准报告_8-20_mock.json \
   --output 展示标准报告_8-20_mock.html
+
+# 视频证据 Mock：复用同一次正确样本选择并输出 13 个 MP4
+python build_mock_report.py \
+  --source-run <relative-path-to-nested-10-artifacts> \
+  --seed 20260903 \
+  --template 展示标准报告_8-20_video.json \
+  --evidence-media-mode video \
+  --video-output-dir mock-video-evidence \
+  --output 展示标准报告_8-20_mock_video.json
+python render_report.py render \
+  --input 展示标准报告_8-20_mock_video.json \
+  --output 展示标准报告_8-20_mock_video.html
+python worldskills-redesign-v2/render_report_v4.py \
+  --input 展示标准报告_8-20_mock_video.json \
+  --output worldskills-redesign-v2/展示标准报告_8-20_mock_video_v4.html
 ```
 
 mock JSON 的 13 个评分项初始仍为空；由同项目分析过程提取出的真实证据保存在
 `events[].item_patch`。每个事件都对应一个按规范完成的项目，回放时先显示“已定位”和
 “证据生成中”，经过事件固定 3 秒的 mock 分析窗口后显示“已完成评分”、逐条全对依据和
-`1 / 1 分`。历史 artifacts 只用于提供真实帧、时间和分析工具链，不改变这套现场标准结论。
+`1 / 1 分`。视频模式从同一次抽中的正确视频和同项目分析帧确定裁剪范围，不会再次抽样；输出统一为
+960×540、10fps、H.264 MP4，并移除音轨。历史 artifacts 只用于提供真实画面、时间和分析工具链，
+不改变这套现场标准结论。
 
 ## 启动实时演示
 
@@ -154,6 +186,18 @@ python serve_demo.py \
 http://127.0.0.1:8765/展示标准报告_8-20_mock.html
 ```
 
+视频 Mock 必须通过服务访问，不能直接以 `file://` 打开：
+
+```bash
+python serve_demo.py \
+  --report 展示标准报告_8-20_mock_video.json \
+  --media-root mock-video-evidence \
+  --port 8765
+```
+
+端砚 UI 访问 `http://127.0.0.1:8765/展示标准报告_8-20_mock_video.html`，世赛 UI 访问
+`http://127.0.0.1:8765/worldskills-redesign-v2/展示标准报告_8-20_mock_video_v4.html`。
+
 页面按钮行为：
 
 - `启动评测`：开始轮询报告 JSON；mock 页面会按事件补丁顺序回放。
@@ -162,7 +206,7 @@ http://127.0.0.1:8765/展示标准报告_8-20_mock.html
 - 左侧流程项：只用于查看某个评分项，不承担“下一项”推进功能。
 
 mock HTML 也可以直接用浏览器打开并启动内嵌回放；标准 HTML 的实时轮询和重置功能需要通过
-上面的本地服务访问。
+上面的本地服务访问。该直接打开方式只适用于图片证据版；视频证据统一由受控媒体接口提供。
 
 ## API
 
@@ -220,6 +264,17 @@ mock HTML 也可以直接用浏览器打开并启动内嵌回放；标准 HTML �
 
 `detail_form` 由模板固定提供，证据 ID 只能引用同一评分项的实时证据；服务端拒绝跨项目引用。
 
+视频报告设置 `presentation.evidence_media_mode` 为 `video`，并在对应评分项的
+`live_binding.video_evidence` 填写一个视频对象。`source_path` 是相对于 `--media-root` 的 MP4 路径；
+也可改用 HTTPS `source_url`，两者必须且只能填写一个。视频对象还需声明项目 ID、证据 ID、覆盖的
+`slot_ids`、起止时间、时长、置信度以及 `width: 960`、`height: 540`、`fps: 10`。图片模式继续使用
+原有 `live_binding.evidence[]`，服务端拒绝两种形式混用。
+
+### `GET/HEAD /api/evidence-media/{item_id}/{evidence_id}`
+
+按报告中已校验的项目和证据 ID 返回本地 MP4，支持浏览器拖动播放所需的单段 Range 请求。接口不接收
+文件路径参数，也不会公开真实来源路径；HTTPS 视频地址由浏览器直接读取，不经过本地服务代理。
+
 ### `POST /api/reset`
 
 以原子替换方式写回模板，保证页面和 JSON 不会读到半写入内容。
@@ -228,9 +283,10 @@ mock HTML 也可以直接用浏览器打开并启动内嵌回放；标准 HTML �
 
 ```bash
 python -m unittest -v test_report.py
+python -m unittest -v worldskills-redesign-v2/test_redesign_v4.py
 python -m py_compile detail_rules.py report_schema.py render_report.py build_mock_report.py serve_demo.py
 ```
 
 测试覆盖 13 项规则唯一性、隐藏全对基线、初始锁定与重置清空、完整证据触发的 8–20 秒分析窗口、
 终态详情公开投影、人工确认状态、跨评分项证据复用、mock 全对事件、特殊轮次与顺序字段、抽屉和
-证据图像查看器标记，以及公开页面脱敏。
+图片/视频查看器标记、两种证据模式互斥、视频 Range 请求、960×540/10fps 媒体规格以及公开页面脱敏。

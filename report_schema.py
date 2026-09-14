@@ -10,8 +10,11 @@ from __future__ import annotations
 
 from copy import deepcopy
 import json
+import math
 from pathlib import Path
+import re
 from typing import Any, Iterable, Mapping
+from urllib.parse import urlparse
 
 from detail_rules import (
     DETAIL_CHECK_STATUSES,
@@ -223,6 +226,12 @@ DIFFICULTY_LABELS = {
 DEFAULT_PROFILE_PATH = Path(__file__).with_name("workflow_tool_profile_10video.json")
 
 VIDEO_SLOT_SCHEMA = "realtime-video-slot/v1"
+VIDEO_EVIDENCE_SCHEMA = "realtime-video-evidence/v1"
+EVIDENCE_MEDIA_MODES = {"image", "video"}
+VIDEO_EVIDENCE_WIDTH = 960
+VIDEO_EVIDENCE_HEIGHT = 540
+VIDEO_EVIDENCE_FPS = 10
+_MEDIA_ID_RE = re.compile(r"^[A-Za-z0-9._-]+$")
 WORKFLOW_DISPLAY_SCHEMA = "realtime-workflow-display/v1"
 WORKFLOW_DISPLAY_STAGES = [
     {"stage_id": "ingest", "label": "接入画面", "order": 0, "weight": 0.10},
@@ -270,8 +279,14 @@ def _slot(slot_id: str, *, required: bool, kind: str = "image") -> dict[str, Any
     }
 
 
-def template_payload(profile: Mapping[str, Any] | None = None) -> dict[str, Any]:
+def template_payload(
+    profile: Mapping[str, Any] | None = None,
+    *,
+    evidence_media_mode: str = "image",
+) -> dict[str, Any]:
     """Return a fresh live template with a private all-correct baseline."""
+    if evidence_media_mode not in EVIDENCE_MEDIA_MODES:
+        raise ValueError(f"未知证据媒体模式：{evidence_media_mode}")
     profile_items = dict((profile or load_tool_profile()).get("items", {}) or {})
     items = []
     for order, definition in enumerate(ITEM_DEFINITIONS, start=1):
@@ -330,6 +345,7 @@ def template_payload(profile: Mapping[str, Any] | None = None) -> dict[str, Any]
                 "time_confidence": None,
                 "evidence_explanation": "等待当前视频流中的有效证据。",
                 "evidence": [],
+                "video_evidence": None,
             },
             "score": None,
             "score_max": 1,
@@ -352,6 +368,7 @@ def template_payload(profile: Mapping[str, Any] | None = None) -> dict[str, Any]
             "score_reveal": "terminal_only",
             "show_source_provenance": False,
             "show_raw_paths": False,
+            "evidence_media_mode": evidence_media_mode,
             "initial_state": "正在接入视频流",
             "poll_interval_ms": 650,
             "video_slot": {
@@ -410,6 +427,104 @@ LIVE_STATES = {
     "待人工确认",
 }
 TERMINAL_LIVE_STATES = {"证据已绑定", "已完成评分", "待人工确认"}
+
+
+def _finite_number(value: Any) -> bool:
+    return (
+        isinstance(value, (int, float))
+        and not isinstance(value, bool)
+        and math.isfinite(float(value))
+    )
+
+
+def _validate_video_evidence(
+    record: Any,
+    *,
+    item_id: str,
+    slot_ids: set[str],
+    required_ids: set[str],
+    terminal: bool,
+    errors: list[str],
+    prefix: str,
+) -> tuple[str, str]:
+    """Validate one video record and return its ID and private source key."""
+    if record is None:
+        if terminal:
+            errors.append(f"{prefix}: terminal video item requires video_evidence")
+        return "", ""
+    if not isinstance(record, Mapping):
+        errors.append(f"{prefix}: video_evidence must be an object or null")
+        return "", ""
+    if record.get("schema") != VIDEO_EVIDENCE_SCHEMA:
+        errors.append(f"{prefix}: video_evidence.schema must be {VIDEO_EVIDENCE_SCHEMA}")
+    evidence_id = str(record.get("evidence_id") or "")
+    if not evidence_id or not _MEDIA_ID_RE.fullmatch(evidence_id):
+        errors.append(f"{prefix}: video evidence ID must use letters, digits, dot, underscore or hyphen")
+    record_item_id = str(record.get("item_id") or "")
+    if record_item_id != item_id:
+        errors.append(f"{prefix}: video evidence item_id does not match owner")
+
+    declared_slots = record.get("slot_ids")
+    if not isinstance(declared_slots, list) or not declared_slots:
+        errors.append(f"{prefix}: video evidence slot_ids must be a non-empty list")
+        declared: set[str] = set()
+    else:
+        declared_list = [str(value) for value in declared_slots]
+        declared = set(declared_list)
+        if len(declared_list) != len(declared):
+            errors.append(f"{prefix}: video evidence slot_ids must be unique")
+        unknown = declared - slot_ids
+        if unknown:
+            errors.append(f"{prefix}: video evidence references unknown slots {sorted(unknown)}")
+    if terminal and not required_ids.issubset(declared):
+        errors.append(f"{prefix}: terminal video evidence must cover every required slot")
+
+    source_path = str(record.get("source_path") or "").strip()
+    source_url = str(record.get("source_url") or "").strip()
+    if bool(source_path) == bool(source_url):
+        errors.append(f"{prefix}: exactly one of source_path or source_url is required")
+    source_key = ""
+    if source_path:
+        candidate = Path(source_path)
+        if candidate.is_absolute() or ".." in candidate.parts or candidate.suffix.lower() != ".mp4":
+            errors.append(f"{prefix}: source_path must be a relative MP4 path inside media root")
+        source_key = f"path:{source_path}"
+    if source_url:
+        parsed = urlparse(source_url)
+        if (
+            parsed.scheme.lower() != "https"
+            or not parsed.netloc
+            or parsed.username is not None
+            or parsed.password is not None
+        ):
+            errors.append(f"{prefix}: source_url must be an HTTPS URL without credentials")
+        source_key = f"url:{source_url}"
+
+    if record.get("mime_type") != "video/mp4":
+        errors.append(f"{prefix}: video evidence mime_type must be video/mp4")
+    if record.get("width") != VIDEO_EVIDENCE_WIDTH:
+        errors.append(f"{prefix}: video evidence width must be {VIDEO_EVIDENCE_WIDTH}")
+    if record.get("height") != VIDEO_EVIDENCE_HEIGHT:
+        errors.append(f"{prefix}: video evidence height must be {VIDEO_EVIDENCE_HEIGHT}")
+    if record.get("fps") != VIDEO_EVIDENCE_FPS:
+        errors.append(f"{prefix}: video evidence fps must be {VIDEO_EVIDENCE_FPS}")
+
+    start = record.get("start_sec")
+    end = record.get("end_sec")
+    duration = record.get("duration_sec")
+    if not (_finite_number(start) and _finite_number(end) and _finite_number(duration)):
+        errors.append(f"{prefix}: video evidence times must be finite numbers")
+    elif float(start) < 0 or float(end) <= float(start) or float(duration) <= 0:
+        errors.append(f"{prefix}: video evidence times must satisfy 0 <= start < end and duration > 0")
+    elif abs((float(end) - float(start)) - float(duration)) > 0.15:
+        errors.append(f"{prefix}: duration_sec must match end_sec - start_sec")
+    confidence = record.get("confidence")
+    if not _finite_number(confidence) or not 0 <= float(confidence) <= 1:
+        errors.append(f"{prefix}: video evidence confidence must be between 0 and 1")
+    caption = record.get("caption")
+    if not isinstance(caption, str) or not caption.strip():
+        errors.append(f"{prefix}: video evidence caption is required")
+    return evidence_id, source_key
 
 
 def _validate_detail_form(
@@ -611,9 +726,13 @@ def validate_report(payload: Mapping[str, Any], *, allow_mock: bool = True) -> l
     if payload.get("presentation", {}).get("show_source_provenance") is not False:
         errors.append("presentation.show_source_provenance must be false")
     presentation = payload.get("presentation", {})
+    evidence_media_mode = "image"
     if not isinstance(presentation, Mapping):
         errors.append("presentation must be an object")
     else:
+        evidence_media_mode = str(presentation.get("evidence_media_mode") or "image")
+        if evidence_media_mode not in EVIDENCE_MEDIA_MODES:
+            errors.append(f"presentation.evidence_media_mode must be one of {sorted(EVIDENCE_MEDIA_MODES)}")
         video_slot = presentation.get("video_slot", {})
         if not isinstance(video_slot, Mapping):
             errors.append("presentation.video_slot must be an object")
@@ -717,6 +836,31 @@ def validate_report(payload: Mapping[str, Any], *, allow_mock: bool = True) -> l
         item_evidence_records: list[Mapping[str, Any]] = []
         binding_records = list(binding.get("evidence", []) or [])
         slot_records = list(_iter_slot_evidence(item))
+        video_record = binding.get("video_evidence")
+        if evidence_media_mode == "image":
+            if video_record is not None:
+                errors.append(f"{item.get('item_id')}: image mode forbids video_evidence")
+        elif evidence_media_mode == "video":
+            if binding_records or slot_records:
+                errors.append(f"{item.get('item_id')}: video mode forbids image evidence")
+            video_id, source_key = _validate_video_evidence(
+                video_record,
+                item_id=str(item.get("item_id") or ""),
+                slot_ids=set(slot_ids),
+                required_ids=required_ids,
+                terminal=str(binding.get("state") or "") in TERMINAL_LIVE_STATES,
+                errors=errors,
+                prefix=str(item.get("item_id") or "item"),
+            )
+            if video_id:
+                item_evidence_ids.add(video_id)
+                owner = used_evidence_ids.setdefault(video_id, str(item.get("item_id")))
+                if owner != str(item.get("item_id")):
+                    errors.append(f"evidence ID reused across items: {video_id}")
+            if source_key:
+                owner = used_paths.setdefault(source_key, str(item.get("item_id")))
+                if owner != str(item.get("item_id")):
+                    errors.append(f"evidence path reused across items: {source_key}")
         for is_binding, evidence in [(True, entry) for entry in binding_records] + [(False, entry) for entry in slot_records]:
             if not isinstance(evidence, Mapping):
                 errors.append(f"{item.get('item_id')}: evidence must be an object")
@@ -823,6 +967,34 @@ def validate_report(payload: Mapping[str, Any], *, allow_mock: bool = True) -> l
         }
         patch_records = list((patch.get("live_binding", {}) or {}).get("evidence", []) or []) if isinstance(patch.get("live_binding", {}), Mapping) else []
         patch_records += list(_iter_slot_evidence(patch))
+        patch_video_record = patch_binding.get("video_evidence") if isinstance(patch_binding, Mapping) else None
+        if evidence_media_mode == "image":
+            if patch_video_record is not None:
+                errors.append(f"event {event.get('event_id')}: image mode forbids video_evidence")
+        elif evidence_media_mode == "video":
+            if patch_records:
+                errors.append(f"event {event.get('event_id')}: video mode forbids image evidence")
+            patch_required_ids = set(
+                (patch.get("completion_condition", {}) or {}).get("required_slot_ids", []) or []
+            )
+            video_id, source_key = _validate_video_evidence(
+                patch_video_record,
+                item_id=patch_item_id,
+                slot_ids=patch_slot_ids,
+                required_ids={str(value) for value in patch_required_ids},
+                terminal=str(patch_binding.get("state") or "") in TERMINAL_LIVE_STATES if isinstance(patch_binding, Mapping) else False,
+                errors=errors,
+                prefix=f"event {event.get('event_id')}",
+            )
+            if video_id:
+                patch_ids.add(video_id)
+                owner = event_evidence_ids.setdefault(video_id, patch_item_id)
+                if owner != patch_item_id:
+                    errors.append(f"event evidence ID reused across items: {video_id}")
+            if source_key:
+                owner = event_paths.setdefault(source_key, patch_item_id)
+                if owner != patch_item_id:
+                    errors.append(f"event evidence path reused across items: {source_key}")
         for evidence in patch_records:
             if not isinstance(evidence, Mapping):
                 continue

@@ -27,6 +27,10 @@ class RedesignV4Tests(unittest.TestCase):
         )
         cls.standard_html = renderer.render_html(cls.standard_payload)
         cls.mock_html = renderer.render_html(cls.mock_payload)
+        cls.video_mock_payload = json.loads(
+            (PROJECT_ROOT / "展示标准报告_8-20_mock_video.json").read_text(encoding="utf-8")
+        )
+        cls.video_mock_html = renderer.render_html(cls.video_mock_payload)
 
     def test_coursera_banner_and_original_layers(self) -> None:
         for marker in (
@@ -160,9 +164,21 @@ class RedesignV4Tests(unittest.TestCase):
     def test_outputs_remain_sanitized(self) -> None:
         from render_report import FORBIDDEN_HTML_MARKERS
 
-        for html in (self.standard_html, self.mock_html):
+        for html in (self.standard_html, self.mock_html, self.video_mock_html):
             for marker in FORBIDDEN_HTML_MARKERS:
                 self.assertNotIn(marker, html)
+
+    def test_video_mode_uses_one_coordinated_player_path(self) -> None:
+        for marker in (
+            'const evidenceMediaMode = DATA.presentation&&DATA.presentation.evidence_media_mode==="video"',
+            'data-evidence-video="true"',
+            "videoEvidenceMarkup",
+            "pauseEvidencePlayers",
+            "syncEvidencePlayers",
+            "lightbox-video",
+        ):
+            self.assertIn(marker, self.video_mock_html)
+        self.assertNotIn("mock-video-evidence/08-item_5069.mp4", self.video_mock_html)
 
 
 if __name__ == "__main__":
