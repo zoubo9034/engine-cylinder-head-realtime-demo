@@ -141,6 +141,18 @@ class RedesignV4Tests(unittest.TestCase):
         self.assertIn('"events":[{', self.mock_html)
         self.assertIn("runMockEvents", self.mock_html)
 
+    def test_mock_replay_does_not_mix_polling_or_regress_item_state(self) -> None:
+        self.assertIn(
+            "const mockReplay = Array.isArray(DATA.events)&&DATA.events.length>0",
+            self.mock_html,
+        )
+        self.assertIn("if(mockReplay){runMockEvents()}else if(!fileMode)", self.mock_html)
+        self.assertIn("function stateRank(status)", self.mock_html)
+        self.assertIn(
+            "stateRank(incomingState)<stateRank(currentItem.status)",
+            self.mock_html,
+        )
+
     def test_outputs_remain_sanitized(self) -> None:
         from render_report import FORBIDDEN_HTML_MARKERS
 
