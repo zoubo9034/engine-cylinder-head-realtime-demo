@@ -97,10 +97,15 @@ class RedesignV4Tests(unittest.TestCase):
         self.assertIn('class="live-layout awaiting-start"', self.standard_html)
         self.assertIn('classList.remove("awaiting-start")', self.standard_html)
         self.assertIn("--canvas-width: 1920px", self.standard_html)
-        self.assertIn("--live-row: 900px", self.standard_html)
-        self.assertIn("grid-template-columns: 280px 720px 760px", self.standard_html)
+        self.assertIn("--canvas-height: 1080px", self.standard_html)
+        self.assertIn("--live-row: 768px", self.standard_html)
+        self.assertIn("grid-template-columns: 236px 430px 1142px", self.standard_html)
         self.assertIn("grid-template-rows: var(--live-row)", self.standard_html)
         self.assertIn("align-items: stretch", self.standard_html)
+        self.assertIn("DESIGN_CANVAS = {width:1920,height:1080}", self.standard_html)
+        self.assertIn("function syncCanvasScale()", self.standard_html)
+        self.assertIn('id="canvas-host"', self.standard_html)
+        self.assertIn('id="page-canvas"', self.standard_html)
         self.assertNotIn("100dvh - 220px", self.standard_html)
         self.assertNotIn("@media (max-width:", self.standard_html)
         self.assertIn("function beginLiveSession(", self.standard_html)
@@ -189,6 +194,9 @@ class RedesignV4Tests(unittest.TestCase):
             "userPausedEvidence",
             "programmaticScrollUntil",
             "settleCardFocusFromScroll",
+            "DESIGN_CANVAS",
+            "syncCanvasScale",
+            '$("follow-chip").onclick=jumpToLatestCompleted',
             "lightbox-video",
         ):
             self.assertIn(marker, self.video_mock_html)
@@ -225,16 +233,19 @@ class RedesignV4Tests(unittest.TestCase):
 
     def test_score_cards_keep_intrinsic_height_on_fixed_canvas(self) -> None:
         for marker in (
-            "grid-auto-rows: max-content",
-            "align-content: start",
-            "height: max-content",
-            "min-height: max-content",
-            "scroll-padding-block: 288px",
-            "grid-template-columns: 280px 720px 760px",
-            "grid-template-columns: 720px 1064px",
+            "flex-direction: column",
+            "align-items: stretch",
+            "flex: 0 0 auto",
+            "height: auto",
+            "scroll-padding-block: 260px",
+            "grid-template-columns: 236px 430px 1142px",
+            "grid-template-columns: 430px 1402px",
+            "width: 250px",
+            "height: 375px",
         ):
             self.assertIn(marker, self.video_mock_html)
         cards_styles = self.video_mock_html.split(".cards {", 1)[1].split(".cards::-webkit-scrollbar", 1)[0]
+        self.assertIn("display: flex", cards_styles)
         self.assertNotIn("grid-template-rows: minmax(0, 1fr)", cards_styles)
         for marker in (
             "100dvh - 220px",
@@ -242,6 +253,20 @@ class RedesignV4Tests(unittest.TestCase):
             "@media (max-width:",
         ):
             self.assertNotIn(marker, self.video_mock_html)
+
+    def test_design_canvas_scales_only_from_viewport_width(self) -> None:
+        source = self.video_mock_html.split("function syncCanvasScale()", 1)[1].split("const WORKFLOW_FALLBACK", 1)[0]
+        self.assertIn("viewportWidth/DESIGN_CANVAS.width", source)
+        self.assertNotIn("viewportHeight", source)
+        self.assertNotIn("Math.min(viewportWidth", source)
+        self.assertIn("height: calc(var(--canvas-height) * var(--canvas-scale, 1))", self.video_mock_html)
+        self.assertIn("transform-origin: top left", self.video_mock_html)
+
+    def test_follow_chip_restores_visibility_before_focus(self) -> None:
+        source = self.video_mock_html.split("function jumpToLatestCompleted(", 1)[1].split("function clearAutoFocusPause", 1)[0]
+        for marker in ("showAllItems()", "current=index", "render()", "focusLatestCompleted(index)"):
+            self.assertIn(marker, source)
+        self.assertLess(source.index("showAllItems()"), source.index("focusLatestCompleted(index)"))
 
 
 if __name__ == "__main__":

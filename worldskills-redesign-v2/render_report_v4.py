@@ -30,6 +30,8 @@ __STYLES__
 </style>
 </head>
 <body>
+<div class="canvas-host" id="canvas-host">
+<div class="page-canvas" id="page-canvas">
 <section class="course-banner" aria-label="课程信息">
   <div class="banner-art" aria-hidden="true">
     <i class="banner-ring"></i>
@@ -136,6 +138,8 @@ __STYLES__
     <span>课程</span>
   </button>
   <footer class="footer" id="footer">本页面展示当前视频流的实时分析过程。证据生成后显示对应核验信息，低置信度结果保留待人工确认。</footer>
+</div>
+</div>
 </div>
 <div class="toast" id="toast"></div>
 <div class="drawer-backdrop" id="drawer-backdrop" hidden>

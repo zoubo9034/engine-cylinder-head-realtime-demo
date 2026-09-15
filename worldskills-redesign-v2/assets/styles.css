@@ -19,9 +19,10 @@
   --error-bg: #fdecec;
   --radius: 14px;
   --canvas-width: 1920px;
-  --page-pad: 56px;
-  --content-width: 1808px;
-  --live-row: 900px;
+  --canvas-height: 1080px;
+  --page-pad: 32px;
+  --content-width: 1856px;
+  --live-row: 768px;
   --shadow: 0 12px 32px rgba(15, 55, 120, 0.08);
   --focus: 0 0 0 3px rgba(0, 86, 210, 0.28);
   --grad-blue: linear-gradient(135deg, #2f80ff 0%, #0056d2 58%, #083d8a 100%);
@@ -31,7 +32,7 @@
 
 * { box-sizing: border-box; }
 html {
-  min-width: var(--canvas-width);
+  min-width: 320px;
   background: #eaf6f3;
   scrollbar-width: thin;
   scrollbar-color: #b7d4f8 #eef5ff;
@@ -45,8 +46,10 @@ html::-webkit-scrollbar-thumb {
 html::-webkit-scrollbar-thumb:hover { background: #9cc4f4; }
 body {
   margin: 0;
-  min-width: var(--canvas-width);
+  min-width: 320px;
   min-height: 100vh;
+  overflow-x: hidden;
+  overflow-y: auto;
   color: var(--ink);
   background:
     radial-gradient(1200px 420px at 88% -8%, rgba(47, 128, 255, 0.14), transparent 58%),
@@ -57,6 +60,24 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 body.locked { overflow: hidden; }
+.canvas-host {
+  position: relative;
+  width: 100vw;
+  height: calc(var(--canvas-height) * var(--canvas-scale, 1));
+  min-height: 100vh;
+  overflow: hidden;
+}
+.page-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--canvas-width);
+  height: var(--canvas-height);
+  overflow: hidden;
+  transform: scale(var(--canvas-scale, 1));
+  transform-origin: top left;
+  will-change: transform;
+}
 button { font: inherit; color: inherit; cursor: pointer; }
 button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(--focus); }
 [hidden] { display: none !important; }
@@ -74,8 +95,8 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
 .course-banner {
   position: relative;
   width: var(--canvas-width);
-  height: 436px;
-  margin: 0 auto;
+  height: 180px;
+  margin: 0;
   overflow: hidden;
   color: #fff;
   background:
@@ -122,11 +143,11 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
   z-index: 1;
   display: flex;
   flex-direction: column;
-  gap: 96px;
+  gap: 12px;
   width: var(--canvas-width);
-  height: 436px;
-  margin: 0 auto;
-  padding: 28px var(--page-pad) 52px;
+  height: 180px;
+  margin: 0;
+  padding: 14px var(--page-pad) 16px;
 }
 .banner-top {
   display: flex;
@@ -155,7 +176,7 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
   display: block;
   max-width: 960px;
   flex: 1;
-  padding-top: 24px;
+  padding-top: 0;
 }
 .crumbs {
   margin: 0 auto 0 0;
@@ -164,9 +185,9 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
 }
 .crumbs span { margin: 0 6px; opacity: 0.6; }
 .course-banner h1 {
-  margin: 0 0 14px;
+  margin: 0 0 6px;
   max-width: 960px;
-  font-size: 43px;
+  font-size: 31px;
   font-weight: 700;
   line-height: 1.18;
   letter-spacing: -0.03em;
@@ -176,41 +197,42 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
   max-width: 760px;
   margin: 0;
   color: rgba(255, 255, 255, 0.82);
-  font-size: 17px;
+  font-size: 14px;
 }
 .banner-meta {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-top: 22px;
+  margin-top: 8px;
 }
 .banner-meta span {
-  padding: 6px 12px;
+  padding: 4px 10px;
   color: #fff;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.08));
   border: 1px solid rgba(255, 255, 255, 0.22);
   border-radius: 999px;
-  font-size: 13px;
+  font-size: 12px;
 }
 .shell {
   width: var(--canvas-width);
-  margin: 0 auto;
-  padding: 28px var(--page-pad) 72px;
+  height: 900px;
+  margin: 0;
+  padding: 12px var(--page-pad) 10px;
 }
 
 .metrics {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 18px;
-  margin: 0 0 20px;
+  gap: 12px;
+  margin: 0 0 10px;
 }
 .metric {
   position: relative;
   min-width: 0;
   overflow: hidden;
   isolation: isolate;
-  min-height: 118px;
-  padding: 22px 22px 20px;
+  min-height: 70px;
+  padding: 10px 16px;
   background: rgba(255, 255, 255, 0.62);
   border: 1px solid rgba(255, 255, 255, 0.8);
   border-radius: var(--radius);
@@ -235,10 +257,10 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
 .metric:nth-child(5)::after { background: linear-gradient(180deg, transparent, rgba(255, 122, 60, 0.18)); }
 .metric-label,
 .metric-value { position: relative; z-index: 1; color: #333333; }
-.metric-label { font-size: 13px; }
+.metric-label { font-size: 12px; }
 .metric-value {
-  margin-top: 8px;
-  font-size: 22px;
+  margin-top: 4px;
+  font-size: 18px;
   font-weight: 700;
   line-height: 1.3;
   overflow-wrap: anywhere;
@@ -250,20 +272,20 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
 
 .live-layout {
   display: grid;
-  grid-template-columns: 280px 720px 760px;
+  grid-template-columns: 236px 430px 1142px;
   grid-template-rows: var(--live-row);
   gap: 24px;
   align-items: stretch;
   height: var(--live-row);
 }
 .live-layout.awaiting-start {
-  grid-template-columns: 280px 1504px;
+  grid-template-columns: 236px 1596px;
 }
 .live-layout.timeline-collapsed:not(.awaiting-start) {
-  grid-template-columns: 720px 1064px;
+  grid-template-columns: 430px 1402px;
 }
 .live-layout.timeline-collapsed.awaiting-start {
-  grid-template-columns: 1808px;
+  grid-template-columns: 1856px;
 }
 .live-layout.timeline-collapsed .course-column {
   display: none;
@@ -345,9 +367,11 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
 }
 .video-slot {
   position: relative;
-  flex: 1 1 auto;
-  width: 100%;
-  min-height: 180px;
+  flex: 0 0 auto;
+  align-self: center;
+  width: 250px;
+  height: 375px;
+  min-height: 375px;
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 12px;
@@ -700,10 +724,9 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
 .control.primary:hover { color: #fff; background: linear-gradient(135deg, #4a90ff, #004bb8); border-color: transparent; }
 
 .cards {
-  display: grid;
-  grid-template-columns: 1fr;
-  grid-auto-rows: max-content;
-  align-content: start;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
   flex: 1;
   gap: 22px;
   min-height: 0;
@@ -711,7 +734,7 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
   overflow-y: auto;
   overflow-x: hidden;
   padding: 3px 6px 8px 2px;
-  scroll-padding-block: 288px;
+  scroll-padding-block: 260px;
   scrollbar-width: thin;
   scrollbar-color: #b7d4f8 #eef5ff;
 }
@@ -766,10 +789,9 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
 }
 .item-card {
   position: relative;
-  align-self: start;
-  height: max-content;
+  flex: 0 0 auto;
+  height: auto;
   min-width: 0;
-  min-height: max-content;
   padding: 0;
   overflow: hidden;
   background: #ffffff;
@@ -991,6 +1013,7 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
   background: #07172d;
   aspect-ratio: 16 / 9;
 }
+.item-card .evidence-video-wrap { width: 480px; max-width: 100%; margin: 0 auto; }
 .lightbox .evidence-video-wrap { width: 100%; align-self: center; }
 .evidence-video { display: block; width: 100%; height: 100%; object-fit: contain; background: #07172d; }
 .video-playback-status:not(:empty) {
@@ -1212,11 +1235,11 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
 .lightbox-meta { min-height: 32px; padding: 10px 4px 0; color: var(--muted); font-size: 13px; }
 
 .footer {
-  margin-top: 40px;
-  padding-top: 24px;
+  margin-top: 4px;
+  padding-top: 4px;
   color: var(--muted);
   border-top: 1px solid var(--line);
-  font-size: 13px;
+  font-size: 11px;
   text-align: center;
 }
 .toast {

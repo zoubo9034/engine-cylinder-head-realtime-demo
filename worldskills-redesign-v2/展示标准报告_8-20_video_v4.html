@@ -28,9 +28,10 @@
   --error-bg: #fdecec;
   --radius: 14px;
   --canvas-width: 1920px;
-  --page-pad: 56px;
-  --content-width: 1808px;
-  --live-row: 900px;
+  --canvas-height: 1080px;
+  --page-pad: 32px;
+  --content-width: 1856px;
+  --live-row: 768px;
   --shadow: 0 12px 32px rgba(15, 55, 120, 0.08);
   --focus: 0 0 0 3px rgba(0, 86, 210, 0.28);
   --grad-blue: linear-gradient(135deg, #2f80ff 0%, #0056d2 58%, #083d8a 100%);
@@ -40,7 +41,7 @@
 
 * { box-sizing: border-box; }
 html {
-  min-width: var(--canvas-width);
+  min-width: 320px;
   background: #eaf6f3;
   scrollbar-width: thin;
   scrollbar-color: #b7d4f8 #eef5ff;
@@ -54,8 +55,10 @@ html::-webkit-scrollbar-thumb {
 html::-webkit-scrollbar-thumb:hover { background: #9cc4f4; }
 body {
   margin: 0;
-  min-width: var(--canvas-width);
+  min-width: 320px;
   min-height: 100vh;
+  overflow-x: hidden;
+  overflow-y: auto;
   color: var(--ink);
   background:
     radial-gradient(1200px 420px at 88% -8%, rgba(47, 128, 255, 0.14), transparent 58%),
@@ -66,6 +69,24 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 body.locked { overflow: hidden; }
+.canvas-host {
+  position: relative;
+  width: 100vw;
+  height: calc(var(--canvas-height) * var(--canvas-scale, 1));
+  min-height: 100vh;
+  overflow: hidden;
+}
+.page-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--canvas-width);
+  height: var(--canvas-height);
+  overflow: hidden;
+  transform: scale(var(--canvas-scale, 1));
+  transform-origin: top left;
+  will-change: transform;
+}
 button { font: inherit; color: inherit; cursor: pointer; }
 button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(--focus); }
 [hidden] { display: none !important; }
@@ -83,8 +104,8 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
 .course-banner {
   position: relative;
   width: var(--canvas-width);
-  height: 436px;
-  margin: 0 auto;
+  height: 180px;
+  margin: 0;
   overflow: hidden;
   color: #fff;
   background:
@@ -131,11 +152,11 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
   z-index: 1;
   display: flex;
   flex-direction: column;
-  gap: 96px;
+  gap: 12px;
   width: var(--canvas-width);
-  height: 436px;
-  margin: 0 auto;
-  padding: 28px var(--page-pad) 52px;
+  height: 180px;
+  margin: 0;
+  padding: 14px var(--page-pad) 16px;
 }
 .banner-top {
   display: flex;
@@ -164,7 +185,7 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
   display: block;
   max-width: 960px;
   flex: 1;
-  padding-top: 24px;
+  padding-top: 0;
 }
 .crumbs {
   margin: 0 auto 0 0;
@@ -173,9 +194,9 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
 }
 .crumbs span { margin: 0 6px; opacity: 0.6; }
 .course-banner h1 {
-  margin: 0 0 14px;
+  margin: 0 0 6px;
   max-width: 960px;
-  font-size: 43px;
+  font-size: 31px;
   font-weight: 700;
   line-height: 1.18;
   letter-spacing: -0.03em;
@@ -185,41 +206,42 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
   max-width: 760px;
   margin: 0;
   color: rgba(255, 255, 255, 0.82);
-  font-size: 17px;
+  font-size: 14px;
 }
 .banner-meta {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-top: 22px;
+  margin-top: 8px;
 }
 .banner-meta span {
-  padding: 6px 12px;
+  padding: 4px 10px;
   color: #fff;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.08));
   border: 1px solid rgba(255, 255, 255, 0.22);
   border-radius: 999px;
-  font-size: 13px;
+  font-size: 12px;
 }
 .shell {
   width: var(--canvas-width);
-  margin: 0 auto;
-  padding: 28px var(--page-pad) 72px;
+  height: 900px;
+  margin: 0;
+  padding: 12px var(--page-pad) 10px;
 }
 
 .metrics {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 18px;
-  margin: 0 0 20px;
+  gap: 12px;
+  margin: 0 0 10px;
 }
 .metric {
   position: relative;
   min-width: 0;
   overflow: hidden;
   isolation: isolate;
-  min-height: 118px;
-  padding: 22px 22px 20px;
+  min-height: 70px;
+  padding: 10px 16px;
   background: rgba(255, 255, 255, 0.62);
   border: 1px solid rgba(255, 255, 255, 0.8);
   border-radius: var(--radius);
@@ -244,10 +266,10 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
 .metric:nth-child(5)::after { background: linear-gradient(180deg, transparent, rgba(255, 122, 60, 0.18)); }
 .metric-label,
 .metric-value { position: relative; z-index: 1; color: #333333; }
-.metric-label { font-size: 13px; }
+.metric-label { font-size: 12px; }
 .metric-value {
-  margin-top: 8px;
-  font-size: 22px;
+  margin-top: 4px;
+  font-size: 18px;
   font-weight: 700;
   line-height: 1.3;
   overflow-wrap: anywhere;
@@ -259,20 +281,20 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
 
 .live-layout {
   display: grid;
-  grid-template-columns: 280px 720px 760px;
+  grid-template-columns: 236px 430px 1142px;
   grid-template-rows: var(--live-row);
   gap: 24px;
   align-items: stretch;
   height: var(--live-row);
 }
 .live-layout.awaiting-start {
-  grid-template-columns: 280px 1504px;
+  grid-template-columns: 236px 1596px;
 }
 .live-layout.timeline-collapsed:not(.awaiting-start) {
-  grid-template-columns: 720px 1064px;
+  grid-template-columns: 430px 1402px;
 }
 .live-layout.timeline-collapsed.awaiting-start {
-  grid-template-columns: 1808px;
+  grid-template-columns: 1856px;
 }
 .live-layout.timeline-collapsed .course-column {
   display: none;
@@ -354,9 +376,11 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
 }
 .video-slot {
   position: relative;
-  flex: 1 1 auto;
-  width: 100%;
-  min-height: 180px;
+  flex: 0 0 auto;
+  align-self: center;
+  width: 250px;
+  height: 375px;
+  min-height: 375px;
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 12px;
@@ -709,10 +733,9 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
 .control.primary:hover { color: #fff; background: linear-gradient(135deg, #4a90ff, #004bb8); border-color: transparent; }
 
 .cards {
-  display: grid;
-  grid-template-columns: 1fr;
-  grid-auto-rows: max-content;
-  align-content: start;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
   flex: 1;
   gap: 22px;
   min-height: 0;
@@ -720,7 +743,7 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
   overflow-y: auto;
   overflow-x: hidden;
   padding: 3px 6px 8px 2px;
-  scroll-padding-block: 288px;
+  scroll-padding-block: 260px;
   scrollbar-width: thin;
   scrollbar-color: #b7d4f8 #eef5ff;
 }
@@ -775,10 +798,9 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
 }
 .item-card {
   position: relative;
-  align-self: start;
-  height: max-content;
+  flex: 0 0 auto;
+  height: auto;
   min-width: 0;
-  min-height: max-content;
   padding: 0;
   overflow: hidden;
   background: #ffffff;
@@ -1000,6 +1022,7 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
   background: #07172d;
   aspect-ratio: 16 / 9;
 }
+.item-card .evidence-video-wrap { width: 480px; max-width: 100%; margin: 0 auto; }
 .lightbox .evidence-video-wrap { width: 100%; align-self: center; }
 .evidence-video { display: block; width: 100%; height: 100%; object-fit: contain; background: #07172d; }
 .video-playback-status:not(:empty) {
@@ -1221,11 +1244,11 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
 .lightbox-meta { min-height: 32px; padding: 10px 4px 0; color: var(--muted); font-size: 13px; }
 
 .footer {
-  margin-top: 40px;
-  padding-top: 24px;
+  margin-top: 4px;
+  padding-top: 4px;
   color: var(--muted);
   border-top: 1px solid var(--line);
-  font-size: 13px;
+  font-size: 11px;
   text-align: center;
 }
 .toast {
@@ -1261,6 +1284,8 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
 </style>
 </head>
 <body>
+<div class="canvas-host" id="canvas-host">
+<div class="page-canvas" id="page-canvas">
 <section class="course-banner" aria-label="课程信息">
   <div class="banner-art" aria-hidden="true">
     <i class="banner-ring"></i>
@@ -1368,6 +1393,8 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
   </button>
   <footer class="footer" id="footer">本页面展示当前视频流的实时分析过程。证据生成后显示对应核验信息，低置信度结果保留待人工确认。</footer>
 </div>
+</div>
+</div>
 <div class="toast" id="toast"></div>
 <div class="drawer-backdrop" id="drawer-backdrop" hidden>
   <aside class="detail-drawer" id="detail-drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title">
@@ -1411,6 +1438,8 @@ const videoPlaybackPositions = new Map(), userPausedEvidence = new Set();
 let focusTransitionToken = 0;
 const $ = id => document.getElementById(id);
 const esc = value => String(value ?? "").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[ch]));
+const DESIGN_CANVAS = {width:1920,height:1080};
+function syncCanvasScale(){const viewport=window.visualViewport||window,viewportWidth=Number(viewport.width)||window.innerWidth,scale=viewportWidth/DESIGN_CANVAS.width;document.documentElement.style.setProperty("--canvas-scale",String(Math.max(.1,scale)))}
 const WORKFLOW_FALLBACK = {schema:"realtime-workflow-display/v1",cycle_ms:3000,jitter_ratio:.15,stages:[
   {stage_id:"ingest",label:"接入画面",order:0,weight:.10},
   {stage_id:"planning",label:"任务规划",order:1,weight:.15},
@@ -1478,15 +1507,17 @@ function createCardNode(markup){const template=document.createElement("template"
 function rememberVideoPositions(root=document){root.querySelectorAll&&root.querySelectorAll("video[data-evidence-video]").forEach(rememberEvidencePosition)}
 function renderCards(){const container=$("cards"),visible=state.map((item,i)=>({item,i})).filter(x=>x.item.status!=="待开始"&&(filter==="all"||(isTerminal(x.item)&&x.item.difficulty===filter)));if(!visible.length){rememberVideoPositions(container);if(!container.querySelector(".cards-empty"))container.innerHTML="<div class=\"cards-empty\"><span class=\"wait-orb\" aria-hidden=\"true\"></span><span class=\"wait-label\">等待识别</span></div>";return}container.querySelector(".cards-empty")?.remove();const desired=new Set(visible.map(x=>String(x.i)));visible.forEach((entry,position)=>{const key=signature(entry.item);let card=container.querySelector(`:scope > .item-card[data-item-index="${entry.i}"]`);if(!card||card.dataset.renderSignature!==key){const next=createCardNode(cardMarkup(entry.item,entry.i,newCardIndexes.has(entry.i)?"reveal":""));next.dataset.renderSignature=key;if(card){rememberVideoPositions(card);card.replaceWith(next)}else container.append(next);card=next}card.classList.toggle("current",entry.i===current);card.classList.toggle("review",entry.item.status==="待人工确认");const reference=container.children[position];if(reference!==card)container.insertBefore(card,reference||null)});container.querySelectorAll(":scope > .item-card").forEach(card=>{if(!desired.has(String(card.dataset.itemIndex))){rememberVideoPositions(card);card.remove()}});bindCardFocusInteractions();if(newCardIndexes.size)requestAnimationFrame(()=>newCardIndexes.clear())}
 function finishCardFocus(index,token,started){if(token!==focusTransitionToken)return;const card=document.querySelector(`.item-card[data-item-index="${index}"]`),container=$("cards");if(!card||!container)return;const cardRect=card.getBoundingClientRect(),containerRect=container.getBoundingClientRect(),delta=Math.abs((cardRect.top+cardRect.bottom-containerRect.top-containerRect.bottom)/2);if(delta<=8||performance.now()-started>1400){pendingAutoplayIndex=index;syncEvidencePlayers();card.classList.add("completion-focus");setTimeout(()=>card.classList.remove("completion-focus"),700);return}requestAnimationFrame(()=>finishCardFocus(index,token,started))}
-function focusLatestCompleted(index){const token=++focusTransitionToken;programmaticScrollUntil=performance.now()+1600;requestAnimationFrame(()=>{const card=document.querySelector(`.item-card[data-item-index="${index}"]`),container=$("cards");if(!card||!container)return;const cardRect=card.getBoundingClientRect(),containerRect=container.getBoundingClientRect();const targetTop=container.scrollTop+cardRect.top-containerRect.top-(container.clientHeight-cardRect.height)/2;container.scrollTo({top:Math.max(0,targetTop),behavior:workflowReducedMotion()?"auto":"smooth"});finishCardFocus(index,token,performance.now())})}
+function canvasScale(){const canvas=$("page-canvas"),width=canvas&&canvas.getBoundingClientRect().width,base=canvas&&canvas.offsetWidth;return width&&base?width/base:1}
+function focusLatestCompleted(index){const token=++focusTransitionToken;programmaticScrollUntil=performance.now()+1600;requestAnimationFrame(()=>{const card=document.querySelector(`.item-card[data-item-index="${index}"]`),container=$("cards");if(!card||!container)return;const cardRect=card.getBoundingClientRect(),containerRect=container.getBoundingClientRect(),scale=canvasScale();const targetTop=container.scrollTop+(cardRect.top-containerRect.top)/scale-(container.clientHeight-card.offsetHeight)/2;container.scrollTo({top:Math.max(0,targetTop),behavior:workflowReducedMotion()?"auto":"smooth"});finishCardFocus(index,token,performance.now())})}
 function focusCardAndPlayback(index){if(!state[index]||state[index].status==="待开始")return;pauseAutoFocus();current=index;render();focusLatestCompleted(index)}
-function isNativeControlClick(event){const video=event.target.closest&&event.target.closest("video[data-evidence-video]");if(!video)return false;const rect=video.getBoundingClientRect(),controlsHeight=Math.max(36,rect.height*0.12);return event.clientY>rect.bottom-controlsHeight}
+function isNativeControlClick(event){const video=event.target.closest&&event.target.closest("video[data-evidence-video]");if(!video)return false;const rect=video.getBoundingClientRect(),controlsHeight=Math.max(24*canvasScale(),rect.height*0.12);return event.clientY>rect.bottom-controlsHeight}
 function bindCardFocusInteractions(){document.querySelectorAll(".item-card").forEach(card=>{if(card.dataset.focusBound==="true")return;card.dataset.focusBound="true";card.addEventListener("click",event=>{if(event.target.closest("button,a,input,select,textarea"))return;if(isNativeControlClick(event))return;focusCardAndPlayback(Number(card.dataset.itemIndex))})})}
 function latestCompletedIndex(){for(let index=state.length-1;index>=0;index-=1){if(isTerminal(state[index]))return index}return null}
 function updateFollowChip(){const chip=$("follow-chip");if(!chip)return;if(followLatest||pendingCompletedIndex===null){chip.hidden=true;chip.innerHTML="";return}const item=state[pendingCompletedIndex],title=item?`项目 ${item.item_number} 已完成`:"新项目已完成",detail=pendingCompletedCount>1?`另有 ${pendingCompletedCount-1} 项更新，点击返回最新结果`:"点击返回最新评分卡";chip.innerHTML=`<span class="follow-chip-icon" aria-hidden="true">✓</span><span class="follow-chip-copy"><strong>${esc(title)}</strong><small>${esc(detail)}</small></span><span class="follow-chip-action">查看<svg viewBox="0 0 16 16" aria-hidden="true"><path d="m6 3.5 4 4.5-4 4.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>`;chip.setAttribute("aria-label",`${title}，${detail}`);chip.hidden=false}
 function pauseAutoFocus(){followLatest=false;programmaticScrollUntil=0;focusTransitionToken+=1;pendingAutoplayIndex=null;updateFollowChip()}
 function requestLatestFocus(index){pendingCompletedIndex=index;pendingCompletedCount+=1;if(followLatest){pendingCompletedCount=0;focusLatestCompleted(index);return}updateFollowChip()}
-function jumpToLatestCompleted(){const index=pendingCompletedIndex===null?latestCompletedIndex():pendingCompletedIndex;followLatest=true;pendingCompletedIndex=null;pendingCompletedCount=0;updateFollowChip();if(index!==null)focusLatestCompleted(index)}
+function showAllItems(){if(filter==="all")return;filter="all";document.querySelectorAll("#difficultyFilters .chip").forEach(button=>button.classList.toggle("active",button.dataset.filter==="all"))}
+function jumpToLatestCompleted(event){if(event){event.preventDefault();event.stopPropagation()}const index=pendingCompletedIndex===null?latestCompletedIndex():pendingCompletedIndex;followLatest=true;pendingCompletedIndex=null;pendingCompletedCount=0;updateFollowChip();if(index===null)return;showAllItems();current=index;render();focusLatestCompleted(index)}
 function clearAutoFocusPause(){followLatest=true;pendingCompletedIndex=null;pendingCompletedCount=0;if(scrollSettleTimer){clearTimeout(scrollSettleTimer);scrollSettleTimer=null}updateFollowChip()}
 function settleCardFocusFromScroll(){const cards=$("cards");if(!cards)return;const maxScroll=Math.max(0,cards.scrollHeight-cards.clientHeight);if(maxScroll>0&&cards.scrollTop>=maxScroll-24){const pending=pendingCompletedIndex;followLatest=true;pendingCompletedIndex=null;pendingCompletedCount=0;updateFollowChip();const index=pending===null?latestCompletedIndex():pending;if(index!==null)focusLatestCompleted(index);return}if(evidenceMediaMode!=="video")return;const containerRect=cards.getBoundingClientRect(),centre=containerRect.top+containerRect.height/2;let best=null,bestDelta=Infinity;cards.querySelectorAll(":scope > .item-card").forEach(card=>{const rect=card.getBoundingClientRect(),delta=Math.abs(rect.top+rect.height/2-centre);if(delta<bestDelta){bestDelta=delta;best=card}});if(!best)return;const index=Number(best.dataset.itemIndex);if(!Number.isInteger(index)||index===current||!state[index]||state[index].status==="待开始")return;current=index;pendingAutoplayIndex=index;render()}
 function bindCardScrollInteractions(){const cards=$("cards");if(!cards||cards.dataset.interactionBound==="true")return;cards.dataset.interactionBound="true";const manual=()=>pauseAutoFocus();cards.addEventListener("wheel",manual,{passive:true});cards.addEventListener("touchstart",manual,{passive:true});cards.addEventListener("pointerdown",manual,{passive:true});cards.addEventListener("keydown",event=>{if(["ArrowUp","ArrowDown","PageUp","PageDown","Home","End"].includes(event.key))manual()});cards.addEventListener("scroll",()=>{if(scrollSettleTimer)clearTimeout(scrollSettleTimer);scrollSettleTimer=setTimeout(()=>{scrollSettleTimer=null;if(performance.now()<programmaticScrollUntil)return;settleCardFocusFromScroll()},180)},{passive:true})}
@@ -1538,6 +1569,10 @@ $("start").onclick=startEvaluation;$("reset").onclick=resetReport;$("drawer-clos
 function setCourseCollapsed(collapsed){const layout=document.querySelector(".live-layout");if(!layout)return;layout.classList.toggle("timeline-collapsed",collapsed);const toggle=$("timelineToggle");if(toggle){toggle.setAttribute("aria-expanded",String(!collapsed));toggle.setAttribute("aria-label",collapsed?"展开课程内容":"收起课程内容");toggle.title=collapsed?"展开课程内容":"收起课程内容"}if($("courseFab"))$("courseFab").hidden=!collapsed}
 $("timelineToggle").onclick=()=>setCourseCollapsed(!document.querySelector(".live-layout").classList.contains("timeline-collapsed"));
 if($("courseFab"))$("courseFab").onclick=()=>setCourseCollapsed(false);
+if($("follow-chip"))$("follow-chip").onclick=jumpToLatestCompleted;
+syncCanvasScale();
+window.addEventListener("resize",syncCanvasScale,{passive:true});
+if(window.visualViewport)window.visualViewport.addEventListener("resize",syncCanvasScale,{passive:true});
 render();
 
 </script>
