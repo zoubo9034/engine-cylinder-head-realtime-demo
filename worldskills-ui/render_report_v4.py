@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import base64
 import json
 import sys
 from pathlib import Path
@@ -359,6 +360,11 @@ def render_html(payload: Mapping[str, Any]) -> str:
     styles = (ASSET_ROOT / "styles.css").read_text(encoding="utf-8")
     script = (ASSET_ROOT / "app.js").read_text(encoding="utf-8")
     media_mode = str((presentation or {}).get("evidence_media_mode") or "image") if isinstance(presentation, Mapping) else "image"
+    sample_src = "../../demo-media/live-input-sample.webm"
+    if media_mode == "video":
+        sample_path = PROJECT_ROOT / "demo-media" / "live-input-sample.webm"
+        sample_src = "data:video/webm;base64," + base64.b64encode(sample_path.read_bytes()).decode("ascii")
+    script = script.replace("__LOCAL_WEBRTC_SAMPLE__", sample_src)
     shell = VIDEO_HTML_SHELL if media_mode == "video" else HTML_SHELL
     output = (
         shell

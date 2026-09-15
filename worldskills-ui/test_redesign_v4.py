@@ -221,7 +221,7 @@ class RedesignV4Tests(unittest.TestCase):
             "URL.createObjectURL",
             "URL.revokeObjectURL",
             "realtime-video-icecandidate",
-            "../../demo-media/live-input-sample.webm",
+            "data:video/webm;base64,",
             'new URL("../../api/reset",document.baseURI)',
         ):
             self.assertIn(marker, self.video_mock_html)

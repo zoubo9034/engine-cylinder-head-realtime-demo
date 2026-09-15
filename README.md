@@ -236,8 +236,8 @@ const answer = await window.realtimeVideoInput.acceptOffer(offer, {
 虚拟发送端运行在浏览器页面内，不需要再次启动 `serve_demo.py`。保持上面的视频事件页服务运行，
 直接打开对应页面并点击“启动评测”即可；若端口已经被该服务占用，这是正常状态，不要在同一端口重复执行启动命令。
 
-打开任一视频事件页并点击“启动评测”，页面会自动用
-`demo-media/live-input-sample.webm` 创建发送端，并通过真实的浏览器内 WebRTC 连接送入实时窗口。
+打开任一视频事件页并点击“启动评测”，页面会自动用生成时从
+`demo-media/live-input-sample.webm` 嵌入的样本创建发送端，并通过真实的浏览器内 WebRTC 连接送入实时窗口。
 也可在浏览器控制台单独执行：
 
 ```js
