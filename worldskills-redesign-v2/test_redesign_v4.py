@@ -239,6 +239,7 @@ class RedesignV4Tests(unittest.TestCase):
                 'class="mode-video"',
                 'class="arena-shell"',
                 'class="arena-header"',
+                'class="banner-art arena-header-art"',
                 'class="arena-logo"',
                 'class="arena-status-grid"',
                 'class="arena-main"',
@@ -267,7 +268,7 @@ class RedesignV4Tests(unittest.TestCase):
             "flex: 0 0 auto",
             "height: auto",
             "grid-template-columns: 216px 456px 1040px",
-            "grid-template-rows: 920px",
+            "grid-template-rows: 940px",
             "width: 408px",
             "height: 612px",
             "grid-template-columns: minmax(0,1fr) 286px",
@@ -276,6 +277,9 @@ class RedesignV4Tests(unittest.TestCase):
             "aspect-ratio: 9 / 16",
             "width: 250px",
             "height: 444px",
+            "width: 290px",
+            "height: 120px",
+            "margin-top: auto",
         ):
             self.assertIn(marker, self.video_mock_html)
         cards_styles = self.video_mock_html.split(".cards {", 1)[1].split(".cards::-webkit-scrollbar", 1)[0]

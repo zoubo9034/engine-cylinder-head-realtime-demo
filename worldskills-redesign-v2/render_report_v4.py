@@ -190,6 +190,11 @@ __STYLES__
 <body class="mode-video">
 <div class="arena-shell">
   <header class="arena-header">
+    <div class="banner-art arena-header-art" aria-hidden="true">
+      <i class="banner-ring"></i>
+      <i class="banner-disc"></i>
+      <i class="banner-slash"></i>
+    </div>
     <div class="arena-brand">
       <img class="arena-logo" src="logo.png" alt="上海人工智能实验室 华东师范大学">
       <div class="arena-title"><span>WORLD SKILLS · LIVE JUDGING</span><h1 id="title">发动机气缸盖拆装智能实训分析</h1></div>
