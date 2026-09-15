@@ -1405,7 +1405,19 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
 .mode-video .arena-results .target { padding: 10px 12px; font-size: 12px; line-height: 1.5; }
 .mode-video .arena-results .binding-line { gap: 6px; margin-top: 8px; }
 .mode-video .arena-results .binding-meta { padding: 6px 8px; font-size: 11px; }
-.mode-video .arena-results .analysis-box { margin-top: auto; padding: 10px 12px; }
+.mode-video .arena-results .analysis-box {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  margin-top: 8px;
+  padding: 12px 14px;
+}
+.mode-video .arena-results .analysis-box .profile-line {
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid #dbe7f7;
+}
 .mode-video .arena-results .tool-chip { font-size: 10px; }
 .mode-video .arena-results .profile-line { margin-top: 5px; font-size: 10px; }
 .mode-video .arena-results .evidence-box { margin: 0; padding: 9px; }

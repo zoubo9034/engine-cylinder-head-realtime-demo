@@ -279,7 +279,9 @@ class RedesignV4Tests(unittest.TestCase):
             "height: 444px",
             "width: 290px",
             "height: 120px",
-            "margin-top: auto",
+            "flex: 1 1 auto",
+            "margin-top: 8px",
+            "border-top: 1px solid #dbe7f7",
         ):
             self.assertIn(marker, self.video_mock_html)
         cards_styles = self.video_mock_html.split(".cards {", 1)[1].split(".cards::-webkit-scrollbar", 1)[0]
