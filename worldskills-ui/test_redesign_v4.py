@@ -218,6 +218,8 @@ class RedesignV4Tests(unittest.TestCase):
             "RTCPeerConnection",
             "video.srcObject=stream",
             "captureStream",
+            "URL.createObjectURL",
+            "URL.revokeObjectURL",
             "realtime-video-icecandidate",
             "../../demo-media/live-input-sample.webm",
             'new URL("../../api/reset",document.baseURI)',
