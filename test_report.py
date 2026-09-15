@@ -1022,9 +1022,18 @@ class ReportContractTest(unittest.TestCase):
             "syncEvidencePlayers",
             "videoServiceReady",
             "pendingAutoplayIndex",
+            "videoPlaybackPositions",
+            "rememberEvidencePosition",
+            "restoreEvidencePosition",
+            "finishCardFocus",
+            "renderSignature",
             "请通过本地演示服务启动视频证据回放",
         ):
             self.assertIn(marker, html)
+        present_source = html.split("async function present(update)", 1)[1].split("async function drainQueue", 1)[0]
+        self.assertNotIn("if(newlyCompleted)pendingAutoplayIndex=update.index", present_source)
+        focus_source = html.split("function finishCardFocus(", 1)[1].split("function focusLatestCompleted", 1)[0]
+        self.assertLess(focus_source.index("delta<=8"), focus_source.index("pendingAutoplayIndex=index"))
         self.assertIn("/mock-video-evidence/08-item_5069.mp4", html)
         self.assertNotIn("source_path", html)
 

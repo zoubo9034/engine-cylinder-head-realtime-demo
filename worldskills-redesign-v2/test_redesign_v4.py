@@ -177,9 +177,18 @@ class RedesignV4Tests(unittest.TestCase):
             "syncEvidencePlayers",
             "videoServiceReady",
             "pendingAutoplayIndex",
+            "videoPlaybackPositions",
+            "rememberEvidencePosition",
+            "restoreEvidencePosition",
+            "finishCardFocus",
+            "renderSignature",
             "lightbox-video",
         ):
             self.assertIn(marker, self.video_mock_html)
+        present_source = self.video_mock_html.split("async function present(update)", 1)[1].split("async function drainQueue", 1)[0]
+        self.assertNotIn("if(newlyCompleted)pendingAutoplayIndex=update.index", present_source)
+        focus_source = self.video_mock_html.split("function finishCardFocus(", 1)[1].split("function focusLatestCompleted", 1)[0]
+        self.assertLess(focus_source.index("delta<=8"), focus_source.index("pendingAutoplayIndex=index"))
         self.assertIn("/mock-video-evidence/08-item_5069.mp4", self.video_mock_html)
 
 
