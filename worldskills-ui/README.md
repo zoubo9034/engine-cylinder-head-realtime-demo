@@ -19,12 +19,12 @@
 ## 生成
 
 ```powershell
-python worldskills-redesign-v2/render_report_v4.py --input 展示标准报告_8-20.json --output worldskills-redesign-v2/展示标准报告_8-20_v4.html
-python worldskills-redesign-v2/render_report_v4.py --input 展示标准报告_8-20_mock.json --output worldskills-redesign-v2/展示标准报告_8-20_mock_v4.html
-python worldskills-redesign-v2/render_report_v4.py --input 展示标准报告_8-20_video.json --output worldskills-redesign-v2/展示标准报告_8-20_video_v4.html
-python worldskills-redesign-v2/render_report_v4.py --input 展示标准报告_8-20_mock_video.json --output worldskills-redesign-v2/展示标准报告_8-20_mock_video_v4.html
-python -m unittest -v worldskills-redesign-v2/test_redesign_v4.py
+python worldskills-ui/render_report_v4.py --input 展示标准报告_8-20.json --output worldskills-ui/image/展示标准报告_8-20_v4.html
+python worldskills-ui/render_report_v4.py --input 展示标准报告_8-20_mock.json --output worldskills-ui/image/展示标准报告_8-20_mock_v4.html
+python worldskills-ui/render_report_v4.py --input 展示标准报告_8-20_video.json --output worldskills-ui/video/展示标准报告_8-20_video_v4.html
+python worldskills-ui/render_report_v4.py --input 展示标准报告_8-20_mock_video.json --output worldskills-ui/video/展示标准报告_8-20_mock_video_v4.html
+python -m unittest -v worldskills-ui/test_redesign_v4.py
 ```
 
 图片 Mock 可以直接打开；视频 Mock 需要通过根目录的 `serve_demo.py` 访问
-`worldskills-redesign-v2/展示标准报告_8-20_mock_video_v4.html`。
+`worldskills-ui/video/展示标准报告_8-20_mock_video_v4.html`。

@@ -13,16 +13,16 @@
 | --- | --- |
 | `report_schema.py` | 8–20 项报告模板和 JSON 校验 |
 | `detail_rules.py` | 13 个评分项的对象、动作、时序、完成状态核验依据 |
-| `render_report.py` | 从报告 JSON 生成自包含 HTML |
+| `render_report.py` | 从报告 JSON 生成端砚 UI 的自包含 HTML |
 | `build_mock_report.py` | 从 10 或 29 个视频 artifacts 生成事件回放 JSON；每项在正确样本中随机选取同项目分析过程产物 |
 | `workflow_tool_stats.py` | 汇总 10 个视频的 `workflow_trace`，生成难度与分析工具 profile |
 | `workflow_tool_profile_10video.json` | 由当前 10 个视频生成的无路径工具链统计 |
 | `serve_demo.py` | 提供静态文件、实时轮询、回填和重置 API |
-| `worldskills-redesign-v2/` | Coursera 课程页风格 V4；后续前端视觉与交互修改的基线 |
+| `duanyan-ui/image/`、`duanyan-ui/video/` | 端砚 UI 的图片证据版与视频证据版 |
+| `worldskills-ui/image/`、`worldskills-ui/video/` | 世赛 UI 的图片证据版与视频证据版 |
+| `worldskills-ui/assets/` | 世赛 UI 共用样式和交互脚本 |
 | `展示标准报告_8-20.json` | 现场使用的初始空模板 |
-| `展示标准报告_8-20.html` | 现场报告页面 |
 | `展示标准报告_8-20_mock.json` | artifacts 生成的 mock 事件数据 |
-| `展示标准报告_8-20_mock.html` | mock 回放页面 |
 | `展示标准报告_8-20_video.json` | 视频证据模式的现场初始模板 |
 | `展示标准报告_8-20_mock_video.json` | 视频证据模式的 mock 事件数据 |
 | `mock-video-evidence/` | 与 13 个评分项对应的 960×540、10fps MP4 片段 |
@@ -36,13 +36,15 @@ Inter 正文建立层级。时间线使用点状脊柱，卡片、证据和分�
 颜色沿用 success / warning / error 浅色语义。HTML 不依赖外部前端包，字体不可用时自动回退到
 系统字体。
 
-后续前端修改以 `worldskills-redesign-v2/` 为基线。该版本复用根目录的公开数据投影、评分状态和 API，使用独立的 HTML shell、CSS 与 JavaScript；根目录中的报告模板、评分规则、mock 生成和服务端逻辑仍是唯一业务数据源。
+两套 UI 的生成页面分别位于 `duanyan-ui/` 和 `worldskills-ui/`，并在各自目录下按
+`image/`、`video/` 分开。世赛 UI 复用根目录的公开数据投影、评分状态和 API，使用独立的 HTML shell、
+CSS 与 JavaScript；根目录中的报告 JSON、评分规则、mock 生成和服务端逻辑仍是唯一业务数据源。
 
 每张评分卡都保留“展开详细表单”入口。入口始终可见：项目尚未进入终态时，右侧抽屉只显示对象识别、动作过程、时序关系、完成状态四组核验维度及数量；进入“已完成评分”或“待人工确认”后，抽屉才显示逐条依据、当前核验状态、置信度、关联证据、现场时间范围、风险边界和分析链。抽屉为只读查看器，不提供改分、通过/不通过或人工备注操作。
 
-图片证据缩略图和抽屉中的证据引用共用同一查看交互：鼠标或键盘聚焦约 120ms 后显示带阶段、时间和置信度的悬停预览，点击或触屏点击打开高清灯箱；灯箱支持关闭按钮、背景点击和 Esc。视频证据模式改为 16:9 播放器，当前聚焦卡片自动静音循环播放，其他播放器自动暂停；点击卡片、点击左侧流程项或滚动使某张卡片停在列表中央，都会让该卡片从上次暂停位置继续播放，用户自己按下的暂停不会被自动覆盖。两种证据模式不会在同一报告中混用，缺少媒体时只显示占位状态。
+图片证据缩略图和抽屉中的证据引用共用同一查看交互：鼠标或键盘聚焦约 120ms 后显示带阶段、时间和置信度的悬停预览，点击或触屏点击打开高清灯箱；灯箱支持关闭按钮、背景点击和 Esc。视频证据在端砚 UI 中使用 16:9 播放器，在世赛 UI 中使用 9:16 证据位完整容纳原始画面。当前聚焦卡片自动静音循环播放，其他播放器自动暂停；点击卡片、点击左侧流程项或滚动使某张卡片停在列表中央，都会让该卡片从上次暂停位置继续播放，用户自己按下的暂停不会被自动覆盖。两种证据模式不会在同一报告中混用，缺少媒体时只显示占位状态。
 
-主区采用左右两栏布局：左栏依次放置与单张评分卡等宽的 16:9 实时视频接入占位、模型工作状态跑灯、当前项目状态窗口以及筛选/控制工具栏；右栏只保留单列评分卡视口。视频窗口当前仅显示接入占位，不加载历史图片或模拟画面，后续可通过窗口内的 `video` 元素接入视频流。桌面端左栏整体吸顶，保证现场画面和控制区持续可见；窄屏改为仅视频窗口吸顶，避免控制区遮挡评分卡。13 个评分卡在项目从“待开始”进入“已定位”后才出现；右栏独立纵向滚动，处于“跟随最新”状态时会在项目完成评分后将最新完成卡片平滑滚动到该栏中央，页面主体无需跟随跳动。用户滚动、点击卡片或流程项后进入“手动浏览”状态，新完成项目不会打断浏览，而是在结果区顶部显示“项目 N 已完成 · 查看”提示条；点击提示条，或手动滚动到列表底部并停住，即恢复自动跟随。
+端砚和世赛视频页都保留实时视频、模型状态、当前项目和单列评分卡。实时窗口可接收 WebRTC 轨道；事件版启动时接入内置样本，标准版等待外部发送端。13 个评分卡在项目从“待开始”进入“已定位”后才出现；处于“跟随最新”状态时，最近完成的卡片会平滑移动到评分列表中央，正在分析的下一项不会提前夺走查看焦点。用户滚动、点击卡片或流程项后进入“手动浏览”状态，新完成项目不会打断浏览，而是在结果区显示“项目 N 已完成 · 查看”提示条；点击提示条，或手动滚动到列表底部并停住，即恢复自动跟随。
 
 模型工作状态跑灯在“证据生成中”时启动，位于视频窗口下方，按接入画面、任务规划、工具编排、视觉分析、证据整理、结果判定六个高层阶段循环点亮。阶段时长依据真实 workflow trace 的工作量设置不同权重，并在每轮播放加入受限随机变化；进入终态后立即停止。标准现场页和 mock 回放页使用同一套展示逻辑，跑灯不参与评分。
 
@@ -65,7 +67,10 @@ python render_report.py template \
 
 python render_report.py render \
   --input 展示标准报告_8-20.json \
-  --output 展示标准报告_8-20.html
+  --output duanyan-ui/image/展示标准报告_8-20.html
+python worldskills-ui/render_report_v4.py \
+  --input 展示标准报告_8-20.json \
+  --output worldskills-ui/image/展示标准报告_8-20_v4.html
 
 # 视频证据模式的标准现场模板与两套页面
 python render_report.py template \
@@ -73,10 +78,10 @@ python render_report.py template \
   --output 展示标准报告_8-20_video.json
 python render_report.py render \
   --input 展示标准报告_8-20_video.json \
-  --output 展示标准报告_8-20_video.html
-python worldskills-redesign-v2/render_report_v4.py \
+  --output duanyan-ui/video/展示标准报告_8-20_video.html
+python worldskills-ui/render_report_v4.py \
   --input 展示标准报告_8-20_video.json \
-  --output worldskills-redesign-v2/展示标准报告_8-20_video_v4.html
+  --output worldskills-ui/video/展示标准报告_8-20_video_v4.html
 ```
 
 模板包含 13 个现场回填位置。每项同时保存隐藏的 `prefilled_result`（全对分数、评价和
@@ -133,7 +138,10 @@ python build_mock_report.py \
 
 python render_report.py render \
   --input 展示标准报告_8-20_mock.json \
-  --output 展示标准报告_8-20_mock.html
+  --output duanyan-ui/image/展示标准报告_8-20_mock.html
+python worldskills-ui/render_report_v4.py \
+  --input 展示标准报告_8-20_mock.json \
+  --output worldskills-ui/image/展示标准报告_8-20_mock_v4.html
 
 # 视频证据 Mock：复用同一次正确样本选择并输出 13 个 MP4
 python build_mock_report.py \
@@ -145,10 +153,10 @@ python build_mock_report.py \
   --output 展示标准报告_8-20_mock_video.json
 python render_report.py render \
   --input 展示标准报告_8-20_mock_video.json \
-  --output 展示标准报告_8-20_mock_video.html
-python worldskills-redesign-v2/render_report_v4.py \
+  --output duanyan-ui/video/展示标准报告_8-20_mock_video.html
+python worldskills-ui/render_report_v4.py \
   --input 展示标准报告_8-20_mock_video.json \
-  --output worldskills-redesign-v2/展示标准报告_8-20_mock_video_v4.html
+  --output worldskills-ui/video/展示标准报告_8-20_mock_video_v4.html
 ```
 
 mock JSON 的 13 个评分项初始仍为空；由同项目分析过程提取出的真实证据保存在
@@ -171,7 +179,7 @@ python serve_demo.py \
 浏览器访问：
 
 ```text
-http://127.0.0.1:8765/展示标准报告_8-20.html
+http://127.0.0.1:8765/duanyan-ui/image/展示标准报告_8-20.html
 ```
 
 启动 mock 回放服务时只需替换报告文件，并打开对应页面：
@@ -183,7 +191,7 @@ python serve_demo.py \
 ```
 
 ```text
-http://127.0.0.1:8765/展示标准报告_8-20_mock.html
+http://127.0.0.1:8765/duanyan-ui/image/展示标准报告_8-20_mock.html
 ```
 
 视频 Mock 必须通过服务访问，不能直接以 `file://` 打开。固定 Mock 页面使用
@@ -197,13 +205,48 @@ python serve_demo.py \
   --port 8765
 ```
 
-端砚 UI 访问 `http://127.0.0.1:8765/展示标准报告_8-20_mock_video.html`，世赛 UI 访问
-`http://127.0.0.1:8765/worldskills-redesign-v2/展示标准报告_8-20_mock_video_v4.html`。
+端砚 UI 访问 `http://127.0.0.1:8765/duanyan-ui/video/展示标准报告_8-20_mock_video.html`，世赛 UI 访问
+`http://127.0.0.1:8765/worldskills-ui/video/展示标准报告_8-20_mock_video_v4.html`。
 
-视频页面通过 `window.realtimeVideoInput` 接收 WebRTC 视频轨道。上游发送端可调用
-`acceptOffer(offer, rtcConfiguration)` 取得 answer，并按需用 `addIceCandidate(candidate)`
-补充远端 ICE candidate；收到的轨道会写入 `#live-video.srcObject`。视频事件版启动时会用
-`demo-media/live-input-sample.webm` 建立一对浏览器内 `RTCPeerConnection`，用于演示和验证同一接收链路。
+### 接入真实外部 WebRTC 视频流
+
+页面必须通过 HTTP(S) 打开。上游采集端创建 `RTCPeerConnection`、加入视频轨道并生成 offer 后，
+由业务信令层把 offer 传给展示页；展示页调用下列接口生成 answer：
+
+```js
+const answer = await window.realtimeVideoInput.acceptOffer(offer, {
+  iceServers: [{ urls: "stun:your-stun.example.com:3478" }],
+});
+// 将 answer 返回给发送端，再由发送端执行 setRemoteDescription(answer)。
+```
+
+若使用 trickle ICE，将发送端 candidate 逐条交给
+`window.realtimeVideoInput.addIceCandidate(candidate)`；展示页产生的 candidate 会通过
+`realtime-video-icecandidate` 事件发出。连接成功后，远端 `MediaStreamTrack` 会绑定到
+`#live-video.srcObject`，页面状态变为“实时视频已连接”。断开时调用
+`window.realtimeVideoInput.close()`。仓库只定义接收端浏览器接口，不替业务系统规定 WebSocket、HTTP
+或其他信令传输方式。
+
+### 启动内置虚拟发送端
+
+```bash
+python serve_demo.py \
+  --report 展示标准报告_8-20_mock_video.json \
+  --media-root mock-video-evidence \
+  --port 8765
+```
+
+打开任一视频事件页并点击“启动评测”，页面会自动用
+`demo-media/live-input-sample.webm` 创建发送端，并通过真实的浏览器内 WebRTC 连接送入实时窗口。
+也可在浏览器控制台单独执行：
+
+```js
+await window.realtimeVideoInput.startLocalSample();
+window.realtimeVideoInput.getState();
+```
+
+成功状态应包含 `receiverConnectionState: "connected"`、`hasRemoteStream: true` 和
+`trackState: "live"`。
 
 页面按钮行为：
 
@@ -292,7 +335,7 @@ mock HTML 也可以直接用浏览器打开并启动内嵌回放；标准 HTML �
 
 ```bash
 python -m unittest -v test_report.py
-python -m unittest -v worldskills-redesign-v2/test_redesign_v4.py
+python -m unittest -v worldskills-ui/test_redesign_v4.py
 python -m py_compile detail_rules.py report_schema.py render_report.py build_mock_report.py serve_demo.py
 ```
 

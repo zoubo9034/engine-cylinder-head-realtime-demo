@@ -829,7 +829,21 @@ def main() -> int:
     media_root = media_root.resolve()
     state = DemoState(root, report_path)
     server = ReusableThreadingHTTPServer((args.host, args.port), make_handler(state, root, media_root))
-    print(f"实时报告服务已启动：http://{args.host}:{args.port}/展示标准报告_8-20.html")
+    report = state.read()
+    is_video = report.get("presentation", {}).get("evidence_media_mode") == "video"
+    has_events = bool(report.get("events"))
+    if is_video:
+        duanyan_page = "展示标准报告_8-20_mock_video.html" if has_events else "展示标准报告_8-20_video.html"
+        worldskills_page = "展示标准报告_8-20_mock_video_v4.html" if has_events else "展示标准报告_8-20_video_v4.html"
+        duanyan_url = f"/duanyan-ui/video/{duanyan_page}"
+        worldskills_url = f"/worldskills-ui/video/{worldskills_page}"
+    else:
+        duanyan_page = "展示标准报告_8-20_mock.html" if has_events else "展示标准报告_8-20.html"
+        worldskills_page = "展示标准报告_8-20_mock_v4.html" if has_events else "展示标准报告_8-20_v4.html"
+        duanyan_url = f"/duanyan-ui/image/{duanyan_page}"
+        worldskills_url = f"/worldskills-ui/image/{worldskills_page}"
+    print(f"实时报告服务已启动：http://{args.host}:{args.port}{duanyan_url}")
+    print(f"世赛 UI：http://{args.host}:{args.port}{worldskills_url}")
     print(f"报告数据文件：{state.report_path}")
     try:
         server.serve_forever()

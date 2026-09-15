@@ -27,8 +27,12 @@
   --error: #b32222;
   --error-bg: #fdecec;
   --radius: 14px;
-  --page-max: 1520px;
-  --page-pad: 56px;
+  --canvas-width: 1920px;
+  --canvas-height: 1080px;
+  --canvas-gutter: 24px;
+  --page-pad: 32px;
+  --content-width: 1856px;
+  --live-row: 768px;
   --shadow: 0 12px 32px rgba(15, 55, 120, 0.08);
   --focus: 0 0 0 3px rgba(0, 86, 210, 0.28);
   --grad-blue: linear-gradient(135deg, #2f80ff 0%, #0056d2 58%, #083d8a 100%);
@@ -52,7 +56,10 @@ html::-webkit-scrollbar-thumb {
 html::-webkit-scrollbar-thumb:hover { background: #9cc4f4; }
 body {
   margin: 0;
+  min-width: 320px;
   min-height: 100vh;
+  overflow-x: hidden;
+  overflow-y: auto;
   color: var(--ink);
   background:
     radial-gradient(1200px 420px at 88% -8%, rgba(47, 128, 255, 0.14), transparent 58%),
@@ -63,6 +70,26 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 body.locked { overflow: hidden; }
+.canvas-host {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  width: 100vw;
+  height: calc(var(--canvas-height) * var(--canvas-scale, 1) + 24px);
+  min-height: 100vh;
+  padding-top: 12px;
+  overflow: hidden;
+}
+.page-canvas {
+  width: var(--canvas-width);
+  height: var(--canvas-height);
+  flex: 0 0 var(--canvas-width);
+  overflow: hidden;
+  transform: scale(var(--canvas-scale, 1));
+  transform-origin: top center;
+  will-change: transform;
+}
 button { font: inherit; color: inherit; cursor: pointer; }
 button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(--focus); }
 [hidden] { display: none !important; }
@@ -79,9 +106,11 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
 
 .course-banner {
   position: relative;
+  width: var(--canvas-width);
+  height: 180px;
+  margin: 0;
   overflow: hidden;
   color: #fff;
-  min-height: 360px;
   background:
     radial-gradient(720px 280px at 12% 118%, rgba(255, 178, 90, 0.22), transparent 58%),
     linear-gradient(118deg, #1468c8 0%, #1e7ae8 42%, #4aa3ff 76%, #7ec4ff 100%);
@@ -126,11 +155,11 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
   z-index: 1;
   display: flex;
   flex-direction: column;
-  gap: 96px;
-  min-height: 436px;
-  max-width: none;
+  gap: 12px;
+  width: var(--canvas-width);
+  height: 180px;
   margin: 0;
-  padding: 28px var(--page-pad) 52px;
+  padding: 14px var(--page-pad) 16px;
 }
 .banner-top {
   display: flex;
@@ -159,7 +188,7 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
   display: block;
   max-width: 960px;
   flex: 1;
-  padding-top: 24px;
+  padding-top: 0;
 }
 .crumbs {
   margin: 0 auto 0 0;
@@ -168,9 +197,9 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
 }
 .crumbs span { margin: 0 6px; opacity: 0.6; }
 .course-banner h1 {
-  margin: 0 0 14px;
+  margin: 0 0 6px;
   max-width: 960px;
-  font-size: 43px;
+  font-size: 31px;
   font-weight: 700;
   line-height: 1.18;
   letter-spacing: -0.03em;
@@ -180,42 +209,42 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
   max-width: 760px;
   margin: 0;
   color: rgba(255, 255, 255, 0.82);
-  font-size: 17px;
+  font-size: 14px;
 }
 .banner-meta {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-top: 22px;
+  margin-top: 8px;
 }
 .banner-meta span {
-  padding: 6px 12px;
+  padding: 4px 10px;
   color: #fff;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.08));
   border: 1px solid rgba(255, 255, 255, 0.22);
   border-radius: 999px;
-  font-size: 13px;
+  font-size: 12px;
 }
 .shell {
-  width: 100%;
-  max-width: none;
+  width: var(--canvas-width);
+  height: 900px;
   margin: 0;
-  padding: 28px var(--page-pad) 72px;
+  padding: 12px var(--page-pad) 10px;
 }
 
 .metrics {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 18px;
-  margin: 0 0 20px;
+  gap: 12px;
+  margin: 0 0 10px;
 }
 .metric {
   position: relative;
   min-width: 0;
   overflow: hidden;
   isolation: isolate;
-  min-height: 118px;
-  padding: 22px 22px 20px;
+  min-height: 70px;
+  padding: 10px 16px;
   background: rgba(255, 255, 255, 0.62);
   border: 1px solid rgba(255, 255, 255, 0.8);
   border-radius: var(--radius);
@@ -240,10 +269,10 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
 .metric:nth-child(5)::after { background: linear-gradient(180deg, transparent, rgba(255, 122, 60, 0.18)); }
 .metric-label,
 .metric-value { position: relative; z-index: 1; color: #333333; }
-.metric-label { font-size: 13px; }
+.metric-label { font-size: 12px; }
 .metric-value {
-  margin-top: 8px;
-  font-size: 22px;
+  margin-top: 4px;
+  font-size: 18px;
   font-weight: 700;
   line-height: 1.3;
   overflow-wrap: anywhere;
@@ -254,22 +283,21 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
 }
 
 .live-layout {
-  --live-row: clamp(780px, calc(100dvh - 220px), 960px);
   display: grid;
-  grid-template-columns: minmax(220px, 280px) minmax(320px, 1fr) minmax(0, 1.15fr);
+  grid-template-columns: 220px 400px 1188px;
   grid-template-rows: var(--live-row);
   gap: 24px;
   align-items: stretch;
   height: var(--live-row);
 }
 .live-layout.awaiting-start {
-  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+  grid-template-columns: 220px 1612px;
 }
 .live-layout.timeline-collapsed:not(.awaiting-start) {
-  grid-template-columns: minmax(320px, 1fr) minmax(0, 1.15fr);
+  grid-template-columns: 440px 1392px;
 }
 .live-layout.timeline-collapsed.awaiting-start {
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: 1856px;
 }
 .live-layout.timeline-collapsed .course-column {
   display: none;
@@ -351,9 +379,11 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
 }
 .video-slot {
   position: relative;
-  flex: 1 1 auto;
-  width: 100%;
-  min-height: 180px;
+  flex: 0 0 auto;
+  align-self: center;
+  width: 250px;
+  height: 375px;
+  min-height: 375px;
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 12px;
@@ -391,6 +421,7 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
 }
 .video-placeholder-title { font-size: 18px; font-weight: 700; }
 .video-placeholder-note { color: rgba(255, 255, 255, 0.78); font-size: 13px; }
+.webrtc-source-video { position: fixed; left: -4px; bottom: -4px; width: 2px; height: 2px; opacity: .001; pointer-events: none; }
 .live-controls {
   display: flex;
   flex-wrap: wrap;
@@ -706,9 +737,9 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
 .control.primary:hover { color: #fff; background: linear-gradient(135deg, #4a90ff, #004bb8); border-color: transparent; }
 
 .cards {
-  display: grid;
-  grid-template-columns: 1fr;
-  grid-template-rows: minmax(0, 1fr);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
   flex: 1;
   gap: 22px;
   min-height: 0;
@@ -716,7 +747,7 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
   overflow-y: auto;
   overflow-x: hidden;
   padding: 3px 6px 8px 2px;
-  scroll-padding-block: 32vh;
+  scroll-padding-block: 260px;
   scrollbar-width: thin;
   scrollbar-color: #b7d4f8 #eef5ff;
 }
@@ -771,24 +802,39 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
 }
 .item-card {
   position: relative;
+  flex: 0 0 auto;
+  height: auto;
   min-width: 0;
-  padding: 22px 24px;
-  background: linear-gradient(180deg, #ffffff, #f8fbff);
+  padding: 0;
+  overflow: hidden;
+  background: #ffffff;
   border: 1px solid var(--line);
-  border-radius: var(--radius);
-  box-shadow: 0 1px 2px rgba(15, 55, 120, 0.04);
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(15, 55, 120, 0.06);
   transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
 }
+.item-card::before {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 4px;
+  background: #c7d3e3;
+  content: "";
+}
 .item-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow);
+  transform: translateY(-1px);
+  border-color: #c3d4eb;
+  box-shadow: 0 12px 28px rgba(15, 55, 120, 0.10);
 }
 .item-card.current {
-  border-color: #8bb6ff;
-  background: linear-gradient(180deg, #f4f8ff, #ffffff);
-  box-shadow: 0 10px 24px rgba(0, 86, 210, 0.12);
+  border-color: #8ab5ed;
+  background: #ffffff;
+  box-shadow: 0 12px 30px rgba(0, 86, 210, 0.14);
 }
+.item-card.current::before { background: var(--blue); }
 .item-card.review { background: #fffaf2; border-color: #efd39a; }
+.item-card.review::before { background: var(--warning); }
 .item-card.completion-focus {
   border-color: var(--blue);
   box-shadow: 0 0 0 3px var(--blue-soft), var(--shadow);
@@ -798,18 +844,31 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: none; }
 }
-.card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 22px 16px 24px;
+  background: linear-gradient(180deg, #fbfdff 0%, #ffffff 100%);
+  border-bottom: 1px solid #edf1f7;
+}
 .card-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 6px; }
 .item-id { display: flex; align-items: center; gap: 10px; }
 .item-no {
-  padding: 4px 8px;
-  color: var(--blue);
-  background: var(--blue-soft);
-  border-radius: 4px;
-  font-size: 13px;
-  font-weight: 700;
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  color: #ffffff;
+  background: var(--grad-blue);
+  border-radius: 8px;
+  box-shadow: 0 5px 12px rgba(0, 86, 210, 0.18);
+  font-size: 15px;
+  font-weight: 750;
 }
-.item-title { font-size: 17px; font-weight: 700; }
+.item-title { color: #202b3a; font-size: 18px; font-weight: 750; line-height: 1.3; }
 .difficulty {
   display: inline-block;
   margin-top: 6px;
@@ -823,8 +882,8 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
 .difficulty.medium { color: var(--warning); background: var(--warning-bg); }
 .difficulty.easy { color: var(--success); background: var(--success-bg); }
 .status-badge, .score-badge {
-  padding: 3px 8px;
-  border-radius: 99px;
+  padding: 4px 9px;
+  border-radius: 6px;
   font-size: 12px;
   font-weight: 650;
   white-space: nowrap;
@@ -834,24 +893,82 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
 .status-badge.done { color: var(--success); background: var(--success-bg); }
 .status-badge.busy, .status-badge.located { color: var(--blue); background: var(--blue-soft); }
 .status-badge.review { color: var(--warning); background: var(--warning-bg); }
-.score-badge { color: var(--success); background: var(--success-bg); }
+.score-badge { color: #ffffff; background: var(--success); box-shadow: 0 3px 8px rgba(30, 122, 70, 0.14); }
 .score-badge.zero { color: var(--error); background: var(--error-bg); }
-.target { margin: 14px 0; color: var(--muted); font-size: 14px; line-height: 1.6; }
-.target-label { display: block; margin-bottom: 4px; color: var(--blue); font-size: 12px; font-weight: 700; }
+.target {
+  margin: 16px 22px 0 24px;
+  padding: 12px 14px;
+  color: #3f4c5e;
+  background: #f6f9fe;
+  border: 1px solid #dfeaf8;
+  border-left: 3px solid var(--blue);
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1.65;
+}
+.target p { margin: 4px 0 0; }
+.target-label { display: block; color: var(--blue); font-size: 11px; font-weight: 750; letter-spacing: .08em; }
 .binding-line {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 12px 22px 0 24px;
+}
+.binding-meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  color: var(--muted);
+  background: #f8fafc;
+  border: 1px solid #e9eef5;
+  border-radius: 7px;
+  font-size: 12px;
+}
+.binding-meta strong { color: var(--ink); font-size: 13px; font-weight: 700; }
+.card-footer {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding-top: 10px;
-  color: var(--muted);
-  border-top: 1px solid var(--line);
-  font-size: 13px;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 14px;
+  padding: 13px 22px 15px 24px;
+  background: #fbfcfe;
+  border-top: 1px solid #edf1f7;
 }
-.binding-line strong { color: var(--ink); font-weight: 650; }
-.card-footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 12px; }
-.detail-trigger { color: var(--blue); background: var(--blue-soft); border-color: #c5d8f7; }
+.card-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  align-items: start;
+  gap: 18px;
+  padding: 16px 22px 0 24px;
+}
+.card-summary, .card-evidence { min-width: 0; }
+.card-evidence { display: flex; justify-content: center; }
+.card-body .target,
+.card-body .binding-line,
+.card-body .analysis-box,
+.card-body .evidence-box { margin-right: 0; margin-left: 0; }
+.card-body .target { margin-top: 0; }
+.card-body .evidence-box { width: 100%; margin-top: 0; }
+.detail-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 7px 12px;
+  color: #ffffff;
+  background: var(--blue);
+  border-color: var(--blue);
+  border-radius: 7px;
+  box-shadow: 0 4px 10px rgba(0, 86, 210, 0.14);
+  font-weight: 650;
+}
+.detail-trigger:hover { color: #ffffff; background: var(--blue-hover); border-color: var(--blue-hover); }
+.detail-trigger svg { width: 14px; height: 14px; }
 
-.evidence-box { margin-top: 12px; padding: 10px; background: var(--page); border-radius: 4px; }
+.evidence-box { margin: 14px 22px 0 24px; padding: 12px; background: #f4f7fb; border: 1px solid #e4eaf2; border-radius: 9px; }
 .evidence-box.busy {
   min-height: 72px;
   display: grid;
@@ -887,31 +1004,53 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
   text-align: left;
 }
 .evidence-thumb .confidence { float: right; color: #cfe0ff; }
-.evidence-video-wrap {
 .follow-chip {
-  align-self: flex-start;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
   margin: 0 0 10px;
-  padding: 9px 14px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--blue-soft);
-  color: var(--blue);
+  padding: 10px 12px;
+  border: 1px solid #bcd4f5;
+  border-radius: 10px;
+  background: rgba(244, 249, 255, .97);
+  color: #24405f;
+  box-shadow: 0 8px 22px rgba(0, 86, 210, .10);
+  backdrop-filter: blur(10px);
   font: inherit;
-  font-size: 12px;
+  text-align: left;
   cursor: pointer;
 }
 .follow-chip[hidden] { display: none; }
-.follow-chip:hover { border-color: var(--blue); color: var(--blue-hover); }
+.follow-chip:hover { border-color: #84afe8; background: #ffffff; }
+.follow-chip-icon { display: grid; place-items: center; width: 34px; height: 34px; color: #ffffff; background: var(--success); border-radius: 50%; font-size: 16px; font-weight: 750; }
+.follow-chip-copy { display: grid; min-width: 0; }
+.follow-chip-copy strong { overflow: hidden; color: #233850; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+.follow-chip-copy small { margin-top: 1px; color: var(--muted); font-size: 11px; }
+.follow-chip-action { display: inline-flex; align-items: center; gap: 5px; color: var(--blue); font-size: 12px; font-weight: 750; white-space: nowrap; }
+.follow-chip-action svg { width: 13px; height: 13px; }
 .evidence-video-wrap {
   position: relative;
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: #07172d;
-  aspect-ratio: 16 / 9;
+  background:
+    radial-gradient(circle at 50% 42%, #193d65 0%, transparent 58%),
+    linear-gradient(160deg, #0d2848 0%, #07172d 72%);
+  aspect-ratio: 9 / 16;
 }
+.evidence-video-backdrop,
+.evidence-video-shade { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.evidence-video-backdrop { z-index: 0; opacity: 0; transition: opacity 180ms ease; }
+.evidence-video-backdrop[data-state="ready"] { opacity: 1; }
+.evidence-video-shade { z-index: 1; background: linear-gradient(180deg, rgba(3,14,30,.16), rgba(3,14,30,.36)); }
+.item-card .evidence-video-wrap { width: 240px; max-width: 100%; margin: 0 auto; }
 .lightbox .evidence-video-wrap { width: 100%; align-self: center; }
-.evidence-video { display: block; width: 100%; height: 100%; object-fit: contain; background: #07172d; }
+.evidence-video { position: relative; z-index: 2; display: block; width: 100%; height: 100%; object-fit: contain; background: transparent; }
 .video-playback-status:not(:empty) {
   position: absolute;
   left: 10px;
@@ -924,15 +1063,38 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
   text-align: center;
   font-size: 11px;
   pointer-events: none;
+  z-index: 3;
 }
 .evidence-video-meta {
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  margin-top: 8px;
+  gap: 12px;
+  margin-top: 10px;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
 }
+.evidence-video-spec { display: grid; min-width: 0; }
+.evidence-video-spec strong { color: #35465a; font-size: 12px; }
+.evidence-video-spec small { margin-top: 1px; overflow: hidden; color: var(--muted); text-overflow: ellipsis; white-space: nowrap; }
+.evidence-expand {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 6px 10px;
+  color: var(--blue);
+  background: #ffffff;
+  border: 1px solid #bcd4f5;
+  border-radius: 7px;
+  box-shadow: 0 3px 8px rgba(0, 86, 210, .08);
+  cursor: zoom-in;
+  font-size: 12px;
+  font-weight: 700;
+}
+.evidence-expand:hover { color: #ffffff; background: var(--blue); border-color: var(--blue); }
+.evidence-expand svg { width: 14px; height: 14px; }
 .video-service-note {
   display: grid;
   place-items: center;
@@ -955,9 +1117,10 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
 }
 .sequence span.on { color: var(--blue); background: var(--blue-soft); border-color: #c5d8f7; }
 .analysis-box {
-  margin-top: 12px;
+  margin: 12px 22px 0 24px;
   padding: 10px 12px;
   background: linear-gradient(90deg, #e8f1ff, #f7faff);
+  border-radius: 0 8px 8px 0;
   border-left: 3px solid var(--blue);
 }
 .analysis-title { margin-bottom: 8px; color: var(--blue); font-size: 12px; font-weight: 700; }
@@ -970,19 +1133,25 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
 .drawer-backdrop, .lightbox {
   position: fixed;
   inset: 0;
-  z-index: 30;
-  background: rgba(0, 0, 0, 0.45);
+  isolation: isolate;
+  background: rgba(12, 31, 56, 0.58);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }
+.drawer-backdrop { z-index: 100; }
+.lightbox { z-index: 120; }
 .drawer-backdrop[hidden], .lightbox[hidden], .hover-preview[hidden] { display: none; }
 .detail-drawer {
-  position: absolute;
+  position: fixed;
   top: 0; right: 0;
   display: flex;
   flex-direction: column;
-  width: min(640px, 92vw);
-  height: 100%;
+  width: min(680px, 94vw);
+  height: 100dvh;
+  overflow: hidden;
   background: #fff;
-  box-shadow: -8px 0 24px rgba(0, 0, 0, 0.12);
+  border-left: 1px solid rgba(255, 255, 255, .55);
+  box-shadow: -18px 0 55px rgba(6, 24, 48, 0.26);
 }
 .drawer-head {
   display: flex;
@@ -1004,7 +1173,7 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
   border-radius: 4px;
   cursor: pointer;
 }
-.drawer-body { overflow: auto; padding: 18px 22px 32px; }
+.drawer-body { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; padding: 18px 22px 32px; }
 .drawer-status { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
 .drawer-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 16px; }
 .drawer-stat { padding: 10px; background: var(--page); border-radius: 4px; }
@@ -1046,6 +1215,21 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
   cursor: zoom-in;
   font-size: 12px;
 }
+.evidence-expand.evidence-ref {
+  display: inline-flex;
+  padding: 6px 10px;
+  color: var(--blue);
+  background: #ffffff;
+  border: 1px solid #bcd4f5;
+  border-radius: 7px;
+  box-shadow: 0 3px 8px rgba(0, 86, 210, .08);
+  font-weight: 700;
+}
+.evidence-expand.evidence-ref:hover {
+  color: #ffffff;
+  background: var(--blue);
+  border-color: var(--blue);
+}
 .risk-list { margin: 0; padding-left: 18px; color: var(--muted); font-size: 13px; }
 .unresolved { padding: 10px; color: #7a5200; background: var(--warning-bg); border-radius: 4px; font-size: 13px; }
 .high-level { padding: 10px; color: var(--muted); background: var(--success-bg); border-left: 3px solid var(--success); font-size: 14px; }
@@ -1063,28 +1247,35 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
 .hover-preview img { display: block; width: 100%; height: 155px; object-fit: contain; background: var(--page); }
 .hover-preview .preview-placeholder { display: grid; place-items: center; height: 155px; color: var(--faint); background: var(--page); }
 .preview-meta { display: flex; justify-content: space-between; margin-top: 6px; color: var(--muted); font-size: 12px; }
-.lightbox { z-index: 80; display: grid; place-items: center; padding: 28px; }
+.lightbox { display: grid; place-items: center; padding: clamp(12px, 3vw, 32px); }
 .lightbox-panel {
   position: relative;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
   width: min(1120px, 96vw);
-  height: min(86vh, 820px);
-  padding: 16px;
+  height: min(88dvh, 820px);
+  min-height: 0;
+  padding: 18px;
+  overflow: hidden;
   background: #fff;
+  border: 1px solid rgba(255, 255, 255, .65);
+  border-radius: 14px;
+  box-shadow: 0 28px 80px rgba(6, 24, 48, .32);
 }
-.lightbox-close { position: absolute; top: 12px; right: 12px; z-index: 2; }
+.lightbox-close { position: absolute; top: 12px; right: 12px; z-index: 2; border-radius: 8px; box-shadow: 0 4px 12px rgba(6, 24, 48, .12); }
+#lightbox-media { display: grid !important; min-width: 0; min-height: 0; place-items: center; overflow: hidden; border-radius: 9px; background: #07172d; }
+.lightbox #lightbox-media .evidence-video-wrap { width: 100%; height: 100%; aspect-ratio: auto; border: 0; border-radius: 0; }
 .lightbox-image { flex: 1; width: 100%; min-height: 0; object-fit: contain; background: var(--page); }
-.lightbox-video { flex: 1; width: 100%; min-height: 0; object-fit: contain; background: #07172d; }
+.lightbox-video { display: block; width: 100%; height: 100%; min-height: 0; object-fit: contain; background: #07172d; }
 .lightbox-placeholder { flex: 1; display: grid; place-items: center; color: var(--faint); background: var(--page); }
-.lightbox-meta { padding-top: 10px; color: var(--muted); font-size: 13px; }
+.lightbox-meta { min-height: 32px; padding: 10px 4px 0; color: var(--muted); font-size: 13px; }
 
 .footer {
-  margin-top: 40px;
-  padding-top: 24px;
+  margin-top: 4px;
+  padding-top: 4px;
   color: var(--muted);
   border-top: 1px solid var(--line);
-  font-size: 13px;
+  font-size: 11px;
   text-align: center;
 }
 .toast {
@@ -1104,6 +1295,183 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
 }
 .toast.show { opacity: 1; transform: none; }
 
+/* Video-only WorldSkills judging console. Image reports keep the course shell. */
+.mode-video {
+  min-width: 1760px;
+  overflow: auto;
+  background: #e8eef5;
+}
+.mode-video .arena-shell {
+  width: 1760px;
+  min-height: 1080px;
+  margin: 0 auto;
+  padding: 8px 0 0;
+}
+.mode-video .arena-header {
+  position: relative;
+  display: grid;
+  grid-template-columns: 520px minmax(0, 1fr) 340px;
+  align-items: center;
+  gap: 22px;
+  height: 120px;
+  padding: 14px 22px;
+  overflow: hidden;
+  color: #ffffff;
+  background:
+    radial-gradient(720px 280px at 12% 118%, rgba(255, 178, 90, .22), transparent 58%),
+    linear-gradient(118deg, #1468c8 0%, #1e7ae8 42%, #4aa3ff 76%, #7ec4ff 100%);
+  border: 1px solid rgba(255,255,255,.16);
+  border-radius: 14px;
+  box-shadow: 0 14px 34px rgba(5, 40, 85, .18);
+}
+.mode-video .arena-header-art { z-index: 0; opacity: .9; }
+.mode-video .arena-header-art .banner-ring { top: -116px; right: 7%; width: 330px; height: 330px; }
+.mode-video .arena-header-art .banner-disc { right: 21%; bottom: -136px; width: 250px; height: 250px; }
+.mode-video .arena-header-art .banner-slash { right: -3%; width: 48%; }
+.mode-video .arena-header > :not(.arena-header-art) { position: relative; z-index: 1; }
+.mode-video .arena-brand { display: flex; flex-direction: column; align-items: flex-start; gap: 7px; min-width: 0; }
+.mode-video .arena-logo { display: block; width: 290px; max-height: 34px; object-fit: contain; object-position: left center; }
+.mode-video .arena-title { min-width: 0; }
+.mode-video .arena-title span { display: block; color: rgba(255,255,255,.68); font-size: 10px; font-weight: 700; letter-spacing: .12em; }
+.mode-video .arena-title h1 { margin: 2px 0 0; overflow: hidden; font-size: 22px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; text-shadow: 0 8px 24px rgba(0,20,60,.24); }
+.mode-video .arena-status-grid { display: grid; grid-template-columns: 1.25fr .75fr .75fr .65fr 1.3fr; gap: 8px; min-width: 0; }
+.mode-video .arena-status { min-width: 0; padding: 8px 10px; background: rgba(255,255,255,.10); border: 1px solid rgba(255,255,255,.14); border-radius: 8px; }
+.mode-video .arena-status span { display: block; color: rgba(255,255,255,.62); font-size: 10px; }
+.mode-video .arena-status strong { display: block; margin-top: 2px; overflow: hidden; color: #ffffff; font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }
+.mode-video .arena-actions { display: grid; grid-template-columns: minmax(0, 1fr) 90px 72px; align-items: center; gap: 8px; }
+.mode-video .arena-connection { display: flex; align-items: center; gap: 8px; min-width: 0; color: rgba(255,255,255,.88); font-size: 12px; }
+.mode-video .arena-connection span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mode-video .arena-actions .control { min-height: 36px; padding: 7px 10px; color: #ffffff; background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.28); }
+.mode-video .arena-actions .control.primary { background: #ffffff; color: #0753a4; box-shadow: none; }
+.mode-video .arena-actions .control:hover { color: #ffffff; background: rgba(255,255,255,.22); }
+.mode-video .arena-actions .control.primary:hover { color: #073b78; background: #f2f7ff; }
+
+.mode-video .arena-main,
+.mode-video .arena-main.awaiting-start,
+.mode-video .arena-main.timeline-collapsed,
+.mode-video .arena-main.timeline-collapsed.awaiting-start,
+.mode-video .arena-main.timeline-collapsed:not(.awaiting-start) {
+  display: grid;
+  grid-template-columns: 216px 456px 1040px;
+  grid-template-rows: 940px;
+  gap: 24px;
+  width: 1760px;
+  height: 940px;
+  margin-top: 12px;
+}
+.mode-video .arena-main.awaiting-start .results-column { display: flex; }
+.mode-video .arena-rail,
+.mode-video .arena-live,
+.mode-video .arena-results {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  height: 940px;
+  overflow: hidden;
+  background: #ffffff;
+  border: 1px solid #dce5f0;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(15,55,120,.07);
+}
+.mode-video .arena-panel-title { display: flex; align-items: baseline; justify-content: space-between; flex: 0 0 auto; padding: 14px 16px 12px; border-bottom: 1px solid #e8edf4; }
+.mode-video .arena-panel-title span { color: #23344a; font-size: 15px; font-weight: 750; }
+.mode-video .arena-panel-title small { color: #7a899b; font-size: 10px; }
+
+.mode-video .arena-rail { padding: 0; }
+.mode-video .arena-rail .timeline-list { flex: 1; min-height: 0; overflow-y: auto; padding: 8px; }
+.mode-video .arena-rail .timeline-btn { grid-template-columns: 32px minmax(0, 1fr) auto; gap: 7px; padding: 9px 7px; border-radius: 7px; }
+.mode-video .arena-rail .timeline-no { width: 26px; height: 26px; }
+.mode-video .arena-rail .timeline-name { font-size: 12px; }
+.mode-video .arena-rail .timeline-state { font-size: 10px; }
+
+.mode-video .arena-live { align-items: center; padding-bottom: 12px; }
+.mode-video .arena-live .arena-panel-title { align-self: stretch; }
+.mode-video .arena-live .video-slot { flex: 0 0 auto; width: 408px; height: 612px; min-height: 612px; margin: 12px auto 0; aspect-ratio: 2 / 3; }
+.mode-video .arena-live .workflow-strip { display: grid; grid-template-columns: auto minmax(0,1fr); gap: 7px 10px; width: 408px; margin: 10px 0 0; padding: 9px 10px; border-radius: 9px; }
+.mode-video .arena-live .workflow-track { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 3px; overflow: visible; }
+.mode-video .arena-live .workflow-stage { min-width: 0; padding: 3px 2px; font-size: 10px; }
+.mode-video .arena-live .workflow-stage:not(:last-child)::after { display: none; }
+.mode-video .arena-live .workflow-state { grid-column: 1 / -1; min-width: 0; text-align: right; font-size: 10px; }
+.mode-video .arena-live .hero { width: 408px; margin: 10px 0 0; padding: 10px 12px; grid-template-columns: minmax(0,1fr) 105px; gap: 8px 12px; background: #f7faff; border: 1px solid #e2eaf4; border-radius: 9px; box-shadow: none; }
+.mode-video .arena-live .hero h2 { margin: 3px 0 4px; font-size: 17px; }
+.mode-video .arena-live .hero p { max-height: 42px; overflow: hidden; font-size: 11px; line-height: 1.45; }
+.mode-video .arena-live .hero-side { text-align: left; }
+.mode-video .arena-live .stage-value { font-size: 16px; }
+.mode-video .arena-live .progress { height: 6px; margin-top: 6px; }
+.mode-video .arena-live .stage-toolbar { width: 408px; margin: 8px 0 0; }
+.mode-video .arena-live .filters { width: 100%; display: grid; grid-template-columns: repeat(4,1fr); gap: 5px; }
+.mode-video .arena-live .chip { padding: 5px 4px; font-size: 10px; }
+
+.mode-video .arena-results { padding: 0; }
+.mode-video .arena-results .follow-chip { flex: 0 0 auto; width: auto; margin: 10px 12px 0; }
+.mode-video .arena-results .cards { flex: 1; min-height: 0; height: auto; padding: 90px 14px; scroll-padding-block: 50%; }
+.mode-video .arena-results .item-card { flex: 0 0 auto; }
+.mode-video .arena-results .card-head { padding: 14px 18px 12px 20px; }
+.mode-video .arena-results .item-no { width: 34px; height: 34px; }
+.mode-video .arena-results .item-title { font-size: 17px; }
+.mode-video .arena-results .card-body { grid-template-columns: minmax(0,1fr) 286px; align-items: stretch; gap: 18px; padding: 12px 18px 0 20px; }
+.mode-video .arena-results .card-summary { display: flex; flex-direction: column; align-self: stretch; }
+.mode-video .arena-results .target { padding: 10px 12px; font-size: 12px; line-height: 1.5; }
+.mode-video .arena-results .binding-line { gap: 6px; margin-top: 8px; }
+.mode-video .arena-results .binding-meta { padding: 6px 8px; font-size: 11px; }
+.mode-video .arena-results .analysis-box {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  margin-top: 8px;
+  padding: 12px 14px;
+  background:
+    radial-gradient(circle at 92% 8%, rgba(47,128,255,.10), transparent 38%),
+    linear-gradient(145deg, #edf5ff 0%, #f7faff 100%);
+  border: 1px solid #d8e6f7;
+  border-left: 3px solid #1768c5;
+  border-radius: 8px;
+}
+.mode-video .arena-results .analysis-title { display: flex; align-items: center; gap: 9px; margin: 0; color: #075cb9; font-size: 11px; letter-spacing: .04em; }
+.mode-video .arena-results .analysis-title::after { height: 1px; flex: 1; background: linear-gradient(90deg, #b8d2ef, transparent); content: ""; }
+.mode-video .arena-results .analysis-columns { display: grid; grid-template-columns: minmax(0,1.12fr) minmax(0,.88fr); flex: 1; gap: 14px; min-height: 0; margin-top: 8px; }
+.mode-video .arena-results .analysis-tools-panel,
+.mode-video .arena-results .analysis-facts { display: flex; flex-direction: column; min-height: 0; padding: 7px 4px; }
+.mode-video .arena-results .analysis-facts { padding-left: 15px; border-left: 1px solid #cfdef0; }
+.mode-video .arena-results .analysis-subtitle { flex: 0 0 auto; color: #6f8198; font-size: 9px; font-weight: 750; letter-spacing: .10em; }
+.mode-video .arena-results .analysis-steps { position: relative; display: flex; flex: 1; flex-direction: column; justify-content: space-evenly; gap: 6px; min-height: 0; padding: 6px 0 2px; }
+.mode-video .arena-results .analysis-steps::before { position: absolute; top: 26px; bottom: 26px; left: 14px; width: 1px; background: #b8d2ef; content: ""; }
+.mode-video .arena-results .analysis-step { position: relative; display: grid; grid-template-columns: 29px minmax(0,1fr); align-items: center; gap: 9px; min-height: 38px; padding: 5px 8px 5px 0; color: #34465c; }
+.mode-video .arena-results .analysis-step i { z-index: 1; display: grid; place-items: center; width: 29px; height: 29px; color: #ffffff; background: linear-gradient(145deg, #2f80df, #0754a8); border: 3px solid #edf5ff; border-radius: 50%; box-shadow: 0 0 0 1px #9fc3eb; font-size: 8px; font-style: normal; font-weight: 700; }
+.mode-video .arena-results .analysis-step b { font-size: 10px; font-weight: 650; line-height: 1.35; }
+.mode-video .arena-results .analysis-stat-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 7px; margin: 7px 0 13px; }
+.mode-video .arena-results .analysis-stat-grid > span { padding: 9px; background: rgba(255,255,255,.68); border-top: 2px solid #77abe4; border-radius: 3px 3px 6px 6px; }
+.mode-video .arena-results .analysis-stat-grid small { display: block; color: #74849a; font-size: 9px; }
+.mode-video .arena-results .analysis-stat-grid strong { display: block; margin-top: 2px; color: #1768c5; font-size: 19px; }
+.mode-video .arena-results .analysis-feature-list { display: flex; flex: 1; flex-direction: column; justify-content: space-evenly; gap: 7px; min-height: 0; padding-top: 7px; }
+.mode-video .arena-results .analysis-feature { position: relative; display: flex; align-items: center; min-height: 31px; padding: 6px 8px 6px 17px; color: #405269; background: rgba(255,255,255,.58); border-radius: 5px; font-size: 10px; line-height: 1.35; }
+.mode-video .arena-results .analysis-feature::before { position: absolute; left: 7px; width: 4px; height: 4px; background: #2f80df; border-radius: 50%; content: ""; }
+.mode-video .arena-results .tool-chip { font-size: 10px; }
+.mode-video .arena-results .profile-line { margin-top: 5px; font-size: 10px; }
+.mode-video .arena-results .evidence-box { margin: 0; padding: 9px; }
+.mode-video .arena-results .slot-row { max-height: 44px; overflow: hidden; margin-bottom: 7px; }
+.mode-video .arena-results .slot { font-size: 9px; }
+.mode-video .arena-results .evidence-video-wrap { width: 250px; height: 444px; aspect-ratio: 9 / 16; }
+.mode-video .arena-results .evidence-video-meta { margin-top: 7px; }
+.mode-video .arena-results .evidence-video-spec small { font-size: 9px; }
+.mode-video .arena-results .explain { max-height: 34px; overflow: hidden; font-size: 10px; }
+.mode-video .arena-results .card-footer { margin-top: 10px; padding: 10px 18px 11px 20px; }
+.mode-video .arena-results .detail-trigger { min-height: 32px; padding: 6px 10px; font-size: 11px; }
+.mode-video .footer { display: none; }
+
+.mode-video .course-banner,
+.mode-video .metrics,
+.mode-video .timeline-toggle,
+.mode-video .course-fab,
+.mode-video .panel-head,
+.mode-video .live-controls { display: none !important; }
+
+.mode-video .drawer-backdrop,
+.mode-video .lightbox,
+.mode-video .toast { font-size: 16px; }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.001ms !important;
@@ -1116,68 +1484,12 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
   .workflow-track { scroll-behavior: auto; }
   .workflow-stage .workflow-light { transition: none; }
 }
-@media (max-width: 1100px) {
-  :root { --page-pad: 32px; }
-}
-@media (max-width: 1200px) {
-  .live-layout {
-    grid-template-columns: minmax(200px, 240px) minmax(280px, 1fr) minmax(0, 1fr);
-  }
-  .live-layout.awaiting-start {
-    grid-template-columns: minmax(200px, 240px) minmax(0, 1fr);
-  }
-  .live-layout.timeline-collapsed:not(.awaiting-start) {
-    grid-template-columns: minmax(280px, 1fr) minmax(0, 1fr);
-  }
-}
-@media (max-width: 1050px) {
-  .live-layout,
-  .live-layout.timeline-collapsed,
-  .live-layout.awaiting-start,
-  .live-layout.timeline-collapsed.awaiting-start,
-  .live-layout.timeline-collapsed:not(.awaiting-start) {
-    grid-template-columns: 1fr;
-    grid-template-rows: none;
-    height: auto;
-    min-height: 0;
-  }
-  .course-column,
-  .stage-column,
-  .results-column {
-    height: auto;
-    overflow: visible;
-  }
-  .stage-column .stage-panel,
-  .video-slot { min-height: 220px; }
-  .timeline { max-height: min(280px, 40vh); }
-  .timeline-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .cards { flex: none; max-height: 62vh; min-height: 220px; }
-}
-@media (max-width: 800px) {
-  .metrics { gap: 10px; }
-  .metric { min-height: 96px; padding: 14px 12px; }
-  .metric-label { font-size: 12px; }
-  .metric-value { font-size: 16px; }
-  .course-banner h1 { font-size: 31px; }
-  .banner-art { display: none; }
-  .hero,
-  .stage-column .hero { grid-template-columns: 1fr; gap: 12px; padding: 16px; }
-  .workflow-strip { align-items: flex-start; flex-direction: column; gap: 7px; }
-  .workflow-track { width: 100%; }
-  .workflow-state { align-self: flex-end; min-width: 0; }
-  .video-placeholder-title { font-size: 15px; }
-}
-@media (max-width: 650px) {
-  .banner-inner, .shell { padding-left: 16px; padding-right: 16px; }
-  .timeline-list { grid-template-columns: 1fr 1fr; }
-  .evidence-grid { grid-template-columns: 1fr 1fr; }
-  .detail-drawer { width: 100%; }
-  .drawer-grid { grid-template-columns: 1fr 1fr; }
-}
 
 </style>
 </head>
 <body>
+<div class="canvas-host" id="canvas-host">
+<div class="page-canvas" id="page-canvas">
 <section class="course-banner" aria-label="课程信息">
   <div class="banner-art" aria-hidden="true">
     <i class="banner-ring"></i>
@@ -1186,9 +1498,9 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
   </div>
   <div class="banner-inner">
     <div class="banner-top">
-      <img class="banner-logo" src="logo.png" alt="上海人工智能实验室 华东师范大学">
+      <img class="banner-logo" src="../logo.png" alt="上海人工智能实验室 华东师范大学">
       <div class="crumbs">智能实训 <span>/</span> 发动机拆装 <span>/</span> 实时评测</div>
-      <div class="live-pill"><i class="pulse"></i><span id="connection">视频流已连接</span></div>
+      <div class="live-pill"><i class="pulse"></i><span id="connection">等待视频接入</span></div>
     </div>
     <div class="banner-body">
       <h1 id="title">发动机气缸盖拆装智能实训分析</h1>
@@ -1285,6 +1597,8 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
   </button>
   <footer class="footer" id="footer">本页面展示当前视频流的实时分析过程。证据生成后显示对应核验信息，低置信度结果保留待人工确认。</footer>
 </div>
+</div>
+</div>
 <div class="toast" id="toast"></div>
 <div class="drawer-backdrop" id="drawer-backdrop" hidden>
   <aside class="detail-drawer" id="detail-drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title">
@@ -1318,16 +1632,21 @@ const terminalStates = new Set(["证据已绑定","已完成评分","待人工�
 const checkLabels = {pending:"待核验",confirmed:"已确认",not_confirmed:"未确认",manual_review:"待人工确认",demo_disabled:"暂不可用"};
 const detailStateLabels = {locked:"等待核验",analyzing:"分析中",unlocked:"已提供逐条结果",unavailable:"详细结果待提供"};
 const evidenceMediaMode = DATA.presentation&&DATA.presentation.evidence_media_mode==="video"?"video":"image";
+const LOCAL_WEBRTC_SAMPLE = "/demo-media/live-input-sample.webm";
 let state = DATA.items.map((item,index)=>({...item,status:displayState(item.binding&&item.binding.state||"待开始"),index,binding:{...(item.binding||{}),evidence:[...((item.binding&&item.binding.evidence)||[])]}}));
-let current = 0, evaluationActive = false, processing = false, pollTimer = null, filter = "all", pending = [], pendingKeys = new Set(), drawerIndex = null, newCardIndexes = new Set();
+let current = 0, activeAnalysisIndex = 0, evaluationActive = false, processing = false, pollTimer = null, filter = "all", pending = [], pendingKeys = new Set(), drawerIndex = null, newCardIndexes = new Set();
 const mockReplay = Array.isArray(DATA.events)&&DATA.events.length>0;
 let followLatest = true, pendingCompletedIndex = null, pendingCompletedCount = 0, scrollSettleTimer = null, programmaticScrollUntil = 0;
 let hoverTimer = null, hoverButton = null;
 let activePlayingVideo = null, pendingAutoplayIndex = null;
 const videoPlaybackPositions = new Map(), userPausedEvidence = new Set();
+const videoBackdropJobs = new Map();
+let liveReceiverPeer = null, liveSenderPeer = null, liveSourceVideo = null, liveRemoteStream = null;
 let focusTransitionToken = 0;
 const $ = id => document.getElementById(id);
 const esc = value => String(value ?? "").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[ch]));
+const DESIGN_CANVAS = {width:1920,height:1080};
+function syncCanvasScale(){const viewport=window.visualViewport||window,viewportWidth=Number(viewport.width)||window.innerWidth,gutter=24,scale=Math.max(.1,(viewportWidth-gutter*2)/DESIGN_CANVAS.width);document.documentElement.style.setProperty("--canvas-scale",String(scale))}
 const WORKFLOW_FALLBACK = {schema:"realtime-workflow-display/v1",cycle_ms:3000,jitter_ratio:.15,stages:[
   {stage_id:"ingest",label:"接入画面",order:0,weight:.10},
   {stage_id:"planning",label:"任务规划",order:1,weight:.15},
@@ -1362,7 +1681,7 @@ function workflowStop(resultState="idle"){
 }
 function workflowStart(itemIndex,totalMs){
   workflowStop();workflowItemIndex=itemIndex;const token=workflowToken,schedule=workflowSchedule(totalMs),reduced=workflowReducedMotion();let index=0;
-  const advance=()=>{if(token!==workflowToken||workflowItemIndex!==itemIndex)return;workflowStageIndex=index;workflowSetVisual(index,"running");const wait=schedule[index];index+=1;if(index<schedule.length)workflowTimer=setTimeout(advance,reduced?Math.min(wait,80):wait);else workflowTimer=setTimeout(()=>{if(token===workflowToken&&workflowItemIndex===itemIndex){workflowStart(itemIndex,totalMs)}},reduced?80:0)};
+  const advance=()=>{if(token!==workflowToken||workflowItemIndex!==itemIndex)return;workflowStageIndex=index;workflowSetVisual(index,"running");const wait=schedule[index];index+=1;if(index<schedule.length)workflowTimer=setTimeout(advance,reduced?Math.min(wait,80):wait);else workflowTimer=setTimeout(()=>{if(token===workflowToken&&workflowItemIndex===itemIndex){workflowStart(itemIndex,totalMs)}},reduced?80:wait)};
   advance();
 }
 function cls(status){return statuses[status]||"pending"}
@@ -1377,7 +1696,7 @@ function renderTimeline(){ $("timeline").innerHTML=state.map((item,i)=>`<button 
 function activeEvidence(item){const binding=item&&item.binding||{};return evidenceMediaMode==="video"?(binding.video_evidence?[binding.video_evidence]:[]):(binding.evidence||[])}
 function evidenceLabel(e){if(e&&e.kind==="video")return e.caption||"视频证据";const stage=e.phase||e.kind||"证据";return e.round?`${e.round} · ${stage}`:stage}
 function evidenceButtonMarkup(item,e,itemIndex){const phase=evidenceLabel(e);const time=e.timestamp?` · ${esc(e.timestamp)}`:"";const confidence=e.confidence!=null?`${Math.round(Number(e.confidence)*100)}%`:"";return `<button class="evidence-thumb" type="button" data-item-index="${itemIndex}" data-evidence-id="${esc(e.evidence_id)}" aria-label="查看${esc(phase)}证据">${e.src?`<img src="${e.src}" alt="${esc(phase)}证据">`:`<span class="empty-note">图像准备中</span>`}<span class="tile-meta">${esc(phase)}${time}<b class="confidence">${confidence}</b></span></button>`}
-function videoEvidenceMarkup(item,itemIndex,compact=false){const video=item.binding&&item.binding.video_evidence;if(!video)return `<div class="empty-note">当前项目仍在等待可用视频证据</div>`;if(location.protocol==="file:")return `<div class="video-service-note">视频证据需要通过本地演示服务查看</div>`;const meta=`${esc(video.caption||"视频证据")} · ${Number(video.width)||960}×${Number(video.height)||540} · ${Number(video.fps)||10}fps`;return `<div class="evidence-video-wrap"><video class="evidence-video" data-evidence-video="true" data-item-index="${itemIndex}" data-evidence-id="${esc(video.evidence_id)}" src="${esc(video.src||"")}" controls muted loop playsinline preload="${itemIndex===current?"metadata":"none"}" aria-label="${esc(video.caption||"视频证据")}"></video><div class="video-playback-status" aria-live="polite"></div></div>${compact?"":`<div class="evidence-video-meta"><span>${meta}</span><button class="evidence-ref" type="button" data-item-index="${itemIndex}" data-evidence-id="${esc(video.evidence_id)}">放大查看</button></div>`}`}
+function videoEvidenceMarkup(item,itemIndex,compact=false){const video=item.binding&&item.binding.video_evidence;if(!video)return `<div class="empty-note">当前项目仍在等待可用视频证据</div>`;if(location.protocol==="file:")return `<div class="video-service-note">视频证据需要通过本地演示服务查看</div>`;const title=esc(video.caption||"视频证据"),spec=`${Number(video.width)||960} × ${Number(video.height)||540} · ${Number(video.fps)||10} fps`;return `<div class="evidence-video-wrap"><canvas class="evidence-video-backdrop" aria-hidden="true"></canvas><div class="evidence-video-shade" aria-hidden="true"></div><video class="evidence-video" data-evidence-video="true" data-item-index="${itemIndex}" data-evidence-id="${esc(video.evidence_id)}" src="${esc(video.src||"")}" controls muted loop playsinline preload="${itemIndex===current?"metadata":"none"}" aria-label="${title}"></video><div class="video-playback-status" aria-live="polite"></div></div>${compact?"":`<div class="evidence-video-meta"><span class="evidence-video-spec"><strong>${title}</strong><small>${spec}</small></span><button class="evidence-expand evidence-ref" type="button" data-item-index="${itemIndex}" data-evidence-id="${esc(video.evidence_id)}" aria-label="放大查看${title}"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M9.5 2.5h4v4M13.5 2.5 8.8 7.2M6.5 13.5h-4v-4M2.5 13.5l4.7-4.7" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>放大查看</span></button></div>`}`}
 function evidenceMarkup(item,itemIndex){
   if(["待开始","已定位"].includes(item.status))return `<div class="evidence-box busy">${item.status==="待开始"?"等待当前操作进入识别区域":"已定位对象，准备整理证据"}</div>`;
   if(item.status==="证据生成中")return `<div class="evidence-box busy"><span class="pulse"></span>&nbsp;正在生成当前项目证据…</div>`;
@@ -1389,47 +1708,65 @@ function evidenceMarkup(item,itemIndex){
   const explanation=item.binding&&item.binding.evidence_explanation||"当前项目的相关画面已整理。";
   return `<div class="evidence-box"><div class="slot-row">${slots}</div>${tiles?`<div class="evidence-grid">${tiles}</div>`:`<div class="empty-note">当前项目仍在等待可用证据图</div>`}${seq.length?`<div class="sequence">${["开始","动作中","完成"].map((p,i)=>`<span class="${seq[i]?"on":""}">${p}</span>`).join("")}</div>`:""}<div class="explain">${esc(explanation)}</div></div>`;
 }
-function analysisMarkup(item){if(!isTerminal(item))return "";const profile=item.analysis_profile||{};const tools=(item.analysis_tools||[]).map(tool=>`<span class="tool-chip">${esc(tool.label||tool.tool_id)}</span>`).join("");const features=(profile.complexity_features||[]).map(feature=>esc(feature)).join(" · ");const metrics=[profile.distinct_tool_count!=null?`${profile.distinct_tool_count} 个工具`:"",profile.actual_analysis_task_count!=null?`实际分析任务 ${profile.actual_analysis_task_count} 个`:""].filter(Boolean).join(" · ");return `<div class="analysis-box"><div class="analysis-title">分析链 · ${esc(item.difficulty_label||labels[item.difficulty]||"")}</div><div class="tool-list">${tools||`<span class="tool-chip">工具链整理中</span>`}</div><div class="profile-line">${esc(metrics)}${features?`<br>证据链：${features}`:""}</div></div>`}
-function cardMarkup(item,i,extraClass=""){const terminal=isTerminal(item);const evaluation=isCompleted(item)&&item.realtime_target?`<div class="target"><span class="target-label">评分结论</span>${esc(item.realtime_target)}</div>`:"";const difficulty=terminal?`<span class="difficulty ${esc(item.difficulty||"")}">${esc(item.difficulty_label||labels[item.difficulty]||"")}</span>`:"";const score=terminal?`<span class="score-badge ${scoreFor(item)===0?"zero":""}">${scoreFor(item)} / 1 分</span>`:"";return `<article class="item-card ${i===current?"current":""} ${item.status==="待人工确认"?"review":""} ${extraClass}" data-item-index="${i}" data-difficulty="${terminal?esc(item.difficulty||""):""}"><div class="card-head"><div class="item-id"><span class="item-no">${item.item_number}</span><div><div class="item-title">${esc(item.display_name)}</div>${difficulty}</div></div><div class="card-actions">${score}<span class="status-badge ${cls(item.status)}">${esc(item.status)}</span></div></div>${evaluation}<div class="binding-line"><span>现场时间</span><strong>${esc(item.binding&&item.binding.live_timestamp||"等待")}</strong><span>·</span><span>置信度</span><strong>${item.binding&&item.binding.time_confidence!=null?Math.round(Number(item.binding.time_confidence)*100)+"%":"—"}</strong></div>${evidenceMarkup(item,i)}${analysisMarkup(item)}<div class="card-footer"><span class="difficulty-hint">详细核验 · ${item.detail&&item.detail.criterion_count||0} 项</span><button class="detail-trigger" type="button" data-detail-index="${i}" aria-controls="detail-drawer" aria-expanded="false">展开详细表单</button></div></article>`}
+function analysisMarkup(item){if(!isTerminal(item))return "";const profile=item.analysis_profile||{},toolItems=item.analysis_tools||[],tools=toolItems.map(tool=>`<span class="tool-chip">${esc(tool.label||tool.tool_id)}</span>`).join(""),featureItems=(profile.complexity_features||[]).map(feature=>`<span class="analysis-feature">${esc(feature)}</span>`).join(""),features=(profile.complexity_features||[]).map(feature=>esc(feature)).join(" · "),metrics=[profile.distinct_tool_count!=null?`${profile.distinct_tool_count} 个工具`:"",profile.actual_analysis_task_count!=null?`实际分析任务 ${profile.actual_analysis_task_count} 个`:""].filter(Boolean).join(" · ");if(evidenceMediaMode==="video")return `<div class="analysis-box analysis-dashboard"><div class="analysis-title">分析链 · ${esc(item.difficulty_label||labels[item.difficulty]||"")}</div><div class="analysis-columns"><section class="analysis-tools-panel"><div class="analysis-subtitle">调用工具</div><div class="analysis-steps">${toolItems.map((tool,index)=>`<span class="analysis-step"><i>${String(index+1).padStart(2,"0")}</i><b>${esc(tool.label||tool.tool_id)}</b></span>`).join("")||`<span class="analysis-step"><i>—</i><b>工具链整理中</b></span>`}</div></section><section class="analysis-facts"><div class="analysis-stat-grid"><span><small>工具类型</small><strong>${profile.distinct_tool_count!=null?esc(profile.distinct_tool_count):"—"}</strong></span><span><small>分析任务</small><strong>${profile.actual_analysis_task_count!=null?esc(profile.actual_analysis_task_count):"—"}</strong></span></div><div class="analysis-subtitle">证据链特征</div><div class="analysis-feature-list">${featureItems||`<span class="analysis-feature">整理中</span>`}</div></section></div></div>`;return `<div class="analysis-box"><div class="analysis-title">分析链 · ${esc(item.difficulty_label||labels[item.difficulty]||"")}</div><div class="tool-list">${tools||`<span class="tool-chip">工具链整理中</span>`}</div><div class="profile-line">${esc(metrics)}${features?`<br>证据链：${features}`:""}</div></div>`}
+function cardMarkup(item,i,extraClass=""){const terminal=isTerminal(item);const evaluation=isCompleted(item)&&item.realtime_target?`<div class="target"><span class="target-label">评分结论</span><p>${esc(item.realtime_target)}</p></div>`:"";const difficulty=terminal?`<span class="difficulty ${esc(item.difficulty||"")}">${esc(item.difficulty_label||labels[item.difficulty]||"")}</span>`:"";const score=terminal?`<span class="score-badge ${scoreFor(item)===0?"zero":""}">${scoreFor(item)} / 1 分</span>`:"";const liveTime=esc(item.binding&&item.binding.live_timestamp||"等待"),confidence=item.binding&&item.binding.time_confidence!=null?Math.round(Number(item.binding.time_confidence)*100)+"%":"—";return `<article class="item-card ${i===current?"current":""} ${item.status==="待人工确认"?"review":""} ${extraClass}" data-item-index="${i}" data-difficulty="${terminal?esc(item.difficulty||""):""}"><div class="card-head"><div class="item-id"><span class="item-no">${item.item_number}</span><div><div class="item-title">${esc(item.display_name)}</div>${difficulty}</div></div><div class="card-actions">${score}<span class="status-badge ${cls(item.status)}">${esc(item.status)}</span></div></div><div class="card-body"><div class="card-summary">${evaluation}<div class="binding-line"><span class="binding-meta"><span>现场时间</span><strong>${liveTime}</strong></span><span class="binding-meta"><span>置信度</span><strong>${confidence}</strong></span></div>${analysisMarkup(item)}</div><div class="card-evidence">${evidenceMarkup(item,i)}</div></div><div class="card-footer"><span class="difficulty-hint">详细核验 · ${item.detail&&item.detail.criterion_count||0} 项</span><button class="detail-trigger" type="button" data-detail-index="${i}" aria-controls="detail-drawer" aria-expanded="false"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 2.5h7l3 3v8H3zM10 2.5v3h3M5.5 8h5M5.5 10.5h5" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/></svg><span>展开详细表单</span></button></div></article>`}
 function createCardNode(markup){const template=document.createElement("template");template.innerHTML=markup.trim();return template.content.firstElementChild}
-function rememberVideoPositions(root=document){root.querySelectorAll&&root.querySelectorAll("video[data-evidence-video]").forEach(rememberEvidencePosition)}
+function rememberVideoPositions(root=document){root.querySelectorAll&&root.querySelectorAll("video[data-evidence-video]").forEach(video=>{rememberEvidencePosition(video);stopVideoBackdrop(video)})}
 function renderCards(){const container=$("cards"),visible=state.map((item,i)=>({item,i})).filter(x=>x.item.status!=="待开始"&&(filter==="all"||(isTerminal(x.item)&&x.item.difficulty===filter)));if(!visible.length){rememberVideoPositions(container);if(!container.querySelector(".cards-empty"))container.innerHTML="<div class=\"cards-empty\"><span class=\"wait-orb\" aria-hidden=\"true\"></span><span class=\"wait-label\">等待识别</span></div>";return}container.querySelector(".cards-empty")?.remove();const desired=new Set(visible.map(x=>String(x.i)));visible.forEach((entry,position)=>{const key=signature(entry.item);let card=container.querySelector(`:scope > .item-card[data-item-index="${entry.i}"]`);if(!card||card.dataset.renderSignature!==key){const next=createCardNode(cardMarkup(entry.item,entry.i,newCardIndexes.has(entry.i)?"reveal":""));next.dataset.renderSignature=key;if(card){rememberVideoPositions(card);card.replaceWith(next)}else container.append(next);card=next}card.classList.toggle("current",entry.i===current);card.classList.toggle("review",entry.item.status==="待人工确认");const reference=container.children[position];if(reference!==card)container.insertBefore(card,reference||null)});container.querySelectorAll(":scope > .item-card").forEach(card=>{if(!desired.has(String(card.dataset.itemIndex))){rememberVideoPositions(card);card.remove()}});bindCardFocusInteractions();if(newCardIndexes.size)requestAnimationFrame(()=>newCardIndexes.clear())}
 function finishCardFocus(index,token,started){if(token!==focusTransitionToken)return;const card=document.querySelector(`.item-card[data-item-index="${index}"]`),container=$("cards");if(!card||!container)return;const cardRect=card.getBoundingClientRect(),containerRect=container.getBoundingClientRect(),delta=Math.abs((cardRect.top+cardRect.bottom-containerRect.top-containerRect.bottom)/2);if(delta<=8||performance.now()-started>1400){pendingAutoplayIndex=index;syncEvidencePlayers();card.classList.add("completion-focus");setTimeout(()=>card.classList.remove("completion-focus"),700);return}requestAnimationFrame(()=>finishCardFocus(index,token,started))}
-function focusLatestCompleted(index){const token=++focusTransitionToken;programmaticScrollUntil=performance.now()+1600;requestAnimationFrame(()=>{const card=document.querySelector(`.item-card[data-item-index="${index}"]`),container=$("cards");if(!card||!container)return;const cardRect=card.getBoundingClientRect(),containerRect=container.getBoundingClientRect();const targetTop=container.scrollTop+cardRect.top-containerRect.top-(container.clientHeight-cardRect.height)/2;container.scrollTo({top:Math.max(0,targetTop),behavior:workflowReducedMotion()?"auto":"smooth"});finishCardFocus(index,token,performance.now())})}
+function canvasScale(){const canvas=$("page-canvas"),width=canvas&&canvas.getBoundingClientRect().width,base=canvas&&canvas.offsetWidth;return width&&base?width/base:1}
+function focusLatestCompleted(index){const token=++focusTransitionToken;programmaticScrollUntil=performance.now()+1600;requestAnimationFrame(()=>{const card=document.querySelector(`.item-card[data-item-index="${index}"]`),container=$("cards");if(!card||!container)return;const cardRect=card.getBoundingClientRect(),containerRect=container.getBoundingClientRect(),scale=canvasScale();const targetTop=container.scrollTop+(cardRect.top-containerRect.top)/scale-(container.clientHeight-card.offsetHeight)/2;container.scrollTo({top:Math.max(0,targetTop),behavior:workflowReducedMotion()?"auto":"smooth"});finishCardFocus(index,token,performance.now())})}
 function focusCardAndPlayback(index){if(!state[index]||state[index].status==="待开始")return;pauseAutoFocus();current=index;render();focusLatestCompleted(index)}
-function isNativeControlClick(event){const video=event.target.closest&&event.target.closest("video[data-evidence-video]");if(!video)return false;const rect=video.getBoundingClientRect(),controlsHeight=Math.max(36,rect.height*0.12);return event.clientY>rect.bottom-controlsHeight}
+function isNativeControlClick(event){const video=event.target.closest&&event.target.closest("video[data-evidence-video]");if(!video)return false;const rect=video.getBoundingClientRect(),controlsHeight=Math.max(24*canvasScale(),rect.height*0.12);return event.clientY>rect.bottom-controlsHeight}
 function bindCardFocusInteractions(){document.querySelectorAll(".item-card").forEach(card=>{if(card.dataset.focusBound==="true")return;card.dataset.focusBound="true";card.addEventListener("click",event=>{if(event.target.closest("button,a,input,select,textarea"))return;if(isNativeControlClick(event))return;focusCardAndPlayback(Number(card.dataset.itemIndex))})})}
 function latestCompletedIndex(){for(let index=state.length-1;index>=0;index-=1){if(isTerminal(state[index]))return index}return null}
-function updateFollowChip(){const chip=$("follow-chip");if(!chip)return;if(followLatest||pendingCompletedIndex===null){chip.hidden=true;chip.textContent="";return}const item=state[pendingCompletedIndex],label=item?`项目 ${item.item_number} 已完成`:"新项目已完成";chip.textContent=pendingCompletedCount>1?`${label} 等 ${pendingCompletedCount} 项 · 查看`:`${label} · 查看`;chip.hidden=false}
+function updateFollowChip(){const chip=$("follow-chip");if(!chip)return;if(followLatest||pendingCompletedIndex===null){chip.hidden=true;chip.innerHTML="";return}const item=state[pendingCompletedIndex],title=item?`项目 ${item.item_number} 已完成`:"新项目已完成",detail=pendingCompletedCount>1?`另有 ${pendingCompletedCount-1} 项更新，点击返回最新结果`:"点击返回最新评分卡";chip.innerHTML=`<span class="follow-chip-icon" aria-hidden="true">✓</span><span class="follow-chip-copy"><strong>${esc(title)}</strong><small>${esc(detail)}</small></span><span class="follow-chip-action">查看<svg viewBox="0 0 16 16" aria-hidden="true"><path d="m6 3.5 4 4.5-4 4.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>`;chip.setAttribute("aria-label",`${title}，${detail}`);chip.hidden=false}
 function pauseAutoFocus(){followLatest=false;programmaticScrollUntil=0;focusTransitionToken+=1;pendingAutoplayIndex=null;updateFollowChip()}
-function requestLatestFocus(index){pendingCompletedIndex=index;pendingCompletedCount+=1;if(followLatest){pendingCompletedCount=0;focusLatestCompleted(index);return}updateFollowChip()}
-function jumpToLatestCompleted(){const index=pendingCompletedIndex===null?latestCompletedIndex():pendingCompletedIndex;followLatest=true;pendingCompletedIndex=null;pendingCompletedCount=0;updateFollowChip();if(index!==null)focusLatestCompleted(index)}
+function requestLatestFocus(index){pendingCompletedIndex=index;pendingCompletedCount+=1;if(followLatest){pendingCompletedCount=0;current=index;render();focusLatestCompleted(index);return}updateFollowChip()}
+function showAllItems(){if(filter==="all")return;filter="all";document.querySelectorAll("#difficultyFilters .chip").forEach(button=>button.classList.toggle("active",button.dataset.filter==="all"))}
+function jumpToLatestCompleted(event){if(event){event.preventDefault();event.stopPropagation()}const index=pendingCompletedIndex===null?latestCompletedIndex():pendingCompletedIndex;followLatest=true;pendingCompletedIndex=null;pendingCompletedCount=0;updateFollowChip();if(index===null)return;showAllItems();current=index;render();focusLatestCompleted(index)}
 function clearAutoFocusPause(){followLatest=true;pendingCompletedIndex=null;pendingCompletedCount=0;if(scrollSettleTimer){clearTimeout(scrollSettleTimer);scrollSettleTimer=null}updateFollowChip()}
 function settleCardFocusFromScroll(){const cards=$("cards");if(!cards)return;const maxScroll=Math.max(0,cards.scrollHeight-cards.clientHeight);if(maxScroll>0&&cards.scrollTop>=maxScroll-24){const pending=pendingCompletedIndex;followLatest=true;pendingCompletedIndex=null;pendingCompletedCount=0;updateFollowChip();const index=pending===null?latestCompletedIndex():pending;if(index!==null)focusLatestCompleted(index);return}if(evidenceMediaMode!=="video")return;const containerRect=cards.getBoundingClientRect(),centre=containerRect.top+containerRect.height/2;let best=null,bestDelta=Infinity;cards.querySelectorAll(":scope > .item-card").forEach(card=>{const rect=card.getBoundingClientRect(),delta=Math.abs(rect.top+rect.height/2-centre);if(delta<bestDelta){bestDelta=delta;best=card}});if(!best)return;const index=Number(best.dataset.itemIndex);if(!Number.isInteger(index)||index===current||!state[index]||state[index].status==="待开始")return;current=index;pendingAutoplayIndex=index;render()}
 function bindCardScrollInteractions(){const cards=$("cards");if(!cards||cards.dataset.interactionBound==="true")return;cards.dataset.interactionBound="true";const manual=()=>pauseAutoFocus();cards.addEventListener("wheel",manual,{passive:true});cards.addEventListener("touchstart",manual,{passive:true});cards.addEventListener("pointerdown",manual,{passive:true});cards.addEventListener("keydown",event=>{if(["ArrowUp","ArrowDown","PageUp","PageDown","Home","End"].includes(event.key))manual()});cards.addEventListener("scroll",()=>{if(scrollSettleTimer)clearTimeout(scrollSettleTimer);scrollSettleTimer=setTimeout(()=>{scrollSettleTimer=null;if(performance.now()<programmaticScrollUntil)return;settleCardFocusFromScroll()},180)},{passive:true})}
 function videoPlaybackStatus(video,message=""){const wrap=video&&video.closest(".evidence-video-wrap"),status=wrap&&wrap.querySelector(".video-playback-status");if(status)status.textContent=message}
+function stopVideoBackdrop(video){const job=videoBackdropJobs.get(video);if(!job)return;job.cancelled=true;if(job.frameId&&video.cancelVideoFrameCallback)video.cancelVideoFrameCallback(job.frameId);if(job.timer)clearTimeout(job.timer);videoBackdropJobs.delete(video)}
+function drawVideoBackdrop(video,canvas){if(!video.videoWidth||!video.videoHeight||!canvas||!canvas.isConnected)return false;const rect=canvas.getBoundingClientRect(),width=Math.max(1,Math.round(rect.width)),height=Math.max(1,Math.round(rect.height));if(canvas.width!==width||canvas.height!==height){canvas.width=width;canvas.height=height}const context=canvas.getContext("2d");if(!context)throw new Error("Canvas 2D unavailable");const scale=Math.max(width/video.videoWidth,height/video.videoHeight),sourceWidth=width/scale,sourceHeight=height/scale,sourceX=(video.videoWidth-sourceWidth)/2,sourceY=(video.videoHeight-sourceHeight)/2;context.save();context.clearRect(0,0,width,height);context.filter="blur(18px) brightness(.58) saturate(1.12)";context.drawImage(video,sourceX,sourceY,sourceWidth,sourceHeight,-12,-12,width+24,height+24);context.restore();return true}
+function startVideoBackdrop(video){if(evidenceMediaMode!=="video"||videoBackdropJobs.has(video))return;const canvas=video.closest(".evidence-video-wrap")&&video.closest(".evidence-video-wrap").querySelector(".evidence-video-backdrop");if(!canvas)return;const job={cancelled:false,frameId:0,timer:0,lastAt:0};videoBackdropJobs.set(video,job);const paint=(now=performance.now())=>{if(job.cancelled||video.paused||video.ended||!video.isConnected||document.hidden){stopVideoBackdrop(video);return}if(now-job.lastAt>=95){try{if(drawVideoBackdrop(video,canvas))canvas.dataset.state="ready"}catch(error){canvas.dataset.state="fallback";stopVideoBackdrop(video);return}job.lastAt=now}if(video.requestVideoFrameCallback)job.frameId=video.requestVideoFrameCallback(paint);else job.timer=setTimeout(()=>paint(performance.now()),100)};paint()}
 function videoPlaybackKey(video){return String(video&&video.dataset.evidenceId||"")}
 function rememberEvidencePosition(video){const key=videoPlaybackKey(video),value=Number(video&&video.currentTime);if(key&&Number.isFinite(value)&&value>=0)videoPlaybackPositions.set(key,value)}
 function restoreEvidencePosition(video){const key=videoPlaybackKey(video);if(!key||!videoPlaybackPositions.has(key))return;const apply=()=>{const saved=videoPlaybackPositions.get(key);if(Number.isFinite(saved)&&Math.abs(Number(video.currentTime||0)-saved)>.15){try{video.currentTime=saved}catch(error){}}};if(video.readyState>=1)apply();else video.addEventListener("loadedmetadata",apply,{once:true})}
-function pauseEvidencePlayers(except=null){document.querySelectorAll("video[data-evidence-video]").forEach(video=>{if(video!==except){rememberEvidencePosition(video);if(!video.paused){video.dataset.systemPause="1";video.pause()}}});if(!except)activePlayingVideo=null}
+function pauseEvidencePlayers(except=null){document.querySelectorAll("video[data-evidence-video]").forEach(video=>{if(video!==except){rememberEvidencePosition(video);stopVideoBackdrop(video);if(!video.paused){video.dataset.systemPause="1";video.pause()}}});if(!except)activePlayingVideo=null}
 function selectEvidenceVideo(video){const index=Number(video.dataset.itemIndex);if(!Number.isInteger(index)||!state[index])return;current=index;document.querySelectorAll(".item-card").forEach(card=>card.classList.toggle("current",Number(card.dataset.itemIndex)===index));document.querySelectorAll(".timeline-btn").forEach(button=>button.classList.toggle("active",Number(button.dataset.index)===index))}
-function bindEvidenceVideo(video){if(video.dataset.playerBound==="true")return;video.dataset.playerBound="true";restoreEvidencePosition(video);video.addEventListener("pointerdown",()=>selectEvidenceVideo(video));video.addEventListener("timeupdate",()=>rememberEvidencePosition(video));video.addEventListener("pause",()=>rememberEvidencePosition(video));video.addEventListener("play",()=>{selectEvidenceVideo(video);pauseEvidencePlayers(video);activePlayingVideo=video;videoPlaybackStatus(video)});video.addEventListener("loadeddata",()=>videoPlaybackStatus(video));video.addEventListener("error",()=>videoPlaybackStatus(video,"视频加载失败，请确认服务已加载视频 Mock 报告"))}
-function requestEvidencePlay(video){if(!video||!video.src)return;bindEvidenceVideo(video);restoreEvidencePosition(video);videoPlaybackStatus(video,"正在加载视频…");if(video.readyState===0)video.load();const result=video.play();if(result&&typeof result.catch==="function")result.catch(error=>{videoPlaybackStatus(video,error&&error.name==="NotAllowedError"?"请点击播放器中的播放按钮":"视频加载失败，请确认服务已加载视频 Mock 报告")})}
+function bindEvidenceVideo(video){if(video.dataset.playerBound==="true")return;video.dataset.playerBound="true";restoreEvidencePosition(video);video.addEventListener("pointerdown",()=>selectEvidenceVideo(video));video.addEventListener("timeupdate",()=>rememberEvidencePosition(video));video.addEventListener("pause",()=>{rememberEvidencePosition(video);stopVideoBackdrop(video)});video.addEventListener("play",()=>{selectEvidenceVideo(video);pauseEvidencePlayers(video);activePlayingVideo=video;videoPlaybackStatus(video);startVideoBackdrop(video)});video.addEventListener("loadeddata",()=>{videoPlaybackStatus(video);const canvas=video.closest(".evidence-video-wrap")&&video.closest(".evidence-video-wrap").querySelector(".evidence-video-backdrop");try{if(canvas)canvas.dataset.state=drawVideoBackdrop(video,canvas)?"ready":"fallback"}catch(error){if(canvas)canvas.dataset.state="fallback"}});video.addEventListener("error",()=>{stopVideoBackdrop(video);videoPlaybackStatus(video,"视频证据加载失败，请检查媒体服务")})}
+function requestEvidencePlay(video){if(!video||!video.src)return;bindEvidenceVideo(video);restoreEvidencePosition(video);videoPlaybackStatus(video,"正在加载视频…");if(video.readyState===0)video.load();const result=video.play();if(result&&typeof result.catch==="function")result.catch(error=>{videoPlaybackStatus(video,error&&error.name==="NotAllowedError"?"请点击播放器中的播放按钮":"视频证据加载失败，请检查媒体服务")})}
 function syncEvidencePlayers(){const videos=[...document.querySelectorAll("video[data-evidence-video]")];videos.forEach(video=>{bindEvidenceVideo(video);if(video.dataset.pauseTracked==="true")return;video.dataset.pauseTracked="true";video.addEventListener("pause",()=>{rememberEvidencePosition(video);const key=String(video.dataset.evidenceId||"");if(!key)return;if(video.dataset.systemPause==="1"){video.dataset.systemPause="";userPausedEvidence.delete(key)}else{userPausedEvidence.add(key)}});video.addEventListener("play",()=>{const key=String(video.dataset.evidenceId||"");if(key)userPausedEvidence.delete(key)})});if(evidenceMediaMode!=="video"||!evaluationActive||location.protocol==="file:")return;const preferred=(!$('lightbox').hidden&&$('lightbox').querySelector('video[data-evidence-video]'))||(!$('drawer-backdrop').hidden&&$('detail-drawer').querySelector(`video[data-item-index="${current}"]`))||videos.find(video=>Number(video.dataset.itemIndex)===current);if(!preferred)return;if(pendingAutoplayIndex!==Number(preferred.dataset.itemIndex))return;pendingAutoplayIndex=null;if(!userPausedEvidence.has(String(preferred.dataset.evidenceId||"")))requestEvidencePlay(preferred)}
-function render(){const item=state[current]||state[0];const complete=doneCount(),bound=state.reduce((n,x)=>n+activeEvidence(x).length,0),score=state.reduce((n,x)=>n+(scoreFor(x)||0),0),hasDifficulty=state.some(isTerminal);$("title").textContent=DATA.title;$("footer").textContent=DATA.presentation.footer;$("done").textContent=`${complete}/${state.length}`;$("score").textContent=`${score}/${state.length}`;$("bound").textContent=String(bound);$("heroProgress").textContent=`${complete} / ${state.length}`;if($("bannerProgress"))$("bannerProgress").textContent=`完成度 ${complete} / ${state.length}`;$("progressBar").style.width=`${state.length?Math.round(complete/state.length*100):0}%`;const filters=$("difficultyFilters");if(filters){filters.hidden=false;filters.classList.toggle("ready",hasDifficulty);filters.querySelectorAll(".chip").forEach(x=>x.classList.toggle("active",hasDifficulty&&x.dataset.filter===filter))}$("phase").textContent=item.status==="待开始"?DATA.presentation.initial_state:item.status;$("quality").textContent=item.status==="待人工确认"?"需要人工确认":item.status==="证据生成中"?"证据生成中":complete?"证据链已整理":"等待有效画面";$("heroKicker").textContent=`实时识别中 · 项目 ${item.item_number}`;$("heroTitle").textContent=item.display_name;$("heroText").textContent=isCompleted(item)?(item.binding&&item.binding.evidence_explanation||item.realtime_target||"相关画面已整理。"):(item.binding&&item.binding.evidence_explanation&&item.binding.evidence_explanation!=="等待当前视频流中的有效证据。"?item.binding.evidence_explanation:"系统正在从视频流中定位操作对象，证据生成后会自动整理到对应项目。");renderTimeline();renderCards();bindCardScrollInteractions();bindEvidenceInteractions();if(drawerIndex!==null)renderDrawer(drawerIndex);syncEvidencePlayers()}
+function render(){const selected=state[current]||state[0],item=state[activeAnalysisIndex]||selected;const complete=doneCount(),bound=state.reduce((n,x)=>n+activeEvidence(x).length,0),score=state.reduce((n,x)=>n+(scoreFor(x)||0),0),hasDifficulty=state.some(isTerminal);$("title").textContent=DATA.title;$("footer").textContent=DATA.presentation.footer;$("done").textContent=`${complete}/${state.length}`;$("score").textContent=`${score}/${state.length}`;$("bound").textContent=String(bound);$("heroProgress").textContent=`${complete} / ${state.length}`;if($("bannerProgress"))$("bannerProgress").textContent=`完成度 ${complete} / ${state.length}`;$("progressBar").style.width=`${state.length?Math.round(complete/state.length*100):0}%`;const filters=$("difficultyFilters");if(filters){filters.hidden=false;filters.classList.toggle("ready",hasDifficulty);filters.querySelectorAll(".chip").forEach(x=>x.classList.toggle("active",hasDifficulty&&x.dataset.filter===filter))}$("phase").textContent=item.status==="待开始"?DATA.presentation.initial_state:item.status;$("quality").textContent=item.status==="待人工确认"?"需要人工确认":item.status==="证据生成中"?"证据生成中":complete?"证据链已整理":"等待有效画面";$("heroKicker").textContent=`实时识别中 · 项目 ${item.item_number}`;$("heroTitle").textContent=item.display_name;$("heroText").textContent=isCompleted(item)?(item.binding&&item.binding.evidence_explanation||item.realtime_target||"相关画面已整理。"):(item.binding&&item.binding.evidence_explanation&&item.binding.evidence_explanation!=="等待当前视频流中的有效证据。"?item.binding.evidence_explanation:"系统正在从视频流中定位操作对象，证据生成后会自动整理到对应项目。");renderTimeline();renderCards();bindCardScrollInteractions();bindEvidenceInteractions();if(drawerIndex!==null)renderDrawer(drawerIndex);syncEvidencePlayers()}
 function toast(message){$("toast").textContent=message;$("toast").classList.add("show");setTimeout(()=>$("toast").classList.remove("show"),1600)}
 function delay(ms){return new Promise(resolve=>setTimeout(resolve,ms))}
 function signature(item){const b=item.binding||{},d=item.detail||{},v=b.video_evidence||null;return JSON.stringify({binding:{revision:b.revision,state:b.state,live_timestamp:b.live_timestamp,live_start_sec:b.live_start_sec,live_end_sec:b.live_end_sec,time_confidence:b.time_confidence,evidence:(b.evidence||[]).map(e=>[e.evidence_id,e.timestamp,e.timestamp_sec,e.phase,e.round,e.order_index,e.confidence,e.caption,e.src]),video_evidence:v&&[v.evidence_id,v.src,v.start_sec,v.end_sec,v.duration_sec,v.confidence]},detail:d})}
 function mergeView(view){if(!view||!Array.isArray(view.items))return;view.items.forEach(incoming=>{const index=state.findIndex(item=>item.item_id===incoming.item_id);if(index<0)return;const currentItem=state[index],incomingState=displayState((incoming.binding||{}).state||"待开始");if(pendingKeys.has(incoming.item_id)||stateRank(incomingState)<stateRank(currentItem.status)||signature(incoming)===signature(currentItem))return;pending.push({index,incoming,finalState:incomingState,processingMs:Number(view.processing_ms||0)});pendingKeys.add(incoming.item_id)});drainQueue()}
-async function present(update){const old=state[update.index];if(!old)return;current=update.index;const wasPending=old.status==="待开始";state[update.index]={...old,status:"已定位"};if(wasPending)newCardIndexes.add(update.index);render();toast(`已定位：${old.display_name}`);await delay(430);if(!evaluationActive){pendingKeys.delete(update.incoming.item_id);return}state[update.index]={...state[update.index],status:"证据生成中",detail:{...(update.incoming.detail||state[update.index].detail||{}),state:"analyzing"}};workflowStart(update.index,update.processingMs||workflowConfig.cycle_ms);render();await delay(update.processingMs||950);if(!evaluationActive){workflowStop();pendingKeys.delete(update.incoming.item_id);return}const nextState=displayState(update.finalState||"已完成评分");state[update.index]={...update.incoming,status:nextState,index:update.index,binding:{...(update.incoming.binding||{}),evidence:[...((update.incoming.binding||{}).evidence||[])]}};if(nextState==="证据生成中")workflowStart(update.index,workflowConfig.cycle_ms);else workflowStop(nextState==="待人工确认"?"review":isCompleted(state[update.index])?"done":"idle");const newlyCompleted=isCompleted(state[update.index])&&!isCompleted(old);render();if(newlyCompleted)requestLatestFocus(update.index);toast(`${old.display_name}：${nextState}`)}
+async function present(update){const old=state[update.index];if(!old)return;activeAnalysisIndex=update.index;if(latestCompletedIndex()===null)current=update.index;const wasPending=old.status==="待开始";state[update.index]={...old,status:"已定位"};if(wasPending)newCardIndexes.add(update.index);render();toast(`已定位：${old.display_name}`);await delay(430);if(!evaluationActive){pendingKeys.delete(update.incoming.item_id);return}state[update.index]={...state[update.index],status:"证据生成中",detail:{...(update.incoming.detail||state[update.index].detail||{}),state:"analyzing"}};workflowStart(update.index,update.processingMs||workflowConfig.cycle_ms);render();await delay(update.processingMs||950);if(!evaluationActive){workflowStop();pendingKeys.delete(update.incoming.item_id);return}const nextState=displayState(update.finalState||"已完成评分");state[update.index]={...update.incoming,status:nextState,index:update.index,binding:{...(update.incoming.binding||{}),evidence:[...((update.incoming.binding||{}).evidence||[])]}};if(nextState==="证据生成中")workflowStart(update.index,workflowConfig.cycle_ms);else workflowStop(nextState==="待人工确认"?"review":isCompleted(state[update.index])?"done":"idle");const newlyCompleted=isCompleted(state[update.index])&&!isCompleted(old);render();if(newlyCompleted)requestLatestFocus(update.index);toast(`${old.display_name}：${nextState}`)}
 async function drainQueue(){if(processing||!evaluationActive)return;processing=true;while(pending.length&&evaluationActive){const update=pending.shift();await present(update);pendingKeys.delete(update.incoming.item_id)}processing=false}
 async function pollReport(){if(!evaluationActive||location.protocol==="file:")return;try{const response=await fetch(`/api/report?ts=${Date.now()}`,{cache:"no-store"});if(response.ok)mergeView(await response.json())}catch(error){$("connection").textContent="等待分析服务";$("quality").textContent="连接重试中"}}
 async function runMockEvents(){for(const event of DATA.events||[]){if(!evaluationActive)break;await delay(Number(event.delay_ms||900));if(!evaluationActive)break;if(event.item_patch)mergeView({items:[event.item_patch],processing_ms:event.processing_ms});while(processing&&evaluationActive)await delay(120)}}
-function beginLiveSession(){const layout=document.querySelector(".live-layout");if(!layout)return;const firstStart=layout.classList.contains("awaiting-start");layout.classList.remove("awaiting-start");if(firstStart)setCourseCollapsed(true)}
+function beginLiveSession(){const layout=document.querySelector(".live-layout");if(!layout)return;const firstStart=layout.classList.contains("awaiting-start");layout.classList.remove("awaiting-start");if(firstStart&&evidenceMediaMode!=="video")setCourseCollapsed(true)}
 function embeddedVideoEvidence(){for(const event of DATA.events||[]){const video=event&&event.item_patch&&event.item_patch.binding&&event.item_patch.binding.video_evidence;if(video&&video.src)return video}return null}
+function setLiveVideoState(state,label){const slot=$("video-slot"),placeholder=slot&&slot.querySelector(".video-placeholder");if(slot)slot.dataset.streamState=state;if(placeholder)placeholder.hidden=state==="connected";if(label&&$("connection"))$("connection").textContent=label;window.dispatchEvent(new CustomEvent("realtime-video-state",{detail:{state,label}}))}
+function closeReceiverPeer(clearVideo=true){if(liveReceiverPeer){liveReceiverPeer.ontrack=null;liveReceiverPeer.onconnectionstatechange=null;liveReceiverPeer.close();liveReceiverPeer=null}if(clearVideo){const video=$("live-video");if(video){video.pause();video.srcObject=null}liveRemoteStream=null;setLiveVideoState("idle","等待视频接入")}}
+function closeLocalSender(){if(liveSenderPeer){liveSenderPeer.close();liveSenderPeer=null}if(liveSourceVideo){liveSourceVideo.pause();liveSourceVideo.src="";liveSourceVideo.remove();liveSourceVideo=null}}
+function closeLiveVideoInput(){closeLocalSender();closeReceiverPeer(true)}
+function waitForIceGathering(peer,timeoutMs=5000){if(peer.iceGatheringState==="complete")return Promise.resolve();return new Promise(resolve=>{let timer=null;const finish=()=>{peer.removeEventListener("icegatheringstatechange",changed);if(timer)clearTimeout(timer);resolve()};const changed=()=>{if(peer.iceGatheringState==="complete")finish()};peer.addEventListener("icegatheringstatechange",changed);timer=setTimeout(finish,timeoutMs)})}
+async function attachLiveStream(stream){const video=$("live-video");if(!video)throw new Error("实时视频窗口不存在");liveRemoteStream=stream;video.srcObject=stream;video.autoplay=true;video.muted=true;video.playsInline=true;setLiveVideoState("connecting","视频流连接中");try{await video.play()}catch(error){}return video}
+async function createWebRTCAnswer(offer,rtcConfiguration={},keepLocalSender=false){if(typeof RTCPeerConnection!=="function")throw new Error("当前浏览器不支持 WebRTC 视频接入");if(!keepLocalSender)closeLocalSender();closeReceiverPeer(false);const peer=new RTCPeerConnection(rtcConfiguration||{});liveReceiverPeer=peer;peer.onicecandidate=event=>window.dispatchEvent(new CustomEvent("realtime-video-icecandidate",{detail:event.candidate?event.candidate.toJSON():null}));peer.ontrack=event=>{const stream=event.streams&&event.streams[0]?event.streams[0]:new MediaStream([event.track]);attachLiveStream(stream)};peer.onconnectionstatechange=()=>{const state=peer.connectionState;if(state==="connected")setLiveVideoState("connected","实时视频已连接");else if(state==="connecting"||state==="new")setLiveVideoState("connecting","视频流连接中");else if(state==="disconnected")setLiveVideoState("disconnected","视频流暂时中断");else if(state==="failed")setLiveVideoState("failed","视频流连接失败");else if(state==="closed"&&!liveReceiverPeer)setLiveVideoState("idle","等待视频接入")};await peer.setRemoteDescription(offer);const answer=await peer.createAnswer();await peer.setLocalDescription(answer);await waitForIceGathering(peer);return {type:peer.localDescription.type,sdp:peer.localDescription.sdp}}
+async function acceptWebRTCOffer(offer,rtcConfiguration={}){return createWebRTCAnswer(offer,rtcConfiguration,false)}
+async function addWebRTCIceCandidate(candidate){if(!liveReceiverPeer)throw new Error("WebRTC 接收端尚未初始化");await liveReceiverPeer.addIceCandidate(candidate||null)}
+function waitForVideoReady(video,timeoutMs=8000){if(video.readyState>=2)return Promise.resolve();return new Promise((resolve,reject)=>{let timer=null;const cleanup=()=>{video.removeEventListener("loadeddata",ready);video.removeEventListener("error",failed);if(timer)clearTimeout(timer)};const ready=()=>{cleanup();resolve()};const failed=()=>{cleanup();reject(new Error("视频样本加载失败"))};video.addEventListener("loadeddata",ready,{once:true});video.addEventListener("error",failed,{once:true});timer=setTimeout(()=>{cleanup();reject(new Error("视频样本加载超时"))},timeoutMs)})}
+async function startLocalWebRTCSource(sourceUrl=LOCAL_WEBRTC_SAMPLE){if(!sourceUrl)throw new Error("缺少视频源");if(typeof RTCPeerConnection!=="function")throw new Error("当前浏览器不支持 WebRTC 视频接入");closeLocalSender();const source=document.createElement("video");source.className="webrtc-source-video";source.muted=true;source.loop=true;source.playsInline=true;source.preload="auto";source.src=sourceUrl;source.setAttribute("aria-hidden","true");document.body.append(source);liveSourceVideo=source;try{source.load();await waitForVideoReady(source);await source.play();const capture=source.captureStream||source.mozCaptureStream;if(typeof capture!=="function")throw new Error("当前浏览器不支持视频流采集");const stream=capture.call(source,10),track=stream.getVideoTracks()[0];if(!track)throw new Error("视频源未产生画面轨道");const sender=new RTCPeerConnection({iceServers:[]});liveSenderPeer=sender;sender.addTrack(track,stream);await sender.setLocalDescription(await sender.createOffer());await waitForIceGathering(sender);const answer=await createWebRTCAnswer({type:sender.localDescription.type,sdp:sender.localDescription.sdp},{iceServers:[]},true);await sender.setRemoteDescription(answer);return {senderState:sender.connectionState,receiverState:liveReceiverPeer&&liveReceiverPeer.connectionState}}catch(error){closeLocalSender();setLiveVideoState("failed","视频流连接失败");throw error}}
+function liveVideoInputState(){const video=$("live-video"),track=liveRemoteStream&&liveRemoteStream.getVideoTracks()[0];return {receiverConnectionState:liveReceiverPeer&&liveReceiverPeer.connectionState||"closed",senderConnectionState:liveSenderPeer&&liveSenderPeer.connectionState||"closed",hasRemoteStream:Boolean(video&&video.srcObject),trackState:track&&track.readyState||"none",videoWidth:Number(video&&video.videoWidth||0),videoHeight:Number(video&&video.videoHeight||0),currentTime:Number(video&&video.currentTime||0)}}
+window.realtimeVideoInput=Object.freeze({acceptOffer:acceptWebRTCOffer,addIceCandidate:addWebRTCIceCandidate,close:closeLiveVideoInput,startLocalSample:startLocalWebRTCSource,getState:liveVideoInputState});
 async function videoServiceReady(){if(evidenceMediaMode!=="video"||location.protocol==="file:")return true;const video=embeddedVideoEvidence();if(!video||!String(video.src||"").startsWith("/"))return true;try{const response=await fetch(video.src,{method:"HEAD",cache:"no-store"});return response.ok}catch(error){return false}}
-async function startEvaluation(){if(evaluationActive){evaluationActive=false;if(pollTimer)clearInterval(pollTimer);workflowStop();pauseEvidencePlayers();$("start").textContent="启动评测";$("connection").textContent="评测已暂停";toast("实时评测已暂停");return}beginLiveSession();const fileMode=location.protocol==="file:";if(fileMode&&evidenceMediaMode==="video"){toast("请通过本地演示服务启动视频证据回放");return}if(!await videoServiceReady()){$("connection").textContent="视频服务未就绪";toast("请重启服务并加载视频 Mock 报告");return}evaluationActive=true;$("start").textContent="暂停评测";$("connection").textContent=mockReplay?"Mock 回放中":"实时分析中";toast("已启动实时评测");if(mockReplay){runMockEvents()}else if(!fileMode){await pollReport();pollTimer=setInterval(pollReport,Number(DATA.presentation.poll_interval_ms||650))}}
-async function resetReport(){if(location.protocol==="file:"){toast("请通过本地演示服务执行重置");return}evaluationActive=false;if(pollTimer)clearInterval(pollTimer);workflowStop();clearAutoFocusPause();pending=[];pendingKeys.clear();processing=false;newCardIndexes.clear();try{const response=await fetch("/api/reset",{method:"POST"});if(!response.ok)throw new Error("reset failed");const view=await response.json();state=view.items.map((item,index)=>({...item,status:"待开始",index,binding:{...(item.binding||{}),evidence:[...((item.binding||{}).evidence||[])]},detail:{...(item.detail||{}),state:"locked",checks:[]}}));current=0;filter="all";closeDetail();$("start").textContent="启动评测";$("connection").textContent="视频流已连接";document.querySelector(".live-layout").classList.add("awaiting-start");setCourseCollapsed(false);render();toast("已恢复初始评测状态")}catch(error){toast("重置失败，请检查本地演示服务")}}
+async function startEvaluation(){if(evaluationActive){evaluationActive=false;if(pollTimer)clearInterval(pollTimer);workflowStop();pauseEvidencePlayers();$("start").textContent="启动评测";$("connection").textContent="评测已暂停";toast("实时评测已暂停");return}beginLiveSession();const fileMode=location.protocol==="file:";if(fileMode&&evidenceMediaMode==="video"){toast("请通过本地演示服务启动视频证据展示");return}if(!await videoServiceReady()){$("connection").textContent="视频服务未就绪";toast("请检查视频证据服务");return}evaluationActive=true;$("start").textContent="暂停评测";$("connection").textContent="实时分析中";toast("已启动实时评测");if(mockReplay){if(evidenceMediaMode==="video")startLocalWebRTCSource().catch(()=>{});runMockEvents()}else if(!fileMode){await pollReport();pollTimer=setInterval(pollReport,Number(DATA.presentation.poll_interval_ms||650))}}
+async function resetReport(){if(location.protocol==="file:"){toast("请通过本地演示服务执行重置");return}evaluationActive=false;if(pollTimer)clearInterval(pollTimer);workflowStop();clearAutoFocusPause();pending=[];pendingKeys.clear();processing=false;newCardIndexes.clear();try{const response=await fetch("/api/reset",{method:"POST"});if(!response.ok)throw new Error("reset failed");const view=await response.json();state=view.items.map((item,index)=>({...item,status:"待开始",index,binding:{...(item.binding||{}),evidence:[...((item.binding||{}).evidence||[])]},detail:{...(item.detail||{}),state:"locked",checks:[]}}));current=0;activeAnalysisIndex=0;filter="all";closeDetail();$("start").textContent="启动评测";$("connection").textContent=liveRemoteStream?"实时视频已连接":"等待视频接入";const layout=document.querySelector(".live-layout");if(layout&&evidenceMediaMode!=="video"){layout.classList.add("awaiting-start");setCourseCollapsed(false)}render();toast("已恢复初始评测状态")}catch(error){toast("重置失败，请检查本地演示服务")}}
 function confidenceText(value){return value==null?"—":`${Math.round(Number(value)*100)}%`}
 function formatSeconds(value){const number=Number(value);if(!Number.isFinite(number)||number<0)return "—";const total=Math.round(number);return `${String(Math.floor(total/60)).padStart(2,"0")}:${String(total%60).padStart(2,"0")}`}
 function timeRangeText(item){const binding=item.binding||{},range=binding.time_range||{};const start=range.start!=null?range.start:binding.live_start_sec,end=range.end!=null?range.end:binding.live_end_sec;if(start==null&&end==null)return binding.live_timestamp||"—";if(start==null)return formatSeconds(end);if(end==null)return formatSeconds(start);return `${formatSeconds(start)} — ${formatSeconds(end)}`}
@@ -1448,13 +1785,19 @@ function closeDetail(){pauseEvidencePlayers();drawerIndex=null;$("drawer-backdro
 function findEvidenceFromButton(button){const item=state[Number(button.dataset.itemIndex)];return item?evidenceById(item,button.dataset.evidenceId):null}
 function showHover(button,fromKeyboard=false){const evidence=findEvidenceFromButton(button);if(!evidence||evidence.kind==="video"||(!fromKeyboard&&window.matchMedia("(pointer:coarse)").matches))return;hoverButton=button;const media=$("hover-media");media.innerHTML=evidence.src?`<img src="${evidence.src}" alt="">`:`<div class="preview-placeholder">暂无图像</div>`;$("hover-phase").textContent=`${evidenceLabel(evidence)}${evidence.timestamp?` · ${evidence.timestamp}`:""}`;$("hover-confidence").textContent=confidenceText(evidence.confidence);const preview=$("hover-preview");preview.hidden=false;const rect=button.getBoundingClientRect(),width=Math.min(310,Math.max(120,window.innerWidth-24)),height=Math.min(270,Math.max(150,window.innerHeight-24));preview.style.width=`${width}px`;let left=rect.right+12,top=rect.top;if(left+width>window.innerWidth-12)left=rect.left-width-12;if(top+height>window.innerHeight-12)top=window.innerHeight-height-12;preview.style.left=`${Math.max(12,Math.min(left,Math.max(12,window.innerWidth-width-12)))}px`;preview.style.top=`${Math.max(12,Math.min(top,Math.max(12,window.innerHeight-height-12)))}px`}
 function hideHover(){if(hoverTimer)clearTimeout(hoverTimer);hoverTimer=null;hoverButton=null;$("hover-preview").hidden=true}
-function openLightbox(button){const evidence=findEvidenceFromButton(button);if(!evidence)return;hideHover();pauseEvidencePlayers();const media=$("lightbox-media");if(evidence.kind==="video")media.innerHTML=evidence.src?`<div class="evidence-video-wrap"><video class="lightbox-video" data-evidence-video="true" data-item-index="${button.dataset.itemIndex}" data-evidence-id="${esc(evidence.evidence_id)}" src="${esc(evidence.src)}" controls muted loop playsinline></video><div class="video-playback-status" aria-live="polite"></div></div>`:`<div class="lightbox-placeholder">暂无视频</div>`;else media.innerHTML=evidence.src?`<img class="lightbox-image" src="${evidence.src}" alt="证据大图">`:`<div class="lightbox-placeholder">暂无图像</div>`;$("lightbox-meta").textContent=`${evidenceLabel(evidence)}${evidence.timestamp?` · ${evidence.timestamp}`:""} · 置信度 ${confidenceText(evidence.confidence)}`;$("lightbox").hidden=false;document.body.classList.add("locked");pendingAutoplayIndex=Number(button.dataset.itemIndex);syncEvidencePlayers();setTimeout(()=>$("lightbox-close").focus(),0)}
+function openLightbox(button){const evidence=findEvidenceFromButton(button);if(!evidence)return;hideHover();pauseEvidencePlayers();const media=$("lightbox-media");if(evidence.kind==="video")media.innerHTML=evidence.src?`<div class="evidence-video-wrap"><canvas class="evidence-video-backdrop" aria-hidden="true"></canvas><div class="evidence-video-shade" aria-hidden="true"></div><video class="lightbox-video evidence-video" data-evidence-video="true" data-item-index="${button.dataset.itemIndex}" data-evidence-id="${esc(evidence.evidence_id)}" src="${esc(evidence.src)}" controls muted loop playsinline></video><div class="video-playback-status" aria-live="polite"></div></div>`:`<div class="lightbox-placeholder">暂无视频</div>`;else media.innerHTML=evidence.src?`<img class="lightbox-image" src="${evidence.src}" alt="证据大图">`:`<div class="lightbox-placeholder">暂无图像</div>`;$("lightbox-meta").textContent=`${evidenceLabel(evidence)}${evidence.timestamp?` · ${evidence.timestamp}`:""} · 置信度 ${confidenceText(evidence.confidence)}`;$("lightbox").hidden=false;document.body.classList.add("locked");pendingAutoplayIndex=Number(button.dataset.itemIndex);syncEvidencePlayers();setTimeout(()=>$("lightbox-close").focus(),0)}
 function closeLightbox(){pauseEvidencePlayers();$("lightbox-media").innerHTML="";$("lightbox").hidden=true;if(drawerIndex===null)document.body.classList.remove("locked");pendingAutoplayIndex=current;syncEvidencePlayers()}
 function bindEvidenceInteractions(){document.querySelectorAll(".evidence-thumb,.evidence-ref").forEach(button=>{button.onpointerenter=event=>{if(event.pointerType==="touch")return;hoverTimer=setTimeout(()=>showHover(button),120)};button.onpointerleave=hideHover;button.onfocus=()=>{if(window.matchMedia("(pointer:coarse)").matches)return;hoverTimer=setTimeout(()=>showHover(button,true),120)};button.onblur=hideHover;button.onclick=()=>openLightbox(button)});syncEvidencePlayers()}
 $("start").onclick=startEvaluation;$("reset").onclick=resetReport;$("drawer-close").onclick=closeDetail;$("lightbox-close").onclick=closeLightbox;$("drawer-backdrop").onclick=event=>{if(event.target===event.currentTarget)closeDetail()};$("lightbox").onclick=event=>{if(event.target===event.currentTarget)closeLightbox()};document.addEventListener("click",event=>{const detailButton=event.target.closest&&event.target.closest(".detail-trigger");if(detailButton){event.preventDefault();openDetail(Number(detailButton.dataset.detailIndex));return}if(event.target.closest&&event.target.closest(".timeline-btn,.timeline-toggle,.course-fab,.chip,.control,.evidence-thumb,.evidence-ref,.drawer-close,.lightbox-close"))return});document.addEventListener("keydown",event=>{if(event.key==="Escape"){if(!$('lightbox').hidden){closeLightbox();return}if(!$('drawer-backdrop').hidden){closeDetail();return}}if(event.key==="Tab"&&!$('drawer-backdrop').hidden){const focusables=[...$('detail-drawer').querySelectorAll('button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])')];if(!focusables.length)return;const first=focusables[0],last=focusables[focusables.length-1];if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus()}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus()}}});document.querySelectorAll("#difficultyFilters .chip").forEach(btn=>btn.onclick=()=>{if(!$("difficultyFilters").classList.contains("ready"))return;document.querySelectorAll("#difficultyFilters .chip").forEach(x=>x.classList.remove("active"));btn.classList.add("active");filter=btn.dataset.filter;renderCards();bindEvidenceInteractions()});
 function setCourseCollapsed(collapsed){const layout=document.querySelector(".live-layout");if(!layout)return;layout.classList.toggle("timeline-collapsed",collapsed);const toggle=$("timelineToggle");if(toggle){toggle.setAttribute("aria-expanded",String(!collapsed));toggle.setAttribute("aria-label",collapsed?"展开课程内容":"收起课程内容");toggle.title=collapsed?"展开课程内容":"收起课程内容"}if($("courseFab"))$("courseFab").hidden=!collapsed}
-$("timelineToggle").onclick=()=>setCourseCollapsed(!document.querySelector(".live-layout").classList.contains("timeline-collapsed"));
-if($("courseFab"))$("courseFab").onclick=()=>setCourseCollapsed(false);
+if(evidenceMediaMode!=="video"&&$("timelineToggle"))$("timelineToggle").onclick=()=>setCourseCollapsed(!document.querySelector(".live-layout").classList.contains("timeline-collapsed"));
+if(evidenceMediaMode!=="video"&&$("courseFab"))$("courseFab").onclick=()=>setCourseCollapsed(false);
+if($("follow-chip"))$("follow-chip").onclick=jumpToLatestCompleted;
+syncCanvasScale();
+window.addEventListener("resize",syncCanvasScale,{passive:true});
+if(window.visualViewport)window.visualViewport.addEventListener("resize",syncCanvasScale,{passive:true});
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)document.querySelectorAll("video[data-evidence-video]").forEach(video=>{if(!video.paused)startVideoBackdrop(video)})});
+window.addEventListener("beforeunload",closeLiveVideoInput);
 render();
 
 </script>

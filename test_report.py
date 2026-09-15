@@ -292,11 +292,36 @@ class ReportContractTest(unittest.TestCase):
         self.assertIn("follow-chip", html)
         self.assertIn("jumpToLatestCompleted", html)
         self.assertIn("settleCardFocusFromScroll", html)
+        self.assertIn("activeAnalysisIndex", html)
+        self.assertIn("if(latestCompletedIndex()===null)current=update.index", html)
+        self.assertIn("current=index;render();focusLatestCompleted(index)", html)
         self.assertNotIn("queuedFocusIndex", html)
         self.assertNotIn("autoFocusPausedUntil", html)
         self.assertIn("track.scrollTo", html)
         self.assertNotIn("scrollIntoView", html)
         self.assertIn("prefers-reduced-motion", html)
+
+    def test_generated_ui_files_are_grouped_by_style_and_media(self) -> None:
+        root = Path(__file__).resolve().parent
+        expected = (
+            root / "duanyan-ui" / "image" / "展示标准报告_8-20.html",
+            root / "duanyan-ui" / "image" / "展示标准报告_8-20_mock.html",
+            root / "duanyan-ui" / "video" / "展示标准报告_8-20_video.html",
+            root / "duanyan-ui" / "video" / "展示标准报告_8-20_mock_video.html",
+            root / "worldskills-ui" / "image" / "展示标准报告_8-20_v4.html",
+            root / "worldskills-ui" / "image" / "展示标准报告_8-20_mock_v4.html",
+            root / "worldskills-ui" / "video" / "展示标准报告_8-20_video_v4.html",
+            root / "worldskills-ui" / "video" / "展示标准报告_8-20_mock_video_v4.html",
+        )
+        self.assertTrue(all(path.is_file() for path in expected))
+        self.assertFalse((root / "worldskills-redesign-v2").exists())
+        for legacy_name in (
+            "展示标准报告_8-20.html",
+            "展示标准报告_8-20_mock.html",
+            "展示标准报告_8-20_video.html",
+            "展示标准报告_8-20_mock_video.html",
+        ):
+            self.assertFalse((root / legacy_name).exists())
 
     def test_public_html_uses_duanyan_design_tokens(self) -> None:
         html = render_html(template_payload())

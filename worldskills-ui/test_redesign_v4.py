@@ -36,6 +36,12 @@ class RedesignV4Tests(unittest.TestCase):
         cls.video_html = renderer.render_html(cls.video_payload)
         cls.video_mock_html = renderer.render_html(cls.video_mock_payload)
 
+    @staticmethod
+    def _without_report_data(html: str) -> str:
+        prefix, remainder = html.split("const DATA = ", 1)
+        _, suffix = remainder.split(";\nconst statuses", 1)
+        return prefix + "const DATA = <REPORT>;\nconst statuses" + suffix
+
     def test_coursera_banner_and_original_layers(self) -> None:
         for marker in (
             "course-banner",
@@ -136,6 +142,10 @@ class RedesignV4Tests(unittest.TestCase):
         self.assertIn("followLatest", self.standard_html)
         self.assertIn("follow-chip", self.standard_html)
         self.assertIn("jumpToLatestCompleted", self.standard_html)
+        self.assertIn("activeAnalysisIndex", self.standard_html)
+        self.assertIn("if(latestCompletedIndex()===null)current=update.index", self.standard_html)
+        self.assertIn("current=index;render();focusLatestCompleted(index)", self.standard_html)
+        self.assertIn("padding: 90px 14px", self.video_mock_html)
 
     def test_original_interaction_contract(self) -> None:
         for marker in (
@@ -270,6 +280,34 @@ class RedesignV4Tests(unittest.TestCase):
                 self.assertNotIn(marker, html)
         self.assertIn('class="course-banner"', self.standard_html)
         self.assertIn('id="timelineToggle"', self.standard_html)
+
+    def test_video_standard_and_event_pages_share_identical_ui_shell(self) -> None:
+        self.assertEqual(self.video_payload["presentation"], self.video_mock_payload["presentation"])
+        self.assertEqual(self.video_payload["scope"], self.video_mock_payload["scope"])
+        self.assertEqual(self.video_payload["demo_policy"], self.video_mock_payload["demo_policy"])
+        self.assertEqual(self.video_payload["demo_context"], self.video_mock_payload["demo_context"])
+        self.assertEqual(self.video_payload["items"], self.video_mock_payload["items"])
+        self.assertEqual(
+            self._without_report_data(self.video_html),
+            self._without_report_data(self.video_mock_html),
+        )
+        checked_standard = (VERSION_ROOT / "video" / "展示标准报告_8-20_video_v4.html").read_text(encoding="utf-8")
+        checked_event = (VERSION_ROOT / "video" / "展示标准报告_8-20_mock_video_v4.html").read_text(encoding="utf-8")
+        self.assertEqual(checked_standard, self.video_html)
+        self.assertEqual(checked_event, self.video_mock_html)
+        self.assertEqual(
+            self._without_report_data(checked_standard),
+            self._without_report_data(checked_event),
+        )
+        for marker in (
+            'src="../logo.png"',
+            'class="arena-status-grid"',
+            'class="analysis-box analysis-dashboard"',
+            "window.realtimeVideoInput",
+            "startLocalWebRTCSource",
+        ):
+            self.assertIn(marker, self.video_html)
+            self.assertIn(marker, self.video_mock_html)
 
     def test_video_score_cards_keep_intrinsic_height(self) -> None:
         for marker in (

@@ -40,7 +40,7 @@ __STYLES__
   </div>
   <div class="banner-inner">
     <div class="banner-top">
-      <img class="banner-logo" src="logo.png" alt="上海人工智能实验室 华东师范大学">
+      <img class="banner-logo" src="../logo.png" alt="上海人工智能实验室 华东师范大学">
       <div class="crumbs">智能实训 <span>/</span> 发动机拆装 <span>/</span> 实时评测</div>
       <div class="live-pill"><i class="pulse"></i><span id="connection">等待视频接入</span></div>
     </div>
@@ -196,7 +196,7 @@ __STYLES__
       <i class="banner-slash"></i>
     </div>
     <div class="arena-brand">
-      <img class="arena-logo" src="logo.png" alt="上海人工智能实验室 华东师范大学">
+      <img class="arena-logo" src="../logo.png" alt="上海人工智能实验室 华东师范大学">
       <div class="arena-title"><span>WORLD SKILLS · LIVE JUDGING</span><h1 id="title">发动机气缸盖拆装智能实训分析</h1></div>
     </div>
     <div class="arena-status-grid" aria-label="实时评测状态">
@@ -271,9 +271,8 @@ def _read_json(path: Path) -> dict[str, Any]:
 
 def _embedded_evidence_sources() -> dict[str, str]:
     candidates = [
-        PROJECT_ROOT / "展示标准报告_8-20_mock.html",
-        PROJECT_ROOT / "worldskills-redesign-v1" / "展示标准报告_8-20_mock_v2.html",
-        PROJECT_ROOT / "worldskills-redesign-v3" / "展示标准报告_8-20_mock_v3.html",
+        PROJECT_ROOT / "duanyan-ui" / "image" / "展示标准报告_8-20_mock.html",
+        VERSION_ROOT / "image" / "展示标准报告_8-20_mock_v4.html",
     ]
     for legacy_html in candidates:
         sources = _collect_sources_from_html(legacy_html)
@@ -374,7 +373,7 @@ def render_html(payload: Mapping[str, Any]) -> str:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="生成 Coursera 风格实时评测页面")
+    parser = argparse.ArgumentParser(description="生成世赛 UI 实时评测页面")
     parser.add_argument("--input", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
