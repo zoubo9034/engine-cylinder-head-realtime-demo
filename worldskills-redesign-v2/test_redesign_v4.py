@@ -204,6 +204,25 @@ class RedesignV4Tests(unittest.TestCase):
         self.assertNotIn("autoFocusPausedUntil", self.video_mock_html)
         self.assertIn("/mock-video-evidence/08-item_5069.mp4", self.video_mock_html)
 
+    def test_video_cards_and_dialogs_use_worldskills_components(self) -> None:
+        for marker in (
+            'class="binding-meta"',
+            'class="evidence-expand evidence-ref"',
+            'class="follow-chip-icon"',
+            'class="follow-chip-copy"',
+            'class="follow-chip-action"',
+            "展开详细表单",
+            ".item-card::before",
+            ".drawer-backdrop { z-index: 100; }",
+            ".lightbox { z-index: 120; }",
+            "height: 100dvh",
+            "#lightbox-media",
+        ):
+            self.assertIn(marker, self.video_mock_html)
+        styles = (VERSION_ROOT / "assets" / "styles.css").read_text(encoding="utf-8")
+        self.assertNotIn(".evidence-video-wrap {\n.follow-chip", styles)
+        self.assertEqual(styles.count("\n.evidence-video-wrap {"), 1)
+
 
 if __name__ == "__main__":
     unittest.main()
