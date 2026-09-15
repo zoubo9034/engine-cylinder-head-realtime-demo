@@ -99,7 +99,7 @@ class RedesignV4Tests(unittest.TestCase):
         self.assertIn("--canvas-width: 1920px", self.standard_html)
         self.assertIn("--canvas-height: 1080px", self.standard_html)
         self.assertIn("--live-row: 768px", self.standard_html)
-        self.assertIn("grid-template-columns: 236px 430px 1142px", self.standard_html)
+        self.assertIn("grid-template-columns: 220px 400px 1188px", self.standard_html)
         self.assertIn("grid-template-rows: var(--live-row)", self.standard_html)
         self.assertIn("align-items: stretch", self.standard_html)
         self.assertIn("DESIGN_CANVAS = {width:1920,height:1080}", self.standard_html)
@@ -238,10 +238,15 @@ class RedesignV4Tests(unittest.TestCase):
             "flex: 0 0 auto",
             "height: auto",
             "scroll-padding-block: 260px",
-            "grid-template-columns: 236px 430px 1142px",
-            "grid-template-columns: 430px 1402px",
+            "grid-template-columns: 220px 400px 1188px",
+            "grid-template-columns: 440px 1392px",
             "width: 250px",
             "height: 375px",
+            "grid-template-columns: minmax(0, 1fr) 280px",
+            'class="card-summary"',
+            'class="card-evidence"',
+            "aspect-ratio: 9 / 16",
+            "width: 240px",
         ):
             self.assertIn(marker, self.video_mock_html)
         cards_styles = self.video_mock_html.split(".cards {", 1)[1].split(".cards::-webkit-scrollbar", 1)[0]
@@ -256,11 +261,13 @@ class RedesignV4Tests(unittest.TestCase):
 
     def test_design_canvas_scales_only_from_viewport_width(self) -> None:
         source = self.video_mock_html.split("function syncCanvasScale()", 1)[1].split("const WORKFLOW_FALLBACK", 1)[0]
-        self.assertIn("viewportWidth/DESIGN_CANVAS.width", source)
+        self.assertIn("(viewportWidth-gutter*2)/DESIGN_CANVAS.width", source)
+        self.assertIn("gutter=24", source)
         self.assertNotIn("viewportHeight", source)
         self.assertNotIn("Math.min(viewportWidth", source)
-        self.assertIn("height: calc(var(--canvas-height) * var(--canvas-scale, 1))", self.video_mock_html)
-        self.assertIn("transform-origin: top left", self.video_mock_html)
+        self.assertIn("height: calc(var(--canvas-height) * var(--canvas-scale, 1) + 24px)", self.video_mock_html)
+        self.assertIn("justify-content: center", self.video_mock_html)
+        self.assertIn("transform-origin: top center", self.video_mock_html)
 
     def test_follow_chip_restores_visibility_before_focus(self) -> None:
         source = self.video_mock_html.split("function jumpToLatestCompleted(", 1)[1].split("function clearAutoFocusPause", 1)[0]

@@ -29,6 +29,7 @@
   --radius: 14px;
   --canvas-width: 1920px;
   --canvas-height: 1080px;
+  --canvas-gutter: 24px;
   --page-pad: 32px;
   --content-width: 1856px;
   --live-row: 768px;
@@ -71,20 +72,22 @@ body {
 body.locked { overflow: hidden; }
 .canvas-host {
   position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
   width: 100vw;
-  height: calc(var(--canvas-height) * var(--canvas-scale, 1));
+  height: calc(var(--canvas-height) * var(--canvas-scale, 1) + 24px);
   min-height: 100vh;
+  padding-top: 12px;
   overflow: hidden;
 }
 .page-canvas {
-  position: absolute;
-  top: 0;
-  left: 0;
   width: var(--canvas-width);
   height: var(--canvas-height);
+  flex: 0 0 var(--canvas-width);
   overflow: hidden;
   transform: scale(var(--canvas-scale, 1));
-  transform-origin: top left;
+  transform-origin: top center;
   will-change: transform;
 }
 button { font: inherit; color: inherit; cursor: pointer; }
@@ -281,17 +284,17 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
 
 .live-layout {
   display: grid;
-  grid-template-columns: 236px 430px 1142px;
+  grid-template-columns: 220px 400px 1188px;
   grid-template-rows: var(--live-row);
   gap: 24px;
   align-items: stretch;
   height: var(--live-row);
 }
 .live-layout.awaiting-start {
-  grid-template-columns: 236px 1596px;
+  grid-template-columns: 220px 1612px;
 }
 .live-layout.timeline-collapsed:not(.awaiting-start) {
-  grid-template-columns: 430px 1402px;
+  grid-template-columns: 440px 1392px;
 }
 .live-layout.timeline-collapsed.awaiting-start {
   grid-template-columns: 1856px;
@@ -933,6 +936,21 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
   background: #fbfcfe;
   border-top: 1px solid #edf1f7;
 }
+.card-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  align-items: start;
+  gap: 18px;
+  padding: 16px 22px 0 24px;
+}
+.card-summary, .card-evidence { min-width: 0; }
+.card-evidence { display: flex; justify-content: center; }
+.card-body .target,
+.card-body .binding-line,
+.card-body .analysis-box,
+.card-body .evidence-box { margin-right: 0; margin-left: 0; }
+.card-body .target { margin-top: 0; }
+.card-body .evidence-box { width: 100%; margin-top: 0; }
 .detail-trigger {
   display: inline-flex;
   align-items: center;
@@ -1020,9 +1038,9 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #07172d;
-  aspect-ratio: 16 / 9;
+  aspect-ratio: 9 / 16;
 }
-.item-card .evidence-video-wrap { width: 480px; max-width: 100%; margin: 0 auto; }
+.item-card .evidence-video-wrap { width: 240px; max-width: 100%; margin: 0 auto; }
 .lightbox .evidence-video-wrap { width: 100%; align-self: center; }
 .evidence-video { display: block; width: 100%; height: 100%; object-fit: contain; background: #07172d; }
 .video-playback-status:not(:empty) {
@@ -1439,7 +1457,7 @@ let focusTransitionToken = 0;
 const $ = id => document.getElementById(id);
 const esc = value => String(value ?? "").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[ch]));
 const DESIGN_CANVAS = {width:1920,height:1080};
-function syncCanvasScale(){const viewport=window.visualViewport||window,viewportWidth=Number(viewport.width)||window.innerWidth,scale=viewportWidth/DESIGN_CANVAS.width;document.documentElement.style.setProperty("--canvas-scale",String(Math.max(.1,scale)))}
+function syncCanvasScale(){const viewport=window.visualViewport||window,viewportWidth=Number(viewport.width)||window.innerWidth,gutter=24,scale=Math.max(.1,(viewportWidth-gutter*2)/DESIGN_CANVAS.width);document.documentElement.style.setProperty("--canvas-scale",String(scale))}
 const WORKFLOW_FALLBACK = {schema:"realtime-workflow-display/v1",cycle_ms:3000,jitter_ratio:.15,stages:[
   {stage_id:"ingest",label:"接入画面",order:0,weight:.10},
   {stage_id:"planning",label:"任务规划",order:1,weight:.15},
@@ -1502,7 +1520,7 @@ function evidenceMarkup(item,itemIndex){
   return `<div class="evidence-box"><div class="slot-row">${slots}</div>${tiles?`<div class="evidence-grid">${tiles}</div>`:`<div class="empty-note">当前项目仍在等待可用证据图</div>`}${seq.length?`<div class="sequence">${["开始","动作中","完成"].map((p,i)=>`<span class="${seq[i]?"on":""}">${p}</span>`).join("")}</div>`:""}<div class="explain">${esc(explanation)}</div></div>`;
 }
 function analysisMarkup(item){if(!isTerminal(item))return "";const profile=item.analysis_profile||{};const tools=(item.analysis_tools||[]).map(tool=>`<span class="tool-chip">${esc(tool.label||tool.tool_id)}</span>`).join("");const features=(profile.complexity_features||[]).map(feature=>esc(feature)).join(" · ");const metrics=[profile.distinct_tool_count!=null?`${profile.distinct_tool_count} 个工具`:"",profile.actual_analysis_task_count!=null?`实际分析任务 ${profile.actual_analysis_task_count} 个`:""].filter(Boolean).join(" · ");return `<div class="analysis-box"><div class="analysis-title">分析链 · ${esc(item.difficulty_label||labels[item.difficulty]||"")}</div><div class="tool-list">${tools||`<span class="tool-chip">工具链整理中</span>`}</div><div class="profile-line">${esc(metrics)}${features?`<br>证据链：${features}`:""}</div></div>`}
-function cardMarkup(item,i,extraClass=""){const terminal=isTerminal(item);const evaluation=isCompleted(item)&&item.realtime_target?`<div class="target"><span class="target-label">评分结论</span><p>${esc(item.realtime_target)}</p></div>`:"";const difficulty=terminal?`<span class="difficulty ${esc(item.difficulty||"")}">${esc(item.difficulty_label||labels[item.difficulty]||"")}</span>`:"";const score=terminal?`<span class="score-badge ${scoreFor(item)===0?"zero":""}">${scoreFor(item)} / 1 分</span>`:"";const liveTime=esc(item.binding&&item.binding.live_timestamp||"等待"),confidence=item.binding&&item.binding.time_confidence!=null?Math.round(Number(item.binding.time_confidence)*100)+"%":"—";return `<article class="item-card ${i===current?"current":""} ${item.status==="待人工确认"?"review":""} ${extraClass}" data-item-index="${i}" data-difficulty="${terminal?esc(item.difficulty||""):""}"><div class="card-head"><div class="item-id"><span class="item-no">${item.item_number}</span><div><div class="item-title">${esc(item.display_name)}</div>${difficulty}</div></div><div class="card-actions">${score}<span class="status-badge ${cls(item.status)}">${esc(item.status)}</span></div></div>${evaluation}<div class="binding-line"><span class="binding-meta"><span>现场时间</span><strong>${liveTime}</strong></span><span class="binding-meta"><span>置信度</span><strong>${confidence}</strong></span></div>${evidenceMarkup(item,i)}${analysisMarkup(item)}<div class="card-footer"><span class="difficulty-hint">详细核验 · ${item.detail&&item.detail.criterion_count||0} 项</span><button class="detail-trigger" type="button" data-detail-index="${i}" aria-controls="detail-drawer" aria-expanded="false"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 2.5h7l3 3v8H3zM10 2.5v3h3M5.5 8h5M5.5 10.5h5" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/></svg><span>展开详细表单</span></button></div></article>`}
+function cardMarkup(item,i,extraClass=""){const terminal=isTerminal(item);const evaluation=isCompleted(item)&&item.realtime_target?`<div class="target"><span class="target-label">评分结论</span><p>${esc(item.realtime_target)}</p></div>`:"";const difficulty=terminal?`<span class="difficulty ${esc(item.difficulty||"")}">${esc(item.difficulty_label||labels[item.difficulty]||"")}</span>`:"";const score=terminal?`<span class="score-badge ${scoreFor(item)===0?"zero":""}">${scoreFor(item)} / 1 分</span>`:"";const liveTime=esc(item.binding&&item.binding.live_timestamp||"等待"),confidence=item.binding&&item.binding.time_confidence!=null?Math.round(Number(item.binding.time_confidence)*100)+"%":"—";return `<article class="item-card ${i===current?"current":""} ${item.status==="待人工确认"?"review":""} ${extraClass}" data-item-index="${i}" data-difficulty="${terminal?esc(item.difficulty||""):""}"><div class="card-head"><div class="item-id"><span class="item-no">${item.item_number}</span><div><div class="item-title">${esc(item.display_name)}</div>${difficulty}</div></div><div class="card-actions">${score}<span class="status-badge ${cls(item.status)}">${esc(item.status)}</span></div></div><div class="card-body"><div class="card-summary">${evaluation}<div class="binding-line"><span class="binding-meta"><span>现场时间</span><strong>${liveTime}</strong></span><span class="binding-meta"><span>置信度</span><strong>${confidence}</strong></span></div>${analysisMarkup(item)}</div><div class="card-evidence">${evidenceMarkup(item,i)}</div></div><div class="card-footer"><span class="difficulty-hint">详细核验 · ${item.detail&&item.detail.criterion_count||0} 项</span><button class="detail-trigger" type="button" data-detail-index="${i}" aria-controls="detail-drawer" aria-expanded="false"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 2.5h7l3 3v8H3zM10 2.5v3h3M5.5 8h5M5.5 10.5h5" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/></svg><span>展开详细表单</span></button></div></article>`}
 function createCardNode(markup){const template=document.createElement("template");template.innerHTML=markup.trim();return template.content.firstElementChild}
 function rememberVideoPositions(root=document){root.querySelectorAll&&root.querySelectorAll("video[data-evidence-video]").forEach(rememberEvidencePosition)}
 function renderCards(){const container=$("cards"),visible=state.map((item,i)=>({item,i})).filter(x=>x.item.status!=="待开始"&&(filter==="all"||(isTerminal(x.item)&&x.item.difficulty===filter)));if(!visible.length){rememberVideoPositions(container);if(!container.querySelector(".cards-empty"))container.innerHTML="<div class=\"cards-empty\"><span class=\"wait-orb\" aria-hidden=\"true\"></span><span class=\"wait-label\">等待识别</span></div>";return}container.querySelector(".cards-empty")?.remove();const desired=new Set(visible.map(x=>String(x.i)));visible.forEach((entry,position)=>{const key=signature(entry.item);let card=container.querySelector(`:scope > .item-card[data-item-index="${entry.i}"]`);if(!card||card.dataset.renderSignature!==key){const next=createCardNode(cardMarkup(entry.item,entry.i,newCardIndexes.has(entry.i)?"reveal":""));next.dataset.renderSignature=key;if(card){rememberVideoPositions(card);card.replaceWith(next)}else container.append(next);card=next}card.classList.toggle("current",entry.i===current);card.classList.toggle("review",entry.item.status==="待人工确认");const reference=container.children[position];if(reference!==card)container.insertBefore(card,reference||null)});container.querySelectorAll(":scope > .item-card").forEach(card=>{if(!desired.has(String(card.dataset.itemIndex))){rememberVideoPositions(card);card.remove()}});bindCardFocusInteractions();if(newCardIndexes.size)requestAnimationFrame(()=>newCardIndexes.clear())}
