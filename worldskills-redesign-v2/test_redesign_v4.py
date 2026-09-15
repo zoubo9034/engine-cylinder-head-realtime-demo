@@ -281,7 +281,10 @@ class RedesignV4Tests(unittest.TestCase):
             "height: 120px",
             "flex: 1 1 auto",
             "margin-top: 8px",
-            "border-top: 1px solid #dbe7f7",
+            'class="analysis-columns"',
+            'class="analysis-steps"',
+            'class="analysis-stat-grid"',
+            'class="analysis-feature-list"',
         ):
             self.assertIn(marker, self.video_mock_html)
         cards_styles = self.video_mock_html.split(".cards {", 1)[1].split(".cards::-webkit-scrollbar", 1)[0]
@@ -310,6 +313,14 @@ class RedesignV4Tests(unittest.TestCase):
             'document.addEventListener("visibilitychange"',
         ):
             self.assertIn(marker, self.video_mock_html)
+
+    def test_last_workflow_stage_has_visible_dwell_and_ui_hides_replay_origin(self) -> None:
+        for html in (self.video_html, self.video_mock_html):
+            workflow_source = html.split("function workflowStart(", 1)[1].split("function cls(", 1)[0]
+            self.assertIn("reduced?80:wait", workflow_source)
+            self.assertNotIn("reduced?80:0", workflow_source)
+            self.assertNotIn("Mock 回放中", html)
+            self.assertNotIn("视频 Mock 报告", html)
 
     def test_follow_chip_restores_visibility_before_focus(self) -> None:
         source = self.video_mock_html.split("function jumpToLatestCompleted(", 1)[1].split("function clearAutoFocusPause", 1)[0]

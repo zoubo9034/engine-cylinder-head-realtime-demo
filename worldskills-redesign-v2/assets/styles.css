@@ -1413,11 +1413,20 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
   margin-top: 8px;
   padding: 12px 14px;
 }
-.mode-video .arena-results .analysis-box .profile-line {
-  margin-top: auto;
-  padding-top: 10px;
-  border-top: 1px solid #dbe7f7;
-}
+.mode-video .arena-results .analysis-columns { display: grid; grid-template-columns: minmax(0,1.08fr) minmax(0,.92fr); flex: 1; gap: 10px; min-height: 0; margin-top: 8px; }
+.mode-video .arena-results .analysis-tools-panel,
+.mode-video .arena-results .analysis-facts { display: flex; flex-direction: column; min-height: 0; padding: 10px; background: rgba(255,255,255,.76); border: 1px solid #dbe7f7; border-radius: 7px; }
+.mode-video .arena-results .analysis-subtitle { flex: 0 0 auto; color: #74849a; font-size: 9px; font-weight: 700; letter-spacing: .08em; }
+.mode-video .arena-results .analysis-steps { display: flex; flex: 1; flex-direction: column; justify-content: space-evenly; gap: 6px; min-height: 0; padding-top: 5px; }
+.mode-video .arena-results .analysis-step { display: grid; grid-template-columns: 25px minmax(0,1fr); align-items: center; gap: 8px; min-height: 36px; padding: 5px 8px; color: #34465c; background: #f7faff; border: 1px solid #e1eaf5; border-radius: 6px; }
+.mode-video .arena-results .analysis-step i { display: grid; place-items: center; width: 23px; height: 23px; color: #ffffff; background: #1768c5; border-radius: 50%; font-size: 8px; font-style: normal; font-weight: 700; }
+.mode-video .arena-results .analysis-step b { font-size: 10px; font-weight: 650; line-height: 1.35; }
+.mode-video .arena-results .analysis-stat-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 6px; margin: 7px 0 12px; }
+.mode-video .arena-results .analysis-stat-grid > span { padding: 8px; background: #f7faff; border: 1px solid #e1eaf5; border-radius: 6px; }
+.mode-video .arena-results .analysis-stat-grid small { display: block; color: #74849a; font-size: 9px; }
+.mode-video .arena-results .analysis-stat-grid strong { display: block; margin-top: 2px; color: #1768c5; font-size: 19px; }
+.mode-video .arena-results .analysis-feature-list { display: flex; flex: 1; flex-direction: column; justify-content: center; gap: 7px; min-height: 0; padding-top: 7px; }
+.mode-video .arena-results .analysis-feature { display: flex; align-items: center; min-height: 30px; padding: 6px 8px; color: #405269; background: #f7faff; border-left: 2px solid #74a8e5; border-radius: 0 5px 5px 0; font-size: 10px; line-height: 1.35; }
 .mode-video .arena-results .tool-chip { font-size: 10px; }
 .mode-video .arena-results .profile-line { margin-top: 5px; font-size: 10px; }
 .mode-video .arena-results .evidence-box { margin: 0; padding: 9px; }

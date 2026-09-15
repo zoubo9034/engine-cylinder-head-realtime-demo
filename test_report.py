@@ -328,6 +328,11 @@ class ReportContractTest(unittest.TestCase):
             "stateRank(incomingState)<stateRank(currentItem.status)",
             html,
         )
+        self.assertNotIn("Mock 回放中", html)
+        self.assertNotIn("视频 Mock 报告", html)
+        workflow_source = html.split("function workflowStart(", 1)[1].split("function cls(", 1)[0]
+        self.assertIn("reduced?80:wait", workflow_source)
+        self.assertNotIn("reduced?80:0", workflow_source)
 
     def test_evaluation_text_is_disclosed_only_after_completion(self) -> None:
         payload = template_payload()
@@ -1035,7 +1040,7 @@ class ReportContractTest(unittest.TestCase):
             "isNativeControlClick",
             "userPausedEvidence",
             "programmaticScrollUntil",
-            "请通过本地演示服务启动视频证据回放",
+            "请通过本地演示服务启动视频证据展示",
         ):
             self.assertIn(marker, html)
         present_source = html.split("async function present(update)", 1)[1].split("async function drainQueue", 1)[0]
