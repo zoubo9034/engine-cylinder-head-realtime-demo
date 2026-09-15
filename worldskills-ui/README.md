@@ -28,3 +28,4 @@ python -m unittest -v worldskills-ui/test_redesign_v4.py
 
 图片 Mock 可以直接打开；视频 Mock 需要通过根目录的 `serve_demo.py` 访问
 `worldskills-ui/video/展示标准报告_8-20_mock_video_v4.html`。
+部署到 GitHub Pages 后，视频 Mock 可直接使用同仓库的相对 MP4/WebM 资源；标准实时页仍需要后端 API。

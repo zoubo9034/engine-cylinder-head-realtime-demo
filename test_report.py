@@ -170,7 +170,7 @@ class ReportContractTest(unittest.TestCase):
         public = public_projection(payload)
         public_video = public["items"][0]["binding"]["video_evidence"]
         self.assertEqual(public["presentation"]["evidence_media_mode"], "video")
-        self.assertEqual(public_video["src"], f"/api/evidence-media/{item['item_id']}/{record['evidence_id']}")
+        self.assertEqual(public_video["src"], f"../../api/evidence-media/{item['item_id']}/{record['evidence_id']}")
         self.assertNotIn("source_path", public_video)
         self.assertEqual(public["items"][0]["detail"]["checks"][0]["evidence_ids"], [record["evidence_id"]])
         self.assertTrue(first_check["criterion_id"])
@@ -317,11 +317,16 @@ class ReportContractTest(unittest.TestCase):
         self.assertFalse((root / "worldskills-redesign-v2").exists())
         for legacy_name in (
             "展示标准报告_8-20.html",
-            "展示标准报告_8-20_mock.html",
             "展示标准报告_8-20_video.html",
             "展示标准报告_8-20_mock_video.html",
         ):
             self.assertFalse((root / legacy_name).exists())
+        legacy_redirect = root / "展示标准报告_8-20_mock.html"
+        self.assertTrue(legacy_redirect.is_file())
+        self.assertIn(
+            "duanyan-ui/image/展示标准报告_8-20_mock.html",
+            legacy_redirect.read_text(encoding="utf-8"),
+        )
 
     def test_public_html_uses_duanyan_design_tokens(self) -> None:
         html = render_html(template_payload())
@@ -1087,7 +1092,8 @@ class ReportContractTest(unittest.TestCase):
             "video.srcObject=stream",
             "captureStream",
             "realtime-video-icecandidate",
-            "/demo-media/live-input-sample.webm",
+            "../../demo-media/live-input-sample.webm",
+            'new URL("../../api/reset",document.baseURI)',
         ):
             self.assertIn(marker, html)
         present_source = html.split("async function present(update)", 1)[1].split("async function drainQueue", 1)[0]
@@ -1104,7 +1110,8 @@ class ReportContractTest(unittest.TestCase):
         self.assertIn("userPausedEvidence.has", sync_source)
         pause_source = html.split("function pauseEvidencePlayers(", 1)[1].split("function selectEvidenceVideo", 1)[0]
         self.assertIn("systemPause", pause_source)
-        self.assertIn("/mock-video-evidence/08-item_5069.mp4", html)
+        self.assertIn("../../mock-video-evidence/08-item_5069.mp4", html)
+        self.assertIn("if(mockReplay){window.location.reload();return}", html)
         self.assertNotIn("source_path", html)
 
 

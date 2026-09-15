@@ -219,7 +219,8 @@ class RedesignV4Tests(unittest.TestCase):
             "video.srcObject=stream",
             "captureStream",
             "realtime-video-icecandidate",
-            "/demo-media/live-input-sample.webm",
+            "../../demo-media/live-input-sample.webm",
+            'new URL("../../api/reset",document.baseURI)',
         ):
             self.assertIn(marker, self.video_mock_html)
         present_source = self.video_mock_html.split("async function present(update)", 1)[1].split("async function drainQueue", 1)[0]
@@ -232,7 +233,8 @@ class RedesignV4Tests(unittest.TestCase):
         self.assertLess(scroll_source.index("scrollTop>=maxScroll-24"), scroll_source.index('evidenceMediaMode!=="video"'))
         self.assertNotIn("queuedFocusIndex", self.video_mock_html)
         self.assertNotIn("autoFocusPausedUntil", self.video_mock_html)
-        self.assertIn("/mock-video-evidence/08-item_5069.mp4", self.video_mock_html)
+        self.assertIn("../../mock-video-evidence/08-item_5069.mp4", self.video_mock_html)
+        self.assertIn("if(mockReplay){window.location.reload();return}", self.video_mock_html)
 
     def test_video_cards_and_dialogs_use_worldskills_components(self) -> None:
         for marker in (

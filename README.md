@@ -248,10 +248,24 @@ window.realtimeVideoInput.getState();
 成功状态应包含 `receiverConnectionState: "connected"`、`hasRemoteStream: true` 和
 `trackState: "live"`。
 
+### 部署到 GitHub Pages
+
+图片 Mock 和视频 Mock 都可以静态部署。视频 Mock 的 MP4、WebM 使用相对项目根路径，GitHub Pages
+会直接提供浏览器所需的 Range 响应；内置 WebRTC 发送端也能在 Pages 的 HTTPS 环境中运行。当前入口：
+
+```text
+https://zoubo9034.github.io/engine-cylinder-head-realtime-demo/duanyan-ui/video/展示标准报告_8-20_mock_video.html
+https://zoubo9034.github.io/engine-cylinder-head-realtime-demo/worldskills-ui/video/展示标准报告_8-20_mock_video_v4.html
+```
+
+静态站没有 `/api/reset`，因此 Mock 页的“重置”会自动刷新当前页面恢复初始状态。标准实时页仍需要
+`serve_demo.py` 或等价后端提供 `/api/report`、`/api/update`、`/api/reset` 和实时证据媒体接口；
+仅把标准页 HTML 放到 Pages 上不能完成现场实时评分。
+
 页面按钮行为：
 
 - `启动评测`：开始轮询报告 JSON；mock 页面会按事件补丁顺序回放。
-- `重置`：调用 `/api/reset`，清空现场绑定并恢复初始模板；mock 文件会保留回放事件。
+- `重置`：有后端时调用 `/api/reset`；静态部署的 Mock 页通过刷新当前页面恢复初始状态。
 - `展开详细表单`：打开当前评分项的只读详情抽屉；未完成时显示核验维度骨架，终态后显示逐条依据和证据关联。
 - 左侧流程项：只用于查看某个评分项，不承担“下一项”推进功能。
 
