@@ -27,8 +27,10 @@
   --error: #b32222;
   --error-bg: #fdecec;
   --radius: 14px;
-  --page-max: 1520px;
+  --canvas-width: 1920px;
   --page-pad: 56px;
+  --content-width: 1808px;
+  --live-row: 900px;
   --shadow: 0 12px 32px rgba(15, 55, 120, 0.08);
   --focus: 0 0 0 3px rgba(0, 86, 210, 0.28);
   --grad-blue: linear-gradient(135deg, #2f80ff 0%, #0056d2 58%, #083d8a 100%);
@@ -38,7 +40,7 @@
 
 * { box-sizing: border-box; }
 html {
-  min-width: 320px;
+  min-width: var(--canvas-width);
   background: #eaf6f3;
   scrollbar-width: thin;
   scrollbar-color: #b7d4f8 #eef5ff;
@@ -52,6 +54,7 @@ html::-webkit-scrollbar-thumb {
 html::-webkit-scrollbar-thumb:hover { background: #9cc4f4; }
 body {
   margin: 0;
+  min-width: var(--canvas-width);
   min-height: 100vh;
   color: var(--ink);
   background:
@@ -79,9 +82,11 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
 
 .course-banner {
   position: relative;
+  width: var(--canvas-width);
+  height: 436px;
+  margin: 0 auto;
   overflow: hidden;
   color: #fff;
-  min-height: 360px;
   background:
     radial-gradient(720px 280px at 12% 118%, rgba(255, 178, 90, 0.22), transparent 58%),
     linear-gradient(118deg, #1468c8 0%, #1e7ae8 42%, #4aa3ff 76%, #7ec4ff 100%);
@@ -127,9 +132,9 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
   display: flex;
   flex-direction: column;
   gap: 96px;
-  min-height: 436px;
-  max-width: none;
-  margin: 0;
+  width: var(--canvas-width);
+  height: 436px;
+  margin: 0 auto;
   padding: 28px var(--page-pad) 52px;
 }
 .banner-top {
@@ -197,9 +202,8 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
   font-size: 13px;
 }
 .shell {
-  width: 100%;
-  max-width: none;
-  margin: 0;
+  width: var(--canvas-width);
+  margin: 0 auto;
   padding: 28px var(--page-pad) 72px;
 }
 
@@ -254,22 +258,21 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
 }
 
 .live-layout {
-  --live-row: clamp(780px, calc(100dvh - 220px), 960px);
   display: grid;
-  grid-template-columns: minmax(220px, 280px) minmax(320px, 1fr) minmax(0, 1.15fr);
+  grid-template-columns: 280px 720px 760px;
   grid-template-rows: var(--live-row);
   gap: 24px;
   align-items: stretch;
   height: var(--live-row);
 }
 .live-layout.awaiting-start {
-  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+  grid-template-columns: 280px 1504px;
 }
 .live-layout.timeline-collapsed:not(.awaiting-start) {
-  grid-template-columns: minmax(320px, 1fr) minmax(0, 1.15fr);
+  grid-template-columns: 720px 1064px;
 }
 .live-layout.timeline-collapsed.awaiting-start {
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: 1808px;
 }
 .live-layout.timeline-collapsed .course-column {
   display: none;
@@ -708,7 +711,8 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
 .cards {
   display: grid;
   grid-template-columns: 1fr;
-  grid-template-rows: minmax(0, 1fr);
+  grid-auto-rows: max-content;
+  align-content: start;
   flex: 1;
   gap: 22px;
   min-height: 0;
@@ -716,7 +720,7 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
   overflow-y: auto;
   overflow-x: hidden;
   padding: 3px 6px 8px 2px;
-  scroll-padding-block: 32vh;
+  scroll-padding-block: 288px;
   scrollbar-width: thin;
   scrollbar-color: #b7d4f8 #eef5ff;
 }
@@ -771,7 +775,10 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
 }
 .item-card {
   position: relative;
+  align-self: start;
+  height: max-content;
   min-width: 0;
+  min-height: max-content;
   padding: 0;
   overflow: hidden;
   background: #ffffff;
@@ -1249,64 +1256,6 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
   .wait-orb { animation: none; }
   .workflow-track { scroll-behavior: auto; }
   .workflow-stage .workflow-light { transition: none; }
-}
-@media (max-width: 1100px) {
-  :root { --page-pad: 32px; }
-}
-@media (max-width: 1200px) {
-  .live-layout {
-    grid-template-columns: minmax(200px, 240px) minmax(280px, 1fr) minmax(0, 1fr);
-  }
-  .live-layout.awaiting-start {
-    grid-template-columns: minmax(200px, 240px) minmax(0, 1fr);
-  }
-  .live-layout.timeline-collapsed:not(.awaiting-start) {
-    grid-template-columns: minmax(280px, 1fr) minmax(0, 1fr);
-  }
-}
-@media (max-width: 1050px) {
-  .live-layout,
-  .live-layout.timeline-collapsed,
-  .live-layout.awaiting-start,
-  .live-layout.timeline-collapsed.awaiting-start,
-  .live-layout.timeline-collapsed:not(.awaiting-start) {
-    grid-template-columns: 1fr;
-    grid-template-rows: none;
-    height: auto;
-    min-height: 0;
-  }
-  .course-column,
-  .stage-column,
-  .results-column {
-    height: auto;
-    overflow: visible;
-  }
-  .stage-column .stage-panel,
-  .video-slot { min-height: 220px; }
-  .timeline { max-height: min(280px, 40vh); }
-  .timeline-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .cards { flex: none; max-height: 62vh; min-height: 220px; }
-}
-@media (max-width: 800px) {
-  .metrics { gap: 10px; }
-  .metric { min-height: 96px; padding: 14px 12px; }
-  .metric-label { font-size: 12px; }
-  .metric-value { font-size: 16px; }
-  .course-banner h1 { font-size: 31px; }
-  .banner-art { display: none; }
-  .hero,
-  .stage-column .hero { grid-template-columns: 1fr; gap: 12px; padding: 16px; }
-  .workflow-strip { align-items: flex-start; flex-direction: column; gap: 7px; }
-  .workflow-track { width: 100%; }
-  .workflow-state { align-self: flex-end; min-width: 0; }
-  .video-placeholder-title { font-size: 15px; }
-}
-@media (max-width: 650px) {
-  .banner-inner, .shell { padding-left: 16px; padding-right: 16px; }
-  .timeline-list { grid-template-columns: 1fr 1fr; }
-  .evidence-grid { grid-template-columns: 1fr 1fr; }
-  .detail-drawer { width: 100%; }
-  .drawer-grid { grid-template-columns: 1fr 1fr; }
 }
 
 </style>

@@ -96,13 +96,13 @@ class RedesignV4Tests(unittest.TestCase):
         )
         self.assertIn('class="live-layout awaiting-start"', self.standard_html)
         self.assertIn('classList.remove("awaiting-start")', self.standard_html)
-        self.assertIn("--live-row:", self.standard_html)
-        self.assertIn(
-            "--live-row: clamp(780px, calc(100dvh - 220px), 960px)",
-            self.standard_html,
-        )
+        self.assertIn("--canvas-width: 1920px", self.standard_html)
+        self.assertIn("--live-row: 900px", self.standard_html)
+        self.assertIn("grid-template-columns: 280px 720px 760px", self.standard_html)
         self.assertIn("grid-template-rows: var(--live-row)", self.standard_html)
         self.assertIn("align-items: stretch", self.standard_html)
+        self.assertNotIn("100dvh - 220px", self.standard_html)
+        self.assertNotIn("@media (max-width:", self.standard_html)
         self.assertIn("function beginLiveSession(", self.standard_html)
         self.assertNotIn("请通过本地演示服务启动评测", self.standard_html)
         start_fn = self.standard_html.split("async function startEvaluation()")[1].split("async function resetReport()")[0]
@@ -222,6 +222,26 @@ class RedesignV4Tests(unittest.TestCase):
         styles = (VERSION_ROOT / "assets" / "styles.css").read_text(encoding="utf-8")
         self.assertNotIn(".evidence-video-wrap {\n.follow-chip", styles)
         self.assertEqual(styles.count("\n.evidence-video-wrap {"), 1)
+
+    def test_score_cards_keep_intrinsic_height_on_fixed_canvas(self) -> None:
+        for marker in (
+            "grid-auto-rows: max-content",
+            "align-content: start",
+            "height: max-content",
+            "min-height: max-content",
+            "scroll-padding-block: 288px",
+            "grid-template-columns: 280px 720px 760px",
+            "grid-template-columns: 720px 1064px",
+        ):
+            self.assertIn(marker, self.video_mock_html)
+        cards_styles = self.video_mock_html.split(".cards {", 1)[1].split(".cards::-webkit-scrollbar", 1)[0]
+        self.assertNotIn("grid-template-rows: minmax(0, 1fr)", cards_styles)
+        for marker in (
+            "100dvh - 220px",
+            "max-height: 62vh",
+            "@media (max-width:",
+        ):
+            self.assertNotIn(marker, self.video_mock_html)
 
 
 if __name__ == "__main__":
