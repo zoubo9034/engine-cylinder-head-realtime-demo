@@ -200,6 +200,11 @@ python serve_demo.py \
 端砚 UI 访问 `http://127.0.0.1:8765/展示标准报告_8-20_mock_video.html`，世赛 UI 访问
 `http://127.0.0.1:8765/worldskills-redesign-v2/展示标准报告_8-20_mock_video_v4.html`。
 
+视频页面通过 `window.realtimeVideoInput` 接收 WebRTC 视频轨道。上游发送端可调用
+`acceptOffer(offer, rtcConfiguration)` 取得 answer，并按需用 `addIceCandidate(candidate)`
+补充远端 ICE candidate；收到的轨道会写入 `#live-video.srcObject`。视频事件版启动时会用
+`demo-media/live-input-sample.webm` 建立一对浏览器内 `RTCPeerConnection`，用于演示和验证同一接收链路。
+
 页面按钮行为：
 
 - `启动评测`：开始轮询报告 JSON；mock 页面会按事件补丁顺序回放。

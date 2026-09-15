@@ -166,7 +166,8 @@ class RedesignV4Tests(unittest.TestCase):
             "const mockReplay = Array.isArray(DATA.events)&&DATA.events.length>0",
             self.mock_html,
         )
-        self.assertIn("if(mockReplay){runMockEvents()}else if(!fileMode)", self.mock_html)
+        self.assertIn('if(mockReplay){if(evidenceMediaMode==="video")', self.mock_html)
+        self.assertIn("runMockEvents()}else if(!fileMode)", self.mock_html)
         self.assertIn("function stateRank(status)", self.mock_html)
         self.assertIn(
             "stateRank(incomingState)<stateRank(currentItem.status)",
@@ -200,6 +201,15 @@ class RedesignV4Tests(unittest.TestCase):
             "settleCardFocusFromScroll",
             '$("follow-chip").onclick=jumpToLatestCompleted',
             "lightbox-video",
+            "window.realtimeVideoInput",
+            "acceptWebRTCOffer",
+            "addWebRTCIceCandidate",
+            "startLocalWebRTCSource",
+            "RTCPeerConnection",
+            "video.srcObject=stream",
+            "captureStream",
+            "realtime-video-icecandidate",
+            "/demo-media/live-input-sample.webm",
         ):
             self.assertIn(marker, self.video_mock_html)
         present_source = self.video_mock_html.split("async function present(update)", 1)[1].split("async function drainQueue", 1)[0]

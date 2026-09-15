@@ -42,7 +42,7 @@ __STYLES__
     <div class="banner-top">
       <img class="banner-logo" src="logo.png" alt="上海人工智能实验室 华东师范大学">
       <div class="crumbs">智能实训 <span>/</span> 发动机拆装 <span>/</span> 实时评测</div>
-      <div class="live-pill"><i class="pulse"></i><span id="connection">视频流已连接</span></div>
+      <div class="live-pill"><i class="pulse"></i><span id="connection">等待视频接入</span></div>
     </div>
     <div class="banner-body">
       <h1 id="title">发动机气缸盖拆装智能实训分析</h1>
@@ -207,7 +207,7 @@ __STYLES__
       <div class="arena-status wide"><span>系统</span><strong id="quality">等待有效画面</strong></div>
     </div>
     <div class="arena-actions">
-      <div class="arena-connection"><i class="pulse"></i><span id="connection">视频流已连接</span></div>
+      <div class="arena-connection"><i class="pulse"></i><span id="connection">等待视频接入</span></div>
       <button class="control primary" id="start" type="button">启动评测</button>
       <button class="control" id="reset" type="button">重置</button>
     </div>

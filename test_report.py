@@ -254,7 +254,7 @@ class ReportContractTest(unittest.TestCase):
             self.assertNotIn(marker, html)
         self.assertNotIn("26/26", html)
         self.assertEqual(len(re.findall(r'class="item-card', html)), 1)
-        self.assertIn("视频流已连接", html)
+        self.assertIn("等待视频接入", html)
         self.assertIn("证据生成中", html)
         self.assertIn("启动评测", html)
         self.assertIn("困难", html)
@@ -322,7 +322,8 @@ class ReportContractTest(unittest.TestCase):
             "const mockReplay = Array.isArray(DATA.events)&&DATA.events.length>0",
             html,
         )
-        self.assertIn("if(mockReplay){runMockEvents()}else if(!fileMode)", html)
+        self.assertIn('if(mockReplay){if(evidenceMediaMode==="video")', html)
+        self.assertIn("runMockEvents()}else if(!fileMode)", html)
         self.assertIn("function stateRank(status)", html)
         self.assertIn(
             "stateRank(incomingState)<stateRank(currentItem.status)",
@@ -946,6 +947,10 @@ class ReportContractTest(unittest.TestCase):
             media_root.mkdir()
             media_bytes = bytes(range(64))
             (media_root / "08-item_5069.mp4").write_bytes(media_bytes)
+            demo_media = root / "demo-media"
+            demo_media.mkdir()
+            sample_bytes = b"\x1a\x45\xdf\xa3webrtc-sample"
+            (demo_media / "live-input-sample.webm").write_bytes(sample_bytes)
             payload = template_payload(evidence_media_mode="video")
             item = payload["items"][0]
             record = self._video_record(item)
@@ -982,6 +987,11 @@ class ReportContractTest(unittest.TestCase):
                 self.assertEqual(response.status, 206)
                 self.assertEqual(response.getheader("Content-Range"), "bytes 56-63/64")
                 self.assertEqual(response.read(), media_bytes[-8:])
+                connection.request("GET", "/demo-media/live-input-sample.webm")
+                response = connection.getresponse()
+                self.assertEqual(response.status, 200)
+                self.assertEqual(response.getheader("Content-Type"), "video/webm")
+                self.assertEqual(response.read(), sample_bytes)
                 connection.request("GET", "/report.json")
                 response = connection.getresponse()
                 self.assertEqual(response.status, 404)
@@ -996,6 +1006,9 @@ class ReportContractTest(unittest.TestCase):
         path = Path(__file__).with_name("展示标准报告_8-20_mock_video.json")
         if not path.exists():
             self.skipTest("video mock fixture has not been generated")
+        live_sample = Path(__file__).with_name("demo-media") / "live-input-sample.webm"
+        self.assertTrue(live_sample.is_file())
+        self.assertEqual(live_sample.read_bytes()[:4], b"\x1a\x45\xdf\xa3")
         payload = json.loads(path.read_text(encoding="utf-8"))
         self.assertEqual(validate_report(payload), [])
         self.assertEqual(payload["presentation"]["evidence_media_mode"], "video")
@@ -1041,6 +1054,15 @@ class ReportContractTest(unittest.TestCase):
             "userPausedEvidence",
             "programmaticScrollUntil",
             "请通过本地演示服务启动视频证据展示",
+            "window.realtimeVideoInput",
+            "acceptWebRTCOffer",
+            "addWebRTCIceCandidate",
+            "startLocalWebRTCSource",
+            "RTCPeerConnection",
+            "video.srcObject=stream",
+            "captureStream",
+            "realtime-video-icecandidate",
+            "/demo-media/live-input-sample.webm",
         ):
             self.assertIn(marker, html)
         present_source = html.split("async function present(update)", 1)[1].split("async function drainQueue", 1)[0]

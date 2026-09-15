@@ -421,6 +421,7 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
 }
 .video-placeholder-title { font-size: 18px; font-weight: 700; }
 .video-placeholder-note { color: rgba(255, 255, 255, 0.78); font-size: 13px; }
+.webrtc-source-video { position: fixed; left: -4px; bottom: -4px; width: 2px; height: 2px; opacity: .001; pointer-events: none; }
 .live-controls {
   display: flex;
   flex-wrap: wrap;
@@ -1421,21 +1422,32 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
   min-height: 0;
   margin-top: 8px;
   padding: 12px 14px;
+  background:
+    radial-gradient(circle at 92% 8%, rgba(47,128,255,.10), transparent 38%),
+    linear-gradient(145deg, #edf5ff 0%, #f7faff 100%);
+  border: 1px solid #d8e6f7;
+  border-left: 3px solid #1768c5;
+  border-radius: 8px;
 }
-.mode-video .arena-results .analysis-columns { display: grid; grid-template-columns: minmax(0,1.08fr) minmax(0,.92fr); flex: 1; gap: 10px; min-height: 0; margin-top: 8px; }
+.mode-video .arena-results .analysis-title { display: flex; align-items: center; gap: 9px; margin: 0; color: #075cb9; font-size: 11px; letter-spacing: .04em; }
+.mode-video .arena-results .analysis-title::after { height: 1px; flex: 1; background: linear-gradient(90deg, #b8d2ef, transparent); content: ""; }
+.mode-video .arena-results .analysis-columns { display: grid; grid-template-columns: minmax(0,1.12fr) minmax(0,.88fr); flex: 1; gap: 14px; min-height: 0; margin-top: 8px; }
 .mode-video .arena-results .analysis-tools-panel,
-.mode-video .arena-results .analysis-facts { display: flex; flex-direction: column; min-height: 0; padding: 10px; background: rgba(255,255,255,.76); border: 1px solid #dbe7f7; border-radius: 7px; }
-.mode-video .arena-results .analysis-subtitle { flex: 0 0 auto; color: #74849a; font-size: 9px; font-weight: 700; letter-spacing: .08em; }
-.mode-video .arena-results .analysis-steps { display: flex; flex: 1; flex-direction: column; justify-content: space-evenly; gap: 6px; min-height: 0; padding-top: 5px; }
-.mode-video .arena-results .analysis-step { display: grid; grid-template-columns: 25px minmax(0,1fr); align-items: center; gap: 8px; min-height: 36px; padding: 5px 8px; color: #34465c; background: #f7faff; border: 1px solid #e1eaf5; border-radius: 6px; }
-.mode-video .arena-results .analysis-step i { display: grid; place-items: center; width: 23px; height: 23px; color: #ffffff; background: #1768c5; border-radius: 50%; font-size: 8px; font-style: normal; font-weight: 700; }
+.mode-video .arena-results .analysis-facts { display: flex; flex-direction: column; min-height: 0; padding: 7px 4px; }
+.mode-video .arena-results .analysis-facts { padding-left: 15px; border-left: 1px solid #cfdef0; }
+.mode-video .arena-results .analysis-subtitle { flex: 0 0 auto; color: #6f8198; font-size: 9px; font-weight: 750; letter-spacing: .10em; }
+.mode-video .arena-results .analysis-steps { position: relative; display: flex; flex: 1; flex-direction: column; justify-content: space-evenly; gap: 6px; min-height: 0; padding: 6px 0 2px; }
+.mode-video .arena-results .analysis-steps::before { position: absolute; top: 26px; bottom: 26px; left: 14px; width: 1px; background: #b8d2ef; content: ""; }
+.mode-video .arena-results .analysis-step { position: relative; display: grid; grid-template-columns: 29px minmax(0,1fr); align-items: center; gap: 9px; min-height: 38px; padding: 5px 8px 5px 0; color: #34465c; }
+.mode-video .arena-results .analysis-step i { z-index: 1; display: grid; place-items: center; width: 29px; height: 29px; color: #ffffff; background: linear-gradient(145deg, #2f80df, #0754a8); border: 3px solid #edf5ff; border-radius: 50%; box-shadow: 0 0 0 1px #9fc3eb; font-size: 8px; font-style: normal; font-weight: 700; }
 .mode-video .arena-results .analysis-step b { font-size: 10px; font-weight: 650; line-height: 1.35; }
-.mode-video .arena-results .analysis-stat-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 6px; margin: 7px 0 12px; }
-.mode-video .arena-results .analysis-stat-grid > span { padding: 8px; background: #f7faff; border: 1px solid #e1eaf5; border-radius: 6px; }
+.mode-video .arena-results .analysis-stat-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 7px; margin: 7px 0 13px; }
+.mode-video .arena-results .analysis-stat-grid > span { padding: 9px; background: rgba(255,255,255,.68); border-top: 2px solid #77abe4; border-radius: 3px 3px 6px 6px; }
 .mode-video .arena-results .analysis-stat-grid small { display: block; color: #74849a; font-size: 9px; }
 .mode-video .arena-results .analysis-stat-grid strong { display: block; margin-top: 2px; color: #1768c5; font-size: 19px; }
-.mode-video .arena-results .analysis-feature-list { display: flex; flex: 1; flex-direction: column; justify-content: center; gap: 7px; min-height: 0; padding-top: 7px; }
-.mode-video .arena-results .analysis-feature { display: flex; align-items: center; min-height: 30px; padding: 6px 8px; color: #405269; background: #f7faff; border-left: 2px solid #74a8e5; border-radius: 0 5px 5px 0; font-size: 10px; line-height: 1.35; }
+.mode-video .arena-results .analysis-feature-list { display: flex; flex: 1; flex-direction: column; justify-content: space-evenly; gap: 7px; min-height: 0; padding-top: 7px; }
+.mode-video .arena-results .analysis-feature { position: relative; display: flex; align-items: center; min-height: 31px; padding: 6px 8px 6px 17px; color: #405269; background: rgba(255,255,255,.58); border-radius: 5px; font-size: 10px; line-height: 1.35; }
+.mode-video .arena-results .analysis-feature::before { position: absolute; left: 7px; width: 4px; height: 4px; background: #2f80df; border-radius: 50%; content: ""; }
 .mode-video .arena-results .tool-chip { font-size: 10px; }
 .mode-video .arena-results .profile-line { margin-top: 5px; font-size: 10px; }
 .mode-video .arena-results .evidence-box { margin: 0; padding: 9px; }
@@ -1495,7 +1507,7 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
       <div class="arena-status wide"><span>系统</span><strong id="quality">等待有效画面</strong></div>
     </div>
     <div class="arena-actions">
-      <div class="arena-connection"><i class="pulse"></i><span id="connection">视频流已连接</span></div>
+      <div class="arena-connection"><i class="pulse"></i><span id="connection">等待视频接入</span></div>
       <button class="control primary" id="start" type="button">启动评测</button>
       <button class="control" id="reset" type="button">重置</button>
     </div>
@@ -1552,6 +1564,7 @@ const terminalStates = new Set(["证据已绑定","已完成评分","待人工�
 const checkLabels = {pending:"待核验",confirmed:"已确认",not_confirmed:"未确认",manual_review:"待人工确认",demo_disabled:"暂不可用"};
 const detailStateLabels = {locked:"等待核验",analyzing:"分析中",unlocked:"已提供逐条结果",unavailable:"详细结果待提供"};
 const evidenceMediaMode = DATA.presentation&&DATA.presentation.evidence_media_mode==="video"?"video":"image";
+const LOCAL_WEBRTC_SAMPLE = "/demo-media/live-input-sample.webm";
 let state = DATA.items.map((item,index)=>({...item,status:displayState(item.binding&&item.binding.state||"待开始"),index,binding:{...(item.binding||{}),evidence:[...((item.binding&&item.binding.evidence)||[])]}}));
 let current = 0, evaluationActive = false, processing = false, pollTimer = null, filter = "all", pending = [], pendingKeys = new Set(), drawerIndex = null, newCardIndexes = new Set();
 const mockReplay = Array.isArray(DATA.events)&&DATA.events.length>0;
@@ -1560,6 +1573,7 @@ let hoverTimer = null, hoverButton = null;
 let activePlayingVideo = null, pendingAutoplayIndex = null;
 const videoPlaybackPositions = new Map(), userPausedEvidence = new Set();
 const videoBackdropJobs = new Map();
+let liveReceiverPeer = null, liveSenderPeer = null, liveSourceVideo = null, liveRemoteStream = null;
 let focusTransitionToken = 0;
 const $ = id => document.getElementById(id);
 const esc = value => String(value ?? "").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[ch]));
@@ -1669,9 +1683,22 @@ async function pollReport(){if(!evaluationActive||location.protocol==="file:")re
 async function runMockEvents(){for(const event of DATA.events||[]){if(!evaluationActive)break;await delay(Number(event.delay_ms||900));if(!evaluationActive)break;if(event.item_patch)mergeView({items:[event.item_patch],processing_ms:event.processing_ms});while(processing&&evaluationActive)await delay(120)}}
 function beginLiveSession(){const layout=document.querySelector(".live-layout");if(!layout)return;const firstStart=layout.classList.contains("awaiting-start");layout.classList.remove("awaiting-start");if(firstStart&&evidenceMediaMode!=="video")setCourseCollapsed(true)}
 function embeddedVideoEvidence(){for(const event of DATA.events||[]){const video=event&&event.item_patch&&event.item_patch.binding&&event.item_patch.binding.video_evidence;if(video&&video.src)return video}return null}
+function setLiveVideoState(state,label){const slot=$("video-slot"),placeholder=slot&&slot.querySelector(".video-placeholder");if(slot)slot.dataset.streamState=state;if(placeholder)placeholder.hidden=state==="connected";if(label&&$("connection"))$("connection").textContent=label;window.dispatchEvent(new CustomEvent("realtime-video-state",{detail:{state,label}}))}
+function closeReceiverPeer(clearVideo=true){if(liveReceiverPeer){liveReceiverPeer.ontrack=null;liveReceiverPeer.onconnectionstatechange=null;liveReceiverPeer.close();liveReceiverPeer=null}if(clearVideo){const video=$("live-video");if(video){video.pause();video.srcObject=null}liveRemoteStream=null;setLiveVideoState("idle","等待视频接入")}}
+function closeLocalSender(){if(liveSenderPeer){liveSenderPeer.close();liveSenderPeer=null}if(liveSourceVideo){liveSourceVideo.pause();liveSourceVideo.src="";liveSourceVideo.remove();liveSourceVideo=null}}
+function closeLiveVideoInput(){closeLocalSender();closeReceiverPeer(true)}
+function waitForIceGathering(peer,timeoutMs=5000){if(peer.iceGatheringState==="complete")return Promise.resolve();return new Promise(resolve=>{let timer=null;const finish=()=>{peer.removeEventListener("icegatheringstatechange",changed);if(timer)clearTimeout(timer);resolve()};const changed=()=>{if(peer.iceGatheringState==="complete")finish()};peer.addEventListener("icegatheringstatechange",changed);timer=setTimeout(finish,timeoutMs)})}
+async function attachLiveStream(stream){const video=$("live-video");if(!video)throw new Error("实时视频窗口不存在");liveRemoteStream=stream;video.srcObject=stream;video.autoplay=true;video.muted=true;video.playsInline=true;setLiveVideoState("connecting","视频流连接中");try{await video.play()}catch(error){}return video}
+async function createWebRTCAnswer(offer,rtcConfiguration={},keepLocalSender=false){if(typeof RTCPeerConnection!=="function")throw new Error("当前浏览器不支持 WebRTC 视频接入");if(!keepLocalSender)closeLocalSender();closeReceiverPeer(false);const peer=new RTCPeerConnection(rtcConfiguration||{});liveReceiverPeer=peer;peer.onicecandidate=event=>window.dispatchEvent(new CustomEvent("realtime-video-icecandidate",{detail:event.candidate?event.candidate.toJSON():null}));peer.ontrack=event=>{const stream=event.streams&&event.streams[0]?event.streams[0]:new MediaStream([event.track]);attachLiveStream(stream)};peer.onconnectionstatechange=()=>{const state=peer.connectionState;if(state==="connected")setLiveVideoState("connected","实时视频已连接");else if(state==="connecting"||state==="new")setLiveVideoState("connecting","视频流连接中");else if(state==="disconnected")setLiveVideoState("disconnected","视频流暂时中断");else if(state==="failed")setLiveVideoState("failed","视频流连接失败");else if(state==="closed"&&!liveReceiverPeer)setLiveVideoState("idle","等待视频接入")};await peer.setRemoteDescription(offer);const answer=await peer.createAnswer();await peer.setLocalDescription(answer);await waitForIceGathering(peer);return {type:peer.localDescription.type,sdp:peer.localDescription.sdp}}
+async function acceptWebRTCOffer(offer,rtcConfiguration={}){return createWebRTCAnswer(offer,rtcConfiguration,false)}
+async function addWebRTCIceCandidate(candidate){if(!liveReceiverPeer)throw new Error("WebRTC 接收端尚未初始化");await liveReceiverPeer.addIceCandidate(candidate||null)}
+function waitForVideoReady(video,timeoutMs=8000){if(video.readyState>=2)return Promise.resolve();return new Promise((resolve,reject)=>{let timer=null;const cleanup=()=>{video.removeEventListener("loadeddata",ready);video.removeEventListener("error",failed);if(timer)clearTimeout(timer)};const ready=()=>{cleanup();resolve()};const failed=()=>{cleanup();reject(new Error("视频样本加载失败"))};video.addEventListener("loadeddata",ready,{once:true});video.addEventListener("error",failed,{once:true});timer=setTimeout(()=>{cleanup();reject(new Error("视频样本加载超时"))},timeoutMs)})}
+async function startLocalWebRTCSource(sourceUrl=LOCAL_WEBRTC_SAMPLE){if(!sourceUrl)throw new Error("缺少视频源");if(typeof RTCPeerConnection!=="function")throw new Error("当前浏览器不支持 WebRTC 视频接入");closeLocalSender();const source=document.createElement("video");source.className="webrtc-source-video";source.muted=true;source.loop=true;source.playsInline=true;source.preload="auto";source.src=sourceUrl;source.setAttribute("aria-hidden","true");document.body.append(source);liveSourceVideo=source;try{source.load();await waitForVideoReady(source);await source.play();const capture=source.captureStream||source.mozCaptureStream;if(typeof capture!=="function")throw new Error("当前浏览器不支持视频流采集");const stream=capture.call(source,10),track=stream.getVideoTracks()[0];if(!track)throw new Error("视频源未产生画面轨道");const sender=new RTCPeerConnection({iceServers:[]});liveSenderPeer=sender;sender.addTrack(track,stream);await sender.setLocalDescription(await sender.createOffer());await waitForIceGathering(sender);const answer=await createWebRTCAnswer({type:sender.localDescription.type,sdp:sender.localDescription.sdp},{iceServers:[]},true);await sender.setRemoteDescription(answer);return {senderState:sender.connectionState,receiverState:liveReceiverPeer&&liveReceiverPeer.connectionState}}catch(error){closeLocalSender();setLiveVideoState("failed","视频流连接失败");throw error}}
+function liveVideoInputState(){const video=$("live-video"),track=liveRemoteStream&&liveRemoteStream.getVideoTracks()[0];return {receiverConnectionState:liveReceiverPeer&&liveReceiverPeer.connectionState||"closed",senderConnectionState:liveSenderPeer&&liveSenderPeer.connectionState||"closed",hasRemoteStream:Boolean(video&&video.srcObject),trackState:track&&track.readyState||"none",videoWidth:Number(video&&video.videoWidth||0),videoHeight:Number(video&&video.videoHeight||0),currentTime:Number(video&&video.currentTime||0)}}
+window.realtimeVideoInput=Object.freeze({acceptOffer:acceptWebRTCOffer,addIceCandidate:addWebRTCIceCandidate,close:closeLiveVideoInput,startLocalSample:startLocalWebRTCSource,getState:liveVideoInputState});
 async function videoServiceReady(){if(evidenceMediaMode!=="video"||location.protocol==="file:")return true;const video=embeddedVideoEvidence();if(!video||!String(video.src||"").startsWith("/"))return true;try{const response=await fetch(video.src,{method:"HEAD",cache:"no-store"});return response.ok}catch(error){return false}}
-async function startEvaluation(){if(evaluationActive){evaluationActive=false;if(pollTimer)clearInterval(pollTimer);workflowStop();pauseEvidencePlayers();$("start").textContent="启动评测";$("connection").textContent="评测已暂停";toast("实时评测已暂停");return}beginLiveSession();const fileMode=location.protocol==="file:";if(fileMode&&evidenceMediaMode==="video"){toast("请通过本地演示服务启动视频证据展示");return}if(!await videoServiceReady()){$("connection").textContent="视频服务未就绪";toast("请检查视频证据服务");return}evaluationActive=true;$("start").textContent="暂停评测";$("connection").textContent="实时分析中";toast("已启动实时评测");if(mockReplay){runMockEvents()}else if(!fileMode){await pollReport();pollTimer=setInterval(pollReport,Number(DATA.presentation.poll_interval_ms||650))}}
-async function resetReport(){if(location.protocol==="file:"){toast("请通过本地演示服务执行重置");return}evaluationActive=false;if(pollTimer)clearInterval(pollTimer);workflowStop();clearAutoFocusPause();pending=[];pendingKeys.clear();processing=false;newCardIndexes.clear();try{const response=await fetch("/api/reset",{method:"POST"});if(!response.ok)throw new Error("reset failed");const view=await response.json();state=view.items.map((item,index)=>({...item,status:"待开始",index,binding:{...(item.binding||{}),evidence:[...((item.binding||{}).evidence||[])]},detail:{...(item.detail||{}),state:"locked",checks:[]}}));current=0;filter="all";closeDetail();$("start").textContent="启动评测";$("connection").textContent="视频流已连接";const layout=document.querySelector(".live-layout");if(layout&&evidenceMediaMode!=="video"){layout.classList.add("awaiting-start");setCourseCollapsed(false)}render();toast("已恢复初始评测状态")}catch(error){toast("重置失败，请检查本地演示服务")}}
+async function startEvaluation(){if(evaluationActive){evaluationActive=false;if(pollTimer)clearInterval(pollTimer);workflowStop();pauseEvidencePlayers();$("start").textContent="启动评测";$("connection").textContent="评测已暂停";toast("实时评测已暂停");return}beginLiveSession();const fileMode=location.protocol==="file:";if(fileMode&&evidenceMediaMode==="video"){toast("请通过本地演示服务启动视频证据展示");return}if(!await videoServiceReady()){$("connection").textContent="视频服务未就绪";toast("请检查视频证据服务");return}evaluationActive=true;$("start").textContent="暂停评测";$("connection").textContent="实时分析中";toast("已启动实时评测");if(mockReplay){if(evidenceMediaMode==="video")startLocalWebRTCSource().catch(()=>{});runMockEvents()}else if(!fileMode){await pollReport();pollTimer=setInterval(pollReport,Number(DATA.presentation.poll_interval_ms||650))}}
+async function resetReport(){if(location.protocol==="file:"){toast("请通过本地演示服务执行重置");return}evaluationActive=false;if(pollTimer)clearInterval(pollTimer);workflowStop();clearAutoFocusPause();pending=[];pendingKeys.clear();processing=false;newCardIndexes.clear();try{const response=await fetch("/api/reset",{method:"POST"});if(!response.ok)throw new Error("reset failed");const view=await response.json();state=view.items.map((item,index)=>({...item,status:"待开始",index,binding:{...(item.binding||{}),evidence:[...((item.binding||{}).evidence||[])]},detail:{...(item.detail||{}),state:"locked",checks:[]}}));current=0;filter="all";closeDetail();$("start").textContent="启动评测";$("connection").textContent=liveRemoteStream?"实时视频已连接":"等待视频接入";const layout=document.querySelector(".live-layout");if(layout&&evidenceMediaMode!=="video"){layout.classList.add("awaiting-start");setCourseCollapsed(false)}render();toast("已恢复初始评测状态")}catch(error){toast("重置失败，请检查本地演示服务")}}
 function confidenceText(value){return value==null?"—":`${Math.round(Number(value)*100)}%`}
 function formatSeconds(value){const number=Number(value);if(!Number.isFinite(number)||number<0)return "—";const total=Math.round(number);return `${String(Math.floor(total/60)).padStart(2,"0")}:${String(total%60).padStart(2,"0")}`}
 function timeRangeText(item){const binding=item.binding||{},range=binding.time_range||{};const start=range.start!=null?range.start:binding.live_start_sec,end=range.end!=null?range.end:binding.live_end_sec;if(start==null&&end==null)return binding.live_timestamp||"—";if(start==null)return formatSeconds(end);if(end==null)return formatSeconds(start);return `${formatSeconds(start)} — ${formatSeconds(end)}`}
@@ -1702,6 +1729,7 @@ syncCanvasScale();
 window.addEventListener("resize",syncCanvasScale,{passive:true});
 if(window.visualViewport)window.visualViewport.addEventListener("resize",syncCanvasScale,{passive:true});
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)document.querySelectorAll("video[data-evidence-video]").forEach(video=>{if(!video.paused)startVideoBackdrop(video)})});
+window.addEventListener("beforeunload",closeLiveVideoInput);
 render();
 
 </script>

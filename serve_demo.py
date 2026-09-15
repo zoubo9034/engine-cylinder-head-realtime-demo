@@ -572,7 +572,7 @@ def _live_projection(payload: Mapping[str, Any]) -> dict[str, Any]:
 
 
 _ROUTE_ID_RE = re.compile(r"^[A-Za-z0-9._-]+$")
-_STATIC_SUFFIXES = {".html", ".css", ".js", ".png", ".svg", ".woff", ".woff2"}
+_STATIC_SUFFIXES = {".html", ".css", ".js", ".png", ".svg", ".webm", ".woff", ".woff2"}
 
 
 def _find_local_video_record(

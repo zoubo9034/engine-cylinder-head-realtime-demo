@@ -12,6 +12,9 @@
 
 与端砚 UI 共用同一报告契约：左侧 8→20 流程、单列项目卡、证据槽位、详情抽屉、查看器、启动/暂停/重置。
 `image` 模式显示关键帧，`video` 模式显示 960×540、10fps 视频片段；两种模式不会混用，且页面同时最多播放一个证据视频。
+实时画面通过 `window.realtimeVideoInput.acceptOffer()` 接收 WebRTC offer 并将远端轨道挂载到
+`#live-video.srcObject`；视频事件版启动时使用 `../demo-media/live-input-sample.webm` 构造虚拟发送端，
+走同一 WebRTC 接收链路。
 
 ## 生成
 
