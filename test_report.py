@@ -1114,6 +1114,7 @@ class ReportContractTest(unittest.TestCase):
         self.assertIn("systemPause", pause_source)
         self.assertIn("../../mock-video-evidence/08-item_5069.mp4", html)
         self.assertIn("if(mockReplay){window.location.reload();return}", html)
+        self.assertIn('location.hostname.endsWith(".github.io")', html)
         self.assertNotIn("source_path", html)
 
 
