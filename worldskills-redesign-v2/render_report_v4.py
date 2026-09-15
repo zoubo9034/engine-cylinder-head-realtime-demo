@@ -127,6 +127,7 @@ __STYLES__
       </section>
     </section>
     <section class="results-column">
+      <button class="follow-chip" id="follow-chip" type="button" hidden>项目已完成 · 查看</button>
       <section class="cards" id="cards" tabindex="0" aria-label="评分项目列表"></section>
     </section>
   </div>

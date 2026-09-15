@@ -124,6 +124,9 @@ class RedesignV4Tests(unittest.TestCase):
         self.assertIn("function workflowStart(", self.standard_html)
         self.assertIn("function focusLatestCompleted(", self.standard_html)
         self.assertIn("pauseAutoFocus", self.standard_html)
+        self.assertIn("followLatest", self.standard_html)
+        self.assertIn("follow-chip", self.standard_html)
+        self.assertIn("jumpToLatestCompleted", self.standard_html)
 
     def test_original_interaction_contract(self) -> None:
         for marker in (
@@ -182,6 +185,10 @@ class RedesignV4Tests(unittest.TestCase):
             "restoreEvidencePosition",
             "finishCardFocus",
             "renderSignature",
+            "isNativeControlClick",
+            "userPausedEvidence",
+            "programmaticScrollUntil",
+            "settleCardFocusFromScroll",
             "lightbox-video",
         ):
             self.assertIn(marker, self.video_mock_html)
@@ -189,6 +196,12 @@ class RedesignV4Tests(unittest.TestCase):
         self.assertNotIn("if(newlyCompleted)pendingAutoplayIndex=update.index", present_source)
         focus_source = self.video_mock_html.split("function finishCardFocus(", 1)[1].split("function focusLatestCompleted", 1)[0]
         self.assertLess(focus_source.index("delta<=8"), focus_source.index("pendingAutoplayIndex=index"))
+        manual_source = self.video_mock_html.split("function pauseAutoFocus(", 1)[1].split("function requestLatestFocus", 1)[0]
+        self.assertIn("followLatest=false", manual_source)
+        scroll_source = self.video_mock_html.split("function settleCardFocusFromScroll(", 1)[1].split("function bindCardScrollInteractions", 1)[0]
+        self.assertLess(scroll_source.index("scrollTop>=maxScroll-24"), scroll_source.index('evidenceMediaMode!=="video"'))
+        self.assertNotIn("queuedFocusIndex", self.video_mock_html)
+        self.assertNotIn("autoFocusPausedUntil", self.video_mock_html)
         self.assertIn("/mock-video-evidence/08-item_5069.mp4", self.video_mock_html)
 
 

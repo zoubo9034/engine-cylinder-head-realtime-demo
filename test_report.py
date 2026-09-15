@@ -288,7 +288,12 @@ class ReportContractTest(unittest.TestCase):
         self.assertIn("position:sticky", html)
         self.assertIn("container.scrollTo", html)
         self.assertIn("pauseAutoFocus", html)
-        self.assertIn("queuedFocusIndex", html)
+        self.assertIn("followLatest", html)
+        self.assertIn("follow-chip", html)
+        self.assertIn("jumpToLatestCompleted", html)
+        self.assertIn("settleCardFocusFromScroll", html)
+        self.assertNotIn("queuedFocusIndex", html)
+        self.assertNotIn("autoFocusPausedUntil", html)
         self.assertIn("track.scrollTo", html)
         self.assertNotIn("scrollIntoView", html)
         self.assertIn("prefers-reduced-motion", html)
@@ -1027,6 +1032,9 @@ class ReportContractTest(unittest.TestCase):
             "restoreEvidencePosition",
             "finishCardFocus",
             "renderSignature",
+            "isNativeControlClick",
+            "userPausedEvidence",
+            "programmaticScrollUntil",
             "请通过本地演示服务启动视频证据回放",
         ):
             self.assertIn(marker, html)
@@ -1034,6 +1042,16 @@ class ReportContractTest(unittest.TestCase):
         self.assertNotIn("if(newlyCompleted)pendingAutoplayIndex=update.index", present_source)
         focus_source = html.split("function finishCardFocus(", 1)[1].split("function focusLatestCompleted", 1)[0]
         self.assertLess(focus_source.index("delta<=8"), focus_source.index("pendingAutoplayIndex=index"))
+        manual_source = html.split("function pauseAutoFocus(", 1)[1].split("function requestLatestFocus", 1)[0]
+        self.assertIn("followLatest=false", manual_source)
+        chip_source = html.split("function updateFollowChip(", 1)[1].split("function pauseAutoFocus", 1)[0]
+        self.assertIn("已完成", chip_source)
+        scroll_source = html.split("function settleCardFocusFromScroll(", 1)[1].split("function bindCardScrollInteractions", 1)[0]
+        self.assertLess(scroll_source.index("scrollTop>=maxScroll-24"), scroll_source.index('evidenceMediaMode!=="video"'))
+        sync_source = html.split("function syncEvidencePlayers(", 1)[1].split("function render()", 1)[0]
+        self.assertIn("userPausedEvidence.has", sync_source)
+        pause_source = html.split("function pauseEvidencePlayers(", 1)[1].split("function selectEvidenceVideo", 1)[0]
+        self.assertIn("systemPause", pause_source)
         self.assertIn("/mock-video-evidence/08-item_5069.mp4", html)
         self.assertNotIn("source_path", html)
 
