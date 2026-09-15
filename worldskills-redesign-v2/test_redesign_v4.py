@@ -30,6 +30,10 @@ class RedesignV4Tests(unittest.TestCase):
         cls.video_mock_payload = json.loads(
             (PROJECT_ROOT / "展示标准报告_8-20_mock_video.json").read_text(encoding="utf-8")
         )
+        cls.video_payload = json.loads(
+            (PROJECT_ROOT / "展示标准报告_8-20_video.json").read_text(encoding="utf-8")
+        )
+        cls.video_html = renderer.render_html(cls.video_payload)
         cls.video_mock_html = renderer.render_html(cls.video_mock_payload)
 
     def test_coursera_banner_and_original_layers(self) -> None:
@@ -194,8 +198,6 @@ class RedesignV4Tests(unittest.TestCase):
             "userPausedEvidence",
             "programmaticScrollUntil",
             "settleCardFocusFromScroll",
-            "DESIGN_CANVAS",
-            "syncCanvasScale",
             '$("follow-chip").onclick=jumpToLatestCompleted',
             "lightbox-video",
         ):
@@ -231,22 +233,49 @@ class RedesignV4Tests(unittest.TestCase):
         self.assertNotIn(".evidence-video-wrap {\n.follow-chip", styles)
         self.assertEqual(styles.count("\n.evidence-video-wrap {"), 1)
 
-    def test_score_cards_keep_intrinsic_height_on_fixed_canvas(self) -> None:
+    def test_video_uses_judging_console_not_course_shell(self) -> None:
+        for html in (self.video_html, self.video_mock_html):
+            for marker in (
+                'class="mode-video"',
+                'class="arena-shell"',
+                'class="arena-header"',
+                'class="arena-logo"',
+                'class="arena-status-grid"',
+                'class="arena-main"',
+                'class="course-column arena-rail"',
+                'class="stage-column arena-live"',
+                'class="results-column arena-results"',
+                "WORLD SKILLS · LIVE JUDGING",
+            ):
+                self.assertIn(marker, html)
+            for marker in (
+                'class="course-banner"',
+                'class="metrics"',
+                'id="timelineToggle"',
+                'id="courseFab"',
+                'class="canvas-host"',
+                'class="page-canvas"',
+            ):
+                self.assertNotIn(marker, html)
+        self.assertIn('class="course-banner"', self.standard_html)
+        self.assertIn('id="timelineToggle"', self.standard_html)
+
+    def test_video_score_cards_keep_intrinsic_height(self) -> None:
         for marker in (
             "flex-direction: column",
             "align-items: stretch",
             "flex: 0 0 auto",
             "height: auto",
-            "scroll-padding-block: 260px",
-            "grid-template-columns: 220px 400px 1188px",
-            "grid-template-columns: 440px 1392px",
-            "width: 250px",
-            "height: 375px",
-            "grid-template-columns: minmax(0, 1fr) 280px",
+            "grid-template-columns: 216px 456px 1040px",
+            "grid-template-rows: 920px",
+            "width: 408px",
+            "height: 612px",
+            "grid-template-columns: minmax(0,1fr) 286px",
             'class="card-summary"',
             'class="card-evidence"',
             "aspect-ratio: 9 / 16",
-            "width: 240px",
+            "width: 250px",
+            "height: 444px",
         ):
             self.assertIn(marker, self.video_mock_html)
         cards_styles = self.video_mock_html.split(".cards {", 1)[1].split(".cards::-webkit-scrollbar", 1)[0]
@@ -259,15 +288,22 @@ class RedesignV4Tests(unittest.TestCase):
         ):
             self.assertNotIn(marker, self.video_mock_html)
 
-    def test_design_canvas_scales_only_from_viewport_width(self) -> None:
-        source = self.video_mock_html.split("function syncCanvasScale()", 1)[1].split("const WORKFLOW_FALLBACK", 1)[0]
-        self.assertIn("(viewportWidth-gutter*2)/DESIGN_CANVAS.width", source)
-        self.assertIn("gutter=24", source)
-        self.assertNotIn("viewportHeight", source)
-        self.assertNotIn("Math.min(viewportWidth", source)
-        self.assertIn("height: calc(var(--canvas-height) * var(--canvas-scale, 1) + 24px)", self.video_mock_html)
-        self.assertIn("justify-content: center", self.video_mock_html)
-        self.assertIn("transform-origin: top center", self.video_mock_html)
+    def test_video_backdrop_canvas_has_bounded_lifecycle(self) -> None:
+        for marker in (
+            'class="evidence-video-backdrop"',
+            'class="evidence-video-shade"',
+            "videoBackdropJobs",
+            "drawVideoBackdrop",
+            "startVideoBackdrop",
+            "stopVideoBackdrop",
+            "requestVideoFrameCallback",
+            "cancelVideoFrameCallback",
+            "setTimeout(()=>paint(performance.now()),100)",
+            'canvas.dataset.state="fallback"',
+            'background:\n    radial-gradient(circle at 50% 42%, #193d65 0%, transparent 58%)',
+            'document.addEventListener("visibilitychange"',
+        ):
+            self.assertIn(marker, self.video_mock_html)
 
     def test_follow_chip_restores_visibility_before_focus(self) -> None:
         source = self.video_mock_html.split("function jumpToLatestCompleted(", 1)[1].split("function clearAutoFocusPause", 1)[0]
