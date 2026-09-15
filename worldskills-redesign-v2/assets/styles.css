@@ -1396,7 +1396,7 @@ button:focus-visible, [tabindex]:focus-visible { outline: none; box-shadow: var(
 
 .mode-video .arena-results { padding: 0; }
 .mode-video .arena-results .follow-chip { flex: 0 0 auto; width: auto; margin: 10px 12px 0; }
-.mode-video .arena-results .cards { flex: 1; min-height: 0; height: auto; padding: 12px 14px 18px; scroll-padding-block: 310px; }
+.mode-video .arena-results .cards { flex: 1; min-height: 0; height: auto; padding: 90px 14px; scroll-padding-block: 50%; }
 .mode-video .arena-results .item-card { flex: 0 0 auto; }
 .mode-video .arena-results .card-head { padding: 14px 18px 12px 20px; }
 .mode-video .arena-results .item-no { width: 34px; height: 34px; }
