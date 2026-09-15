@@ -168,6 +168,10 @@ mock JSON 的 13 个评分项初始仍为空；由同项目分析过程提取出
 
 ## 启动实时演示
 
+`serve_demo.py` 同时提供前端页面、报告 API 和视频媒体。下面的标准页、图片事件页、视频事件页是
+三种互斥启动方案，同一端口只启动一个实例；切换报告时先停止当前实例，或为新实例选择其他空闲端口，
+并从该新端口重新打开前端页面。
+
 启动标准报告服务：
 
 ```bash
@@ -229,12 +233,8 @@ const answer = await window.realtimeVideoInput.acceptOffer(offer, {
 
 ### 启动内置虚拟发送端
 
-```bash
-python serve_demo.py \
-  --report 展示标准报告_8-20_mock_video.json \
-  --media-root mock-video-evidence \
-  --port 8765
-```
+虚拟发送端运行在浏览器页面内，不需要再次启动 `serve_demo.py`。保持上面的视频事件页服务运行，
+直接打开对应页面并点击“启动评测”即可；若端口已经被该服务占用，这是正常状态，不要在同一端口重复执行启动命令。
 
 打开任一视频事件页并点击“启动评测”，页面会自动用
 `demo-media/live-input-sample.webm` 创建发送端，并通过真实的浏览器内 WebRTC 连接送入实时窗口。
